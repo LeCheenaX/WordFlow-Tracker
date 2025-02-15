@@ -10,16 +10,49 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 	mySetting: 'default'
 }
 
-export default class MyPlugin extends Plugin {
+
+export default class AdvancedSnapshotsPlugin extends Plugin {
 	settings: MyPluginSettings;
 
 	async onload() {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
+		const ribbonIconEl = this.addRibbonIcon('dice', 'Advanced Snapshots', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
+			new Notice('Try opening snapshots!');
+			new SampleModal(this.app).open(); // open a SampleModal
+			/* Test starts */
+			const activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
+			if (!activeEditor || activeEditor.getMode() !== "source") {
+			new Notice('⚠️ 没有找到活动的Markdown编辑器'); 
+			//new Notice(`当前模式：${Helloview.getMode()}`);
+			return;
+			}
+
+			try {
+				const editor = activeEditor.editor;
+				// @ts-expect-error: 获取CodeMirror State 并跳过Obsidian类型检查
+				const cmState = editor?.cm;
+				
+				if (!cmState) {
+				new Notice('❌ 无法获取CodeMirror状态');
+				return;
+				}
+
+				new Notice('找到被封装的CodeMirror状态');
+				// @ts-expect-error
+				const cmEditor: EditorView = activeEditor.editor.cm;
+				// @ts-expect-error
+				const cm2State: EditorState = cmEditor.state;
+        		console.log("Current CM State:", {
+          			doc: cm2State.doc.toString(),
+          			selection: cm2State.selection.ranges
+				});
+			}
+			catch (error) {
+				console.error("发生错误:", error);
+			}
 		});
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass('my-plugin-ribbon-class');
@@ -99,6 +132,7 @@ class SampleModal extends Modal {
 	onOpen() {
 		const {contentEl} = this;
 		contentEl.setText('Woah!');
+
 	}
 
 	onClose() {
@@ -108,9 +142,9 @@ class SampleModal extends Modal {
 }
 
 class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+	plugin: AdvancedSnapshotsPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: AdvancedSnapshotsPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

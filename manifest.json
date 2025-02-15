@@ -1,11 +1,11 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.0",
-	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"id": "advanced-snapshots",
+	"name": "Advanced Snapshots",
+	"version": "0.1.0",
+	"minAppVersion": "1.7.0",
+	"description": "A more powerful snapshots than the alternative in official Obsidian file recovery.",
+	"author": "LeCheenaX",
+	"authorUrl": "https://github.com/LeCheenaX",
+	"fundingUrl": "to-be-continued",
 	"isDesktopOnly": false
 }
