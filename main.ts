@@ -1,5 +1,5 @@
 // add EditorTransaction
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, debounce, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
 //import { EditorState, StateField, Extension, ChangeSet, Transaction } from "@codemirror/state";
 import { historyField, history } from "@codemirror/commands";
 //import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from "@codemirror/view";
@@ -23,75 +23,160 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 		await this.loadSettings();
 		
 
-		//Test
+		//Test for future use
 		this.registerEvent(this.app.workspace.on('layout-change', () => {
             if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source")
 			{
 				new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
+				// should make into function
+				// need to improve when plugin starts, the cursor must at active document
+				let activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
+				// @ts-expect-error直接访问 Obsidian 维护的历史状态
+				let history = activeEditor.editor.cm.state.field(historyField); // // warning, history might be refreshed when too many and idle editor too long.
+				// @ts-expect-error
+				let doc = activeEditor.editor.cm.state.sliceDoc(0); // 不要 as string | Text
+				// @ts-expect-error
+				let docLength = activeEditor.editor.cm.state.doc.length;
+				console.log("his:", history);
+				let lastDone = history.done.length; // warning, history might be refreshed when too many and idle editor too long.
+				let lastUndone = history.undone.length;
+				
+
+				this.registerEvent(this.app.workspace.on("editor-change", (editor: Editor, view: MarkdownView) => {
+					const historyTracker = debounce(() => {
+						// @ts-expect-error直接访问 Obsidian 维护的历史状态
+						history = activeEditor.editor.cm.state.field(historyField);
+						// @ts-expect-error
+						doc = activeEditor.editor.cm.state.sliceDoc(0);
+						// @ts-expect-error
+						docLength = activeEditor.editor.cm.state.doc.length;
+
+						let currentDone = history.done.length;
+						let currentUndone = history.undone.length;
+
+						if ( (currentDone!= lastDone) || (currentUndone!= lastUndone)){
+							let doneDiff: number = currentDone - lastDone;
+							console.log("捕获操作:", {				
+								done: history.done.length,
+								undone: history.undone.length,
+								doneDiff: doneDiff,
+								docLength: docLength,
+								doc: doc
+							});
+
+							if (doneDiff > 0){// need to ensure that toA will not change before printing, as a long changes may be joining into one done event. This requires to check if no inputting and if yes pause 0.5 second.
+								for ( let i=doneDiff; i>0; i--){ //only done events need to consider separated input that may not be caught by the debouncer function
+									history.done[currentDone-i].changes.iterChanges((fromA:Number, toA:Number, fromB:Number, toB:Number, inserted: string | Text) => {
+										//@ts-expect-error
+										const theOther = activeEditor.editor.cm.state.sliceDoc(fromA,toA); // bug: does not show space or line-break
+										console.log(`Do adding texts: "${theOther}" from ${fromA} to ${toA} in current document, \ndo deleting texts: "${inserted}" from ${fromB} to ${toB} in current document.`);
+									});
+								}
+							}	
+
+							if (doneDiff < 0){
+								history.undone[currentUndone-1].changes.iterChanges((fromA:Number, toA:Number, fromB:Number, toB:Number, inserted: string | Text) => {
+									// @ts-expect-error
+									const theOther = activeEditor.editor.cm.state.sliceDoc(fromA,toA);
+									console.log(`Undo adding texts: "${inserted}" from ${fromB} to ${toB} from previous document, \nundo deleting texts: "${theOther}" from ${fromA} to ${toA} from previous document.`);						
+								});
+							}
+
+							lastDone = currentDone;
+							lastUndone = currentUndone;
+						}
+
+						
+					}, 800, true);
+					// 使用 Obsidian 官方 API 监听键盘事件
+					this.registerDomEvent(document, 'keyup', (evt: KeyboardEvent) => {
+						historyTracker();
+						// 可选：立即检查一次（应对快速输入）
+						requestAnimationFrame(() => historyTracker());
+					});
+					
+					
+				}));
 			}
         }));
 		
 		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source")
 			{
 				new Notice(`Now Edit Mode!`);
+				// should make into function
+
+				let activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
+				// @ts-expect-error直接访问 Obsidian 维护的历史状态
+				let history = activeEditor.editor.cm.state.field(historyField); // 关键！访问 Obsidian 内部历史对象
+				// @ts-expect-error
+				let doc = activeEditor.editor.cm.state.sliceDoc(0); // 不要 as string | Text
+				// @ts-expect-error
+				let docLength = activeEditor.editor.cm.state.doc.length;
+				console.log("his:", history);
+				let lastDone = history.done.length;
+				let lastUndone = history.undone.length;
+				
+
+				this.registerEvent(this.app.workspace.on("editor-change", (editor: Editor, view: MarkdownView) => {
+					const historyTracker = debounce(() => {
+						// @ts-expect-error直接访问 Obsidian 维护的历史状态
+						history = activeEditor.editor.cm.state.field(historyField);
+						// @ts-expect-error
+						doc = activeEditor.editor.cm.state.sliceDoc(0);
+						// @ts-expect-error
+						docLength = activeEditor.editor.cm.state.doc.length;
+
+						let currentDone = history.done.length;
+						let currentUndone = history.undone.length;
+
+						if ( (currentDone!= lastDone) || (currentUndone!= lastUndone)){
+							let doneDiff: number = currentDone - lastDone;
+							console.log("捕获操作:", {				
+								done: history.done.length,
+								undone: history.undone.length,
+								doneDiff: doneDiff,
+								docLength: docLength,
+								doc: doc
+							});
+
+							if (doneDiff > 0){// need to ensure that toA will not change before printing, as a long changes may be joining into one done event. This requires to check if no inputting and if yes pause 0.5 second.
+								for ( let i=doneDiff; i>0; i--){ //only done events need to consider separated input that may not be caught by the debouncer function
+									history.done[currentDone-i].changes.iterChanges((fromA:Number, toA:Number, fromB:Number, toB:Number, inserted: string | Text) => {
+										//@ts-expect-error
+										const theOther = activeEditor.editor.cm.state.sliceDoc(fromA,toA); // bug: does not show space or line-break
+										console.log(`Do adding texts: "${theOther}" from ${fromA} to ${toA} in current document, \ndo deleting texts: "${inserted}" from ${fromB} to ${toB} in current document.`);
+									});
+
+								}								
+							}	
+
+							if (doneDiff < 0){
+								history.undone[currentUndone-1].changes.iterChanges((fromA:Number, toA:Number, fromB:Number, toB:Number, inserted: string | Text) => {
+									// @ts-expect-error
+									const theOther = activeEditor.editor.cm.state.sliceDoc(fromA,toA);
+									console.log(`Undo adding texts: "${inserted}" from ${fromB} to ${toB} from previous document, \nundo deleting texts: "${theOther}" from ${fromA} to ${toA} from previous document.`);						
+								});
+							}
+
+							lastDone = currentDone;
+							lastUndone = currentUndone;
+						}
+
+						
+					}, 800, true); // restrict from 500 to 800 miliseconds for after key up, pressing the next key very fastly
+					// 使用 Obsidian 官方 API 监听键盘事件
+					this.registerDomEvent(document, 'keyup', (evt: KeyboardEvent) => {
+						historyTracker();
+						// 可选：立即检查一次（应对快速输入）
+						requestAnimationFrame(() => historyTracker());
+					});
+					
+					
+				}));
 			}
 		
 
-		// ✅ 官方推荐的事件监听方式
-		const activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView)
-		if (activeEditor){ // need to improve when plugin starts, the cursor must at active document
-			// @ts-expect-error直接访问 Obsidian 维护的历史状态
-			let history = activeEditor.editor.cm.state.field(historyField); // 关键！访问 Obsidian 内部历史对象
-			// @ts-expect-error
-			let doc = activeEditor.editor.cm.state.sliceDoc(0); // 不要 as string | Text
-			// @ts-expect-error
-			let docLength = activeEditor.editor.cm.state.doc.length;
-			console.log("his:", history);
-			let lastDone = history.done.length;
-			let lastUndone = history.undone.length;
-			
 
-			this.registerEvent(this.app.workspace.on("editor-change", (editor: Editor, view: MarkdownView) => {
-				// @ts-expect-error直接访问 Obsidian 维护的历史状态
-				history = activeEditor.editor.cm.state.field(historyField);
-				// @ts-expect-error
-				doc = activeEditor.editor.cm.state.sliceDoc(0);
-				// @ts-expect-error
-				docLength = activeEditor.editor.cm.state.doc.length;
-
-				let currentDone = history.done.length;
-				let currentUndone = history.undone.length;
-
-				if ( (currentDone!= lastDone) || (currentUndone!= lastUndone)){
-					console.log("捕获操作:", {				
-						done: history.done.length,
-						undone: history.undone.length,
-						doneDiff: currentDone - lastDone,
-						docLength: docLength,
-						doc: doc
-					});
-
-					if (currentDone - lastDone > 0){// need to ensure that toA will not change before printing, as a long changes may be joining into one done event. This requires to check if no inputting and if yes pause 0.5 second.
-						history.done[currentDone-1].changes.iterChanges((fromA:Number, toA:Number, fromB:Number, toB:Number, inserted: string | Text) => {
-							//@ts-expect-error
-							const theOther = activeEditor.editor.cm.state.sliceDoc(fromA,toA); // bug: does not show space or line-break
-							console.log(`Do adding texts: "${theOther}" from ${fromA} to ${toA} in current document, \ndo deleting texts: "${inserted}" from ${fromB} to ${toB} in current document.`);
-						});
-					}	
-
-					if (currentDone - lastDone < 0){
-						history.undone[currentUndone-1].changes.iterChanges((fromA:Number, toA:Number, fromB:Number, toB:Number, inserted: string | Text) => {
-							// @ts-expect-error
-							const theOther = activeEditor.editor.cm.state.sliceDoc(fromA,toA);
-							console.log(`Undo adding texts: "${inserted}" from ${fromB} to ${toB} from previous document, \nundo deleting texts: "${theOther}" from ${fromA} to ${toA} from previous document.`);						
-						});
-					}
-
-					lastDone = currentDone;
-					lastUndone = currentUndone;
-				}
-			}));
-		}
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('dice', 'Advanced Snapshots', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
