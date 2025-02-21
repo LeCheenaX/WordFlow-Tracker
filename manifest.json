@@ -1,9 +1,9 @@
 {
-	"id": "advanced-snapshots",
-	"name": "Advanced Snapshots",
+	"id": "wordflow-tracker",
+	"name": "Wordflow Tracker",
 	"version": "0.1.0",
 	"minAppVersion": "1.7.0",
-	"description": "A more powerful snapshots than the alternative in official Obsidian file recovery.",
+	"description": "Automatically track the changes and stats you made on every note in Obsidian, logging it to your daily note in any format you like!",
 	"author": "LeCheenaX",
 	"authorUrl": "https://github.com/LeCheenaX",
 	"fundingUrl": "to-be-continued",
