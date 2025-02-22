@@ -3,7 +3,7 @@ import { App, debounce, Editor, MarkdownView, Modal, Notice, Plugin, PluginSetti
 //import { EditorState, StateField, Extension, ChangeSet, Transaction } from "@codemirror/state";
 import { historyField, history } from "@codemirror/commands";
 //import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from "@codemirror/view";
-import {WordsCounter} from "stats";
+import {WordsCounter} from ".src/stats";
 
 // Remember to rename these classes and interfaces!
 
