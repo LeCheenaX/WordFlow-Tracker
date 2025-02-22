@@ -3,7 +3,7 @@ import { App, debounce, Editor, MarkdownView, Modal, Notice, Plugin, PluginSetti
 //import { EditorState, StateField, Extension, ChangeSet, Transaction } from "@codemirror/state";
 import { historyField, history } from "@codemirror/commands";
 //import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from "@codemirror/view";
-import {WordsCounter} from "./stats";
+import {wordsCounter} from "./stats";
 
 // Remember to rename these classes and interfaces!
 
@@ -24,53 +24,6 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-		
-
-		//Test for future use
-		this.registerEvent(this.app.workspace.on('layout-change', () => {
-
-            if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source")
-			{
-				new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
-				// need to improve when plugin starts, the cursor must at active document
-				let activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
-				
-				this.safeActivateTracker(activeEditor); // bug: this will trigger printing multiple times in the same note when editor-changed.
-			}
-        }));
-		
-		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source")
-			{
-				new Notice(`Now Edit Mode!`);
-				// should make into function
-
-				//debug:
-				let activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
-				//console.log(activeEditor); //debug
-				//console.log(activeEditor?.file?.basename); // get file name
-				// rename parsing...
-				//...
-
-				this.safeActivateTracker(activeEditor);
-				
-			}
-		
-		// 新增文件重命名监听
-        this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
-            if (file instanceof TFile) {
-                const oldName = this.pathToNameMap.get(oldPath);
-                if (oldName && this.activeTrackers.has(oldName)) {
-                    // 迁移追踪记录到新文件名
-                    this.activeTrackers.set(file.basename, true);
-                    this.activeTrackers.delete(oldName);
-                    
-                    // 更新路径映射
-                    this.pathToNameMap.delete(oldPath);
-                    this.pathToNameMap.set(file.path, file.basename);
-                }
-            }
-        }));
-
 
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('dice', 'Advanced Snapshots', (evt: MouseEvent) => {
@@ -176,11 +129,71 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 
+		/* Registered Events */
+		
+		// Update tracking files after rename events
+        this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
+            if (file instanceof TFile) {
+                const oldName = this.pathToNameMap.get(oldPath);
+                if (oldName && this.activeTrackers.has(oldName)) {
+                    // 迁移追踪记录到新文件名
+                    this.activeTrackers.set(file.basename, true);
+                    this.activeTrackers.delete(oldName);
+                    
+                    // 更新路径映射
+                    this.pathToNameMap.delete(oldPath);
+                    this.pathToNameMap.set(file.path, file.basename);
+                }
+            }
+        }));
+
+		this.registerEvent(this.app.workspace.on('active-leaf-change', () => {
+            if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source")
+			{
+				// done | need to improve when plugin starts, the cursor must at active document
+				new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
+				
+				console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
+
+				let activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
+				
+				/*debug rename issue*/
+				//console.log(activeEditor); 
+				//console.log(activeEditor?.file?.basename); // get file name
+				// rename parsing...
+				//...
+
+				this.safeActivateTracker(activeEditor); // done | this will trigger printing multiple times in the same note when editor-changed.
+			}
+        }));
+
+		this.registerEvent(this.app.workspace.on('layout-change', () => {
+
+            if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source")
+			{
+				new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
+				// done | need to improve when plugin starts, the cursor must at active document
+				let activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
+
+				console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
+
+				this.safeActivateTracker(activeEditor); // bug: this will trigger printing multiple times in the same note when editor-changed.
+			}
+        }));
+
+
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
+		/*
 		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
 			console.log('click', evt);
+			//test to switch between editor
+			if(this.app.workspace.activeEditor)
+			{
+				console.log(this.app.workspace.activeEditor.file?.basename)
+			}
 		});
+		*/
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
@@ -194,6 +207,7 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 		// rename后更新路径映射
         this.pathToNameMap.set(activeEditor?.file?.path, activeFileName);
 
+		// normal process
 		if (!this.activeTrackers.has(activeFileName)) {
 			this.editorTracker(activeEditor);
 			this.activeTrackers.set(activeFileName, true);
@@ -201,14 +215,6 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 			// debug
 			//console.log("Tracking file:", activeFileName);
 			
-			/*
-			// 注册清理回调（当文件删除时）
-			this.registerEvent(activeEditor.file.vault.on('delete', (file) => {
-				if (file.path === activeEditor.file.path) {
-					this.activeTrackers.delete(activeFileName);
-				}
-			}));
-			*/
 		}
 	}
 
@@ -219,12 +225,12 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 			return
 		}
 		// debug2: 
-		//console.log("Tracking file2:", activeEditor.file?.basename);
+		console.log("Tracking file2:", activeEditor.file?.basename);
 
 		// @ts-expect-error直接访问 Obsidian 维护的历史状态
-		let history = activeEditor.editor.cm.state.field(historyField); // warning, history might be refreshed when too many and idle editor too long. // test try cm from cm
+		let history = activeEditor.editor.cm.state.field(historyField); // done | warning, history might be refreshed when too many and idle editor too long. 
 		// @ts-expect-error
-		let doc = activeEditor.editor.cm.state.sliceDoc(0); // 不要 as string | Text
+		let doc = activeEditor.editor.cm.state.sliceDoc(0); // return string
 		// @ts-expect-error
 		let docLength = activeEditor.editor.cm.state.doc.length;		
 		let lastDone = (history.done.length > 1)? history.done.length :1; // warning, history might be refreshed when too many and idle editor too long. History length will be 0 or 1 when first editing. 
@@ -244,13 +250,13 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 
 			const historyTracker = debounce(() => {
 				// debug3: 
-				//console.log("Tracking file3:", activeEditor.file?.basename);
-				// todo | deregister notes to track, temporary workaround
+				console.log("Tracking file3:", activeEditor.file?.basename);
 				// cm will be destroyed if closed the page.
 				/*if(!activeEditor) {					
 					return; 
 				}*/
 				//console.log(activeEditor);
+				// done | deregister notes to track, temporary workaround
 				if(!activeEditor.file) { // direct way to prove means cm destoyed. without having to find activeEditor.cm.destroyed: true. 
 					//@ts-expect-error
 					let closedFile = activeEditor.inlineTitleEl.textContent;
@@ -284,7 +290,7 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 				}
 
 				//Count Words
-				const wordsCounter = new WordsCounter;
+				let wordsCt = wordsCounter();
 
 				// debug, can be deleted
 				if ( doneDiff || undoneDiff ){					
@@ -306,27 +312,29 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 				// done | need to ensure that toA will not change before printing, as a long changes may be joining into one done event. This requires to check if no inputting and if yes pause 0.5 second.
 				if ((doneDiff + historyCleared > 0) && currentDone > 1 ){
 					for ( let i=(doneDiff+historyCleared); i>0; i--){ //only done events need to consider separated inputs that may not be caught by the debouncer function
-						history.done[currentDone-i].changes.iterChanges((fromA:Number, toA:Number, fromB:Number, toB:Number, inserted: string ) => { // do not use string | Text
+						history.done[currentDone-i].changes.iterChanges((fromA:Number, toA:Number, fromB:Number, toB:Number, inserted: string | Text ) => { // inserted is Text in cm, string|Text in Obsidian
 							//@ts-expect-error
 							const theOther = activeEditor.editor.cm.state.sliceDoc(fromA,toA); 
+							inserted = inserted.toString();
 							console.log(`Do adding texts: "${theOther}" from ${fromA} to ${toA} in current document, \ndo deleting texts: "${inserted}" from ${fromB} to ${toB} in current document.`);
-							wordsCounter.addText(inserted);
+							console.log("Modified Words: ", wordsCt(theOther)+wordsCt(inserted));
 						});
 					}
 				}	
 
 				// done | when fixed doneDiff is detected minus, and done events is added to undone.
 				if ((doneDiff + historyCleared < 0)&&((undoneDiff + doneDiff + historyCleared) == 0 )){
-					history.undone[currentUndone-1].changes.iterChanges((fromA:Number, toA:Number, fromB:Number, toB:Number, inserted: string ) => { // do not use string | Text
+					history.undone[currentUndone-1].changes.iterChanges((fromA:Number, toA:Number, fromB:Number, toB:Number, inserted: string | Text ) => { // inserted is Text in cm, string|Text in Obsidian
 						// @ts-expect-error
 						const theOther = activeEditor.editor.cm.state.sliceDoc(fromA,toA);
+						inserted = inserted.toString();
 						console.log(`Undo adding texts: "${inserted}" from ${fromB} to ${toB} from previous document, \nundo deleting texts: "${theOther}" from ${fromA} to ${toA} from previous document.`);
-						wordsCounter.addText(inserted);						
+						console.log("Modified Words: ", wordsCt(inserted)+wordsCt(theOther));		
 					});
 				}
 
-				// bug need to fix debounce bug first.
-				//console.log("Modified Words: ", wordsCounter.getTotal());
+				
+				
 
 				lastDone = currentDone;
 				lastUndone = currentUndone;
