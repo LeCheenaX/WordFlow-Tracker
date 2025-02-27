@@ -22,7 +22,6 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 	settings: MyPluginSettings;
 	private activeTrackers: Map<string, boolean> = new Map(); // for multiple notes editing	
     private pathToNameMap: Map<string|undefined, string> = new Map(); // 新增：反向映射用于重命名检测
-	private activeListener: EventRef | null = null; // for unique event listener on active editor, we can upgrade it to a map so that mulltiple files will be supported
 	public trackerMap: Map<string, DocTracker> = new Map<string, DocTracker>(); // give up nested map
 
 	async onload() {
@@ -177,7 +176,7 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 
 				this.trackerMap.forEach((tracker, fileName) => {
 					if (fileName !== activeEditor?.file?.basename){
-						tracker.destroy();
+						tracker.release();
 					}
 				});
 
@@ -190,7 +189,7 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 				});
 
 				this.trackerMap.forEach((tracker, fileName)=>{
-					tracker.destroy();
+					tracker.release();
 				});
 			}
 
@@ -213,13 +212,12 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 						this.activeTrackers.set(fileName, false);
 					}
 				});
-				// test can delete later
-				if (this.activeListener) {
-					
-					this.app.workspace.offref(this.activeListener);
-					this.activeListener = null;			
-					if (DEBUG) console.log("Removed last editor event listener!"); // for debug
-				}
+				
+				this.trackerMap.forEach((tracker, fileName) => {
+					if (fileName !== activeEditor?.file?.basename){
+						tracker.release();
+					}
+				});
 
 				this.safeActivateTracker(activeEditor); // bug: this will trigger printing multiple times in the same note when editor-changed.
 			}
@@ -239,14 +237,13 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 						this.activeTrackers.set(fileName, false);
 					}
 				});
-				// test can delete later
-				if (this.activeListener) {
-					
-					this.app.workspace.offref(this.activeListener);
-					this.activeListener = null;			
-					if (DEBUG) console.log("Removed last editor event listener!"); // for debug
-				}
 
+				this.trackerMap.forEach((tracker, fileName) => {
+					if (fileName !== activeEditor?.file?.basename){
+						tracker.release();
+					}
+				});
+				
 				this.safeActivateTracker(activeEditor); // bug: this will trigger printing multiple times in the same note when editor-changed.
 			}
 

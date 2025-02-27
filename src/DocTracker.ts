@@ -10,6 +10,7 @@ export class DocTracker{
     public lastUndone: number = 0;
     public changedTimes: number = 0;
     public changedWords: number = 0;
+    public isActive: boolean = false;
     
     
     private debouncedTracker: ReturnType<typeof debounce>;
@@ -64,7 +65,7 @@ export class DocTracker{
             return;
         }
         /* Given up Protection */
-        // the following may be necessary because of the destroy function
+        // the following may be necessary because of the release function
         /*
         if (this.activeEditor.file?.basename != this.fileName) {
             this.plugin.trackerMap.set(this.activeEditor.file?.basename, new Map(this, false));
@@ -98,7 +99,9 @@ export class DocTracker{
                 doneDiff: doneDiff,
                 undoneDiff: undoneDiff,
                 docLength: docLength,
-                doc: doc
+                doc: doc,
+                lastChangedTime: this.changedTimes,
+                lastChangedWords: this.changedWords,
             });
             console.log("DocTracker.trackChanges: CurrentHistory:", history);	
 
@@ -123,9 +126,11 @@ export class DocTracker{
                         console.log("Modified Words: ", mWords);
                     }
                     this.changedWords += mWords;	
-                    this.changedTimes += (doneDiff + historyCleared);
+                    
                 });
             }
+
+            this.changedTimes += (doneDiff + historyCleared); // multiple changes should be counted only one time.
         }	
 
         // done | when fixed doneDiff is detected minus, and done events is added to undone.
@@ -140,8 +145,9 @@ export class DocTracker{
                     console.log("Modified Words: ", mWords);	
                 }
                 this.changedWords += mWords;	
-                this.changedTimes += undoneDiff;
             });
+
+            this.changedTimes += undoneDiff; // multiple changes should be counted only one time.
         }
 
         
@@ -156,13 +162,16 @@ export class DocTracker{
     }
 
 
-    public destroy() {
+    public release(){       
         if (this.editorListener) {
             this.plugin.app.workspace.offref(this.editorListener);
         }
-        this.debouncedTracker.run();
-        if (DEBUG) console.log(`Tracker destroyed for: ${this.fileName}`);
-    }
+        if (this.isActive) {
+            this.debouncedTracker.run();  
+            if (DEBUG) console.log(`Tracker released for: ${this.fileName}`);    
+        }
+        this.isActive = false; // ensure that this will only run once
+    }; 
 
 
 
