@@ -1,4 +1,4 @@
-import { debounce, Editor, EventRef, MarkdownView, Plugin, TFile } from "obsidian";
+import { debounce, Editor, EventRef, MarkdownView, Plugin, TFile,View, ViewState } from "obsidian";
 import AdvancedSnapshotsPlugin from "./main";
 import { wordsCounter } from "./stats";
 import { historyField } from "@codemirror/commands";
@@ -11,6 +11,7 @@ export class DocTracker{
     public changedTimes: number = 0;
     public changedWords: number = 0;
     public isActive: boolean = false;
+    public docLength: number = 0;
     
     
     private debouncedTracker: ReturnType<typeof debounce>;
@@ -31,25 +32,22 @@ export class DocTracker{
             return;
         }
 
-
-        this.plugin.trackerMap.set(this.fileName, this);
-
         this.activate();
 
         if (DEBUG) console.log(`DocTracker.initialize: created for ${this.fileName}`);
     }
 
     private trackChanges() {
-        if (DEBUG) console.log("DocTracker.trackChanges: tracking history changes of ", this.activeEditor?.file?.basename);
+        //if (DEBUG) console.log("DocTracker.trackChanges: tracking history changes of ", this.activeEditor?.file?.basename);
 
         // direct way to prove means cm destoyed, without having to find activeEditor.cm.destroyed: true.
-        if (!this.activeEditor?.file) { 
-            //@ts-expect-error
+        /*if (!this.activeEditor?.file) { 
+            //@ts1-expect-error
             const closedFileName:string = this.activeEditor?.inlineTitleEl.textContent;
             this.plugin.trackerMap.delete(closedFileName);
             if (DEBUG) console.log("DocTracker.trackChanges: closed ", closedFileName);
             return;
-        }
+        }*/
         /* Given up Protection */
         // the following may be necessary because of the release function
         /*
@@ -148,19 +146,18 @@ export class DocTracker{
     }
 
 
-    public activate(){
+    public async activate(){
         if(!this.plugin.app.workspace.getActiveViewOfType(MarkdownView)) {
             if(DEBUG) console.log("DocTracker.activate: No active editor!");
             return;
         }
         if(this.isActive) return; // ensure currently not active
 
-        this.activeEditor = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+        this.activeEditor = this.plugin.app.workspace.getActiveViewOfType(MarkdownView); 
 
-        if(DEBUG) console.log("DocTracker.activate: tracking file:", this.activeEditor?.file?.basename);
-
+        await sleep(10); // Warning: cm will be delayed for 3-5 ms to be bound to the updated editor.
         // @ts-expect-error
-        const history = this.activeEditor.editor.cm.state.field(historyField); // reference will be destroyed after initialization
+        const history = this.activeEditor?.editor.cm.state.field(historyField); // reference will be destroyed after initialization
 
         this.lastDone = (history.done.length>1)? history.done.length: 1;
         this.lastUndone = history.undone.length;
@@ -187,13 +184,9 @@ export class DocTracker{
         }
         if (this.isActive) {
             this.release();
-        }
-        this.isActive = false; // ensure that this will only run once
-        if (DEBUG) console.log("Set ", this.fileName," inactive!"); // debug
+            this.isActive = false; // ensure that this will only run once
+            if (DEBUG) console.log("DocTracker.deactivate: Set ", this.fileName," inactive!"); // debug
+        }       
     }
-
-
-
-
 }
 

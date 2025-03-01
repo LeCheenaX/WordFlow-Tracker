@@ -26,6 +26,7 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		const debouncedHandler = this.instantDebounce(this.activeDocHandler.bind(this), 50);
 
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('dice', 'Advanced Snapshots', (evt: MouseEvent) => {
@@ -171,16 +172,16 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
         }));
 
 		this.registerEvent(this.app.workspace.on('active-leaf-change', () => {
-			this.activeDocHandler();
+			debouncedHandler();
         }));
 
 		this.registerEvent(this.app.workspace.on('layout-change', () => {
-			this.activeDocHandler();
+			debouncedHandler();
         }));
 
 		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source")
 			{
-				this.activeDocHandler();
+				debouncedHandler();
 			}
 
 
@@ -207,7 +208,7 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 			if (DEBUG) new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
 			// done | need to improve when plugin starts, the cursor must at active document
 			const activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
-			if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
+			//if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
 
 			this.trackerMap.forEach((tracker, fileName) => {
 				if (fileName !== activeEditor?.file?.basename){
@@ -227,14 +228,14 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 
 
 	// 新增的保护性激活方法
-	private safeActivateTracker(activeEditor: MarkdownView | null) {	
+	private async safeActivateTracker(activeEditor: MarkdownView | null) {	
 		if (!activeEditor?.file?.basename) return;
 
 		let activeFileName = activeEditor?.file?.basename;
 		// rename后更新路径映射
         this.pathToNameMap.set(activeEditor?.file?.path, activeFileName);
 
-		console.log("Calling:", activeFileName, " activeState:", this.trackerMap.get(activeFileName)?.isActive) // debug
+		//console.log("Calling:", activeFileName, " activeState:", this.trackerMap.get(activeFileName)?.isActive) // debug
 		// normal process
 
 		if (!this.trackerMap.has(activeFileName)){
@@ -245,16 +246,50 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 		else{
 			this.trackerMap.get(activeFileName)?.activate();
 		}
-		
+		await sleep(50); // for the process completion
+
 		if(DEBUG){	
-			this.trackerMap.forEach((tracker, fileName)=>{
-				console.log("Current trackerMap: ",{
+			const trackerEntries:any = [];
+			this.trackerMap.forEach((tracker, fileName) => {
+				trackerEntries.push({
 					fileName: fileName,
 					trackerActiveState: tracker.isActive,
+					lastDone: tracker.lastDone
 				});
 			});
+			console.log("Current trackerMap:", trackerEntries);
 		}
-	}
+	};
+
+	private instantDebounce<T extends (...args: any[]) => void>(
+		fn: T,
+		wait: number
+	  ): (...args: Parameters<T>) => void {
+		let lastCallTime = 0; 
+		let timeoutId: number | null = null; 
+	  
+		return function (this: any, ...args: Parameters<T>) {
+		  const now = Date.now();
+		  
+		  // run immediately and ban running until timeout exceeded
+		  if (now - lastCallTime >= wait) {
+			// 清理可能存在的残留计时器
+			if (timeoutId !== null) {
+			  clearTimeout(timeoutId);
+			  timeoutId = null;
+			}
+			
+			// run immediately
+			fn.apply(this, args);
+			lastCallTime = now;
+			
+			// set timeout
+			timeoutId = window.setTimeout(() => {
+			  timeoutId = null;
+			}, wait);
+		  }
+		};
+	  }
 
 	onunload() {
 
