@@ -18,7 +18,7 @@ export class DocTracker{
 
     constructor(
         public fileName: string,      
-        private activeEditor: MarkdownView,    
+        private activeEditor: MarkdownView | null,    
         private plugin: AdvancedSnapshotsPlugin,
     ) {
         this.initialize();
@@ -34,22 +34,7 @@ export class DocTracker{
 
         this.plugin.trackerMap.set(this.fileName, this);
 
-        if(DEBUG) console.log("DocTracker.initialize: tracking file:", this.activeEditor.file?.basename);
-
-        // @ts-expect-error
-        const history = this.activeEditor.editor.cm.state.field(historyField); // reference will be destroyed after initialization
-
-        
-        this.lastDone = (history.done.length>1)? history.done.length: 1;
-        this.lastUndone = history.undone.length;
-
-        // 创建独立防抖实例
-        this.debouncedTracker = debounce(this.trackChanges.bind(this), 1000, true); // Modified from official value 500 ms to 1000 ms, for execution delay. 
-        
-        // 绑定编辑器事件
-        this.editorListener = this.plugin.app.workspace.on('editor-change', (editor: Editor, view: MarkdownView) => {
-            this.debouncedTracker();
-        });
+        this.activate();
 
         if (DEBUG) console.log(`DocTracker.initialize: created for ${this.fileName}`);
     }
@@ -57,7 +42,8 @@ export class DocTracker{
     private trackChanges() {
         if (DEBUG) console.log("DocTracker.trackChanges: tracking history changes of ", this.activeEditor?.file?.basename);
 
-        if (!this.activeEditor?.file) {
+        // direct way to prove means cm destoyed, without having to find activeEditor.cm.destroyed: true.
+        if (!this.activeEditor?.file) { 
             //@ts-expect-error
             const closedFileName:string = this.activeEditor?.inlineTitleEl.textContent;
             this.plugin.trackerMap.delete(closedFileName);
@@ -162,16 +148,49 @@ export class DocTracker{
     }
 
 
+    public activate(){
+        if(!this.plugin.app.workspace.getActiveViewOfType(MarkdownView)) {
+            if(DEBUG) console.log("DocTracker.activate: No active editor!");
+            return;
+        }
+        if(this.isActive) return; // ensure currently not active
+
+        this.activeEditor = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+
+        if(DEBUG) console.log("DocTracker.activate: tracking file:", this.activeEditor?.file?.basename);
+
+        // @ts-expect-error
+        const history = this.activeEditor.editor.cm.state.field(historyField); // reference will be destroyed after initialization
+
+        this.lastDone = (history.done.length>1)? history.done.length: 1;
+        this.lastUndone = history.undone.length;
+
+        // 创建独立防抖实例
+        this.debouncedTracker = debounce(this.trackChanges.bind(this), 1000, true); // Modified from official value 500 ms to 1000 ms, for execution delay. 
+        
+        // 绑定编辑器事件
+        this.editorListener = this.plugin.app.workspace.on('editor-change', (editor: Editor, view: MarkdownView) => {
+            this.debouncedTracker();
+        });
+
+        this.isActive = true;
+    }
+
     public release(){       
+        this.debouncedTracker.run();  
+        if (DEBUG) console.log(`Tracker released for: ${this.fileName}`);    
+    }; 
+
+    public deactivate(){
         if (this.editorListener) {
             this.plugin.app.workspace.offref(this.editorListener);
         }
         if (this.isActive) {
-            this.debouncedTracker.run();  
-            if (DEBUG) console.log(`Tracker released for: ${this.fileName}`);    
+            this.release();
         }
         this.isActive = false; // ensure that this will only run once
-    }; 
+        if (DEBUG) console.log("Set ", this.fileName," inactive!"); // debug
+    }
 
 
 

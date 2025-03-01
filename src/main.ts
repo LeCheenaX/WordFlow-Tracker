@@ -3,7 +3,7 @@ import { App, debounce, Editor, EventRef, MarkdownView, Modal, Notice, Plugin, P
 //import { EditorState, StateField, Extension, ChangeSet, Transaction } from "@codemirror/state";
 import { historyField, history } from "@codemirror/commands";
 //import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from "@codemirror/view";
-import { wordsCounter } from "./stats";
+//import { wordsCounter } from "./stats";
 import { DocTracker } from './DocTracker';
 
 // Remember to rename these classes and interfaces!
@@ -83,6 +83,28 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 			catch (error) {
 				console.error("发生错误:", error);
 			}
+
+			// 获取所有 Leaf 中打开的文件 (包含多个窗格)
+			const getAllOpenFiles = (): TFile[] => {
+				const files: TFile[] = [];
+				
+				this.app.workspace.iterateAllLeaves(leaf => {
+				if (leaf.view?.getViewType() === 'markdown') {
+					const file = (leaf.view as any).file;
+					if (file instanceof TFile) {
+					files.push(file);
+					}
+				}
+				});
+				
+				return files;
+			};
+			
+			// 使用示例
+			const openFiles = getAllOpenFiles();
+			console.log("已打开文件:", openFiles.map(f => f.path)); // warning, this may log duplicate files if you have duplicate views
+
+
 		});
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass('my-plugin-ribbon-class');
@@ -140,7 +162,6 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
                     // 迁移追踪记录到新文件名
                     this.activeTrackers.set(file.basename, true);
                     this.activeTrackers.delete(oldName);
-					this.trackerMap.delete(oldName);
                     
                     // 更新路径映射
                     this.pathToNameMap.delete(oldPath);
@@ -150,101 +171,16 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
         }));
 
 		this.registerEvent(this.app.workspace.on('active-leaf-change', () => {
-            if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source")
-			{
-				// done | need to improve when plugin starts, the cursor must at active document
-				
-				if (DEBUG) new Notice(`Now Edit Mode!`); 
-
-				let activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
-				
-				/*debug rename issue*/
-				//console.log(activeEditor); 
-				//console.log(activeEditor?.file?.basename); // get file name
-				// rename parsing...
-				//...
-
-				if (DEBUG) console.log("Editing file:", activeEditor?.file?.basename) // debug
-				// 清理所有非当前文件的激活状态
-				this.activeTrackers.forEach((isActive, fileName) => {
-					if (fileName !== activeEditor?.file?.basename) {
-						this.activeTrackers.set(fileName, false);
-					}
-				});
-				// previous historyTracker may still be debounced
-				// need to manually use historyTracker.run()
-
-				this.trackerMap.forEach((tracker, fileName) => {
-					if (fileName !== activeEditor?.file?.basename){
-						tracker.release();
-					}
-				});
-
-				this.safeActivateTracker(activeEditor); // done | this will trigger printing multiple times in the same note when editor-changed.
-			}
-			else{ // deregister all inactive files
-				this.activeTrackers.forEach((isActive, fileName) => {
-					this.activeTrackers.set(fileName, false);
-					if (DEBUG) console.log("Set non-editing files inactive!")// debug
-				});
-
-				this.trackerMap.forEach((tracker, fileName)=>{
-					tracker.release();
-				});
-			}
-
-
+			this.activeDocHandler();
         }));
 
 		this.registerEvent(this.app.workspace.on('layout-change', () => {
-
-            if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source")
-			{
-				if (DEBUG) new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
-				// done | need to improve when plugin starts, the cursor must at active document
-				let activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
-
-				if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
-
-				// 清理所有非当前文件的激活状态
-				this.activeTrackers.forEach((isActive, fileName) => {
-					if (fileName !== activeEditor?.file?.basename) {
-						this.activeTrackers.set(fileName, false);
-					}
-				});
-				
-				this.trackerMap.forEach((tracker, fileName) => {
-					if (fileName !== activeEditor?.file?.basename){
-						tracker.release();
-					}
-				});
-
-				this.safeActivateTracker(activeEditor); // bug: this will trigger printing multiple times in the same note when editor-changed.
-			}
+			this.activeDocHandler();
         }));
 
 		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source")
 			{
-				if (DEBUG) new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
-				// done | need to improve when plugin starts, the cursor must at active document
-				let activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
-
-				if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
-
-				// 清理所有非当前文件的激活状态
-				this.activeTrackers.forEach((isActive, fileName) => {
-					if (fileName !== activeEditor?.file?.basename) {
-						this.activeTrackers.set(fileName, false);
-					}
-				});
-
-				this.trackerMap.forEach((tracker, fileName) => {
-					if (fileName !== activeEditor?.file?.basename){
-						tracker.release();
-					}
-				});
-				
-				this.safeActivateTracker(activeEditor); // bug: this will trigger printing multiple times in the same note when editor-changed.
+				this.activeDocHandler();
 			}
 
 
@@ -266,28 +202,58 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 	}
 
 	// add private functions since here
+	private activeDocHandler(){
+		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source"){
+			if (DEBUG) new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
+			// done | need to improve when plugin starts, the cursor must at active document
+			const activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
+			if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
+
+			this.trackerMap.forEach((tracker, fileName) => {
+				if (fileName !== activeEditor?.file?.basename){
+					tracker.deactivate();
+				}
+			});
+
+			this.safeActivateTracker(activeEditor); // done | bug: this will trigger printing multiple times in the same note when editor-changed.
+		}
+		else{
+			// deregister all inactive files
+			this.trackerMap.forEach((tracker, fileName)=>{
+				tracker.deactivate();
+			});
+		}
+	};
+
 
 	// 新增的保护性激活方法
-	private safeActivateTracker(activeEditor: MarkdownView | null) {
-		let activeFileName = activeEditor?.file?.basename;
-		if (!activeFileName || activeEditor?.getMode() !== "source") return;
+	private safeActivateTracker(activeEditor: MarkdownView | null) {	
+		if (!activeEditor?.file?.basename) return;
 
+		let activeFileName = activeEditor?.file?.basename;
 		// rename后更新路径映射
         this.pathToNameMap.set(activeEditor?.file?.path, activeFileName);
 
-		console.log("Calling:", activeFileName, " activeState:", this.activeTrackers.get(activeFileName))// debug
+		console.log("Calling:", activeFileName, " activeState:", this.trackerMap.get(activeFileName)?.isActive) // debug
 		// normal process
-		if (!this.activeTrackers.has(activeFileName) || this.activeTrackers.get(activeFileName) == false) {
-			// track active File
-			const newTracker = new DocTracker(activeFileName, activeEditor, this);
-			this.activeTrackers.set(activeFileName, true);
-			// debug
-			console.log("Called:", activeFileName, " activeState:", this.activeTrackers.get(activeFileName))// debug
-			//console.log("Tracking file:", activeFileName);			
+
+		if (!this.trackerMap.has(activeFileName)){
+		// track active File
+		const newTracker = new DocTracker(activeFileName, activeEditor, this);
+		this.trackerMap.set(activeFileName, newTracker);
+		} 
+		else{
+			this.trackerMap.get(activeFileName)?.activate();
 		}
 		
-
-
+		if(DEBUG){	
+			this.trackerMap.forEach((tracker, fileName)=>{
+				console.log("Current trackerMap: ",{
+					fileName: fileName,
+					trackerActiveState: tracker.isActive,
+				});
+			});
+		}
 	}
 
 	onunload() {
