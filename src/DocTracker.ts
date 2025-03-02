@@ -138,11 +138,18 @@ export class DocTracker{
         
         this.lastDone = currentDone;
         this.lastUndone = currentUndone;
+        this.updateStatusBarTracker();
         
         console.log(`DocTracker.trackChanges: [${this.fileName}]:`, {
             currentChangedTimes: this.changedTimes,
             currentChangedWords: this.changedWords
         });
+    }
+
+    private updateStatusBarTracker(){
+        this.plugin.statusBarContent = 'mTimes: '+`${this.changedTimes}`+'/100 mWords: '+ `${this.changedWords}`;
+        if(DEBUG) this.plugin.statusBarContent += ` ${this.fileName}`;
+        this.plugin.statusBarTrackerEl.setText(this.plugin.statusBarContent);
     }
 
 
@@ -169,7 +176,7 @@ export class DocTracker{
         this.editorListener = this.plugin.app.workspace.on('editor-change', (editor: Editor, view: MarkdownView) => {
             this.debouncedTracker();
         });
-
+        this.updateStatusBarTracker();
         this.isActive = true;
     }
 

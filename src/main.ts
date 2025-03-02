@@ -23,6 +23,8 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 	private activeTrackers: Map<string, boolean> = new Map(); // for multiple notes editing	
     private pathToNameMap: Map<string|undefined, string> = new Map(); // 新增：反向映射用于重命名检测
 	public trackerMap: Map<string, DocTracker> = new Map<string, DocTracker>(); // give up nested map
+	public statusBarTrackerEl: HTMLElement; // for status bar tracking
+	public statusBarContent: string; // for status bar content editing
 
 	async onload() {
 		await this.loadSettings();
@@ -111,8 +113,7 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 		ribbonIconEl.addClass('my-plugin-ribbon-class');
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+		this.statusBarTrackerEl = this.addStatusBarItem();
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
