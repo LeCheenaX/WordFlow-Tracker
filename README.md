@@ -1,23 +1,27 @@
-# Planned Features
+## Introduction
+![e02aa240869c6cd942b7f4881bf3901](https://github.com/user-attachments/assets/8979f3f6-53a4-4353-b2f5-ba91286f7f2a)
+WorkFlow Tracker is a lite plugin that track your edits on each note and automatically record these edits statistics to your periodic note, like your daily note. 
+You can customize which data to be recorded in [[#Supported regular expressions]] below. 
+You can also customize how the data to be recorded, like inserting a table or a list to the specified position of your note. 
+![44b4ed09c7c6821f4ace21393df0395](https://github.com/user-attachments/assets/36fdf7f9-173d-46f5-bb92-b7ce5b634b03)
 
 
-## Adding your plugin to the community plugin list
+### How does this plugin collect data?
+> All statics are fetched by diectly reading the Obsidian data, without adding additional thread to record the data, which means that enabling the recording will bring almost no performance loss or extra RAM occupation.
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+We fetch the edit statistcs by access the history field of Obsidian editor, which is the place to store the undo/redo history of Obsidian. No extra history database is created, thus don't worry about the burdens in large vault. 
+
+## Supported regular expressions
+| Regular Expression  | Description |
+| ------------------- | ------------------- |
+| ${modifiedNoteName}    | the name of modified note |
+| ${editedWords} | the number of words you edited in a period per note |
+| ${editedTimes} | the number of edits in a period per note. In Obsidian rule, if you input 2 characters in more than 0.5 second, they will be considered 2 edits |
+| ${editedPercentage} | the rate of edited words of original words, in a period of editing per note. Very useful when you want to track if the edits are little changes or huge efforts |
+| ${lastModifiedTime} | the last modified time of your note that is recorded to periodic note, you can specify the format of this item in plugin settings |
+
 
 ## Manually installing the plugin
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+Copy over `main.js`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/wordflow-tracker/`.
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint .\src\`
