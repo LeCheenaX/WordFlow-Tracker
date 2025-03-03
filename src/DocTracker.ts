@@ -1,9 +1,9 @@
 import { debounce, Editor, EventRef, MarkdownView, Plugin, TFile,View, ViewState } from "obsidian";
-import AdvancedSnapshotsPlugin from "./main";
+import WordflowTrackerPlugin from "./main";
 import { wordsCounter } from "./stats";
 import { historyField } from "@codemirror/commands";
 
-const DEBUG = true as const;
+const DEBUG = false as const;
 
 export class DocTracker{
     public lastDone: number = 0;
@@ -21,7 +21,7 @@ export class DocTracker{
     constructor(
         public fileName: string,      
         private activeEditor: MarkdownView | null,    
-        private plugin: AdvancedSnapshotsPlugin,
+        private plugin: WordflowTrackerPlugin,
     ) {
         this.initialize();
     }
@@ -145,7 +145,7 @@ export class DocTracker{
     }
 
     private updateStatusBarTracker(){
-        this.plugin.statusBarContent = 'mTimes: '+`${this.changedTimes}`+'/100 mWords: '+ `${this.changedWords}`;
+        this.plugin.statusBarContent = 'eTimes: '+`${this.changedTimes}`+' eWords: '+ `${this.changedWords}`;
         if(DEBUG) this.plugin.statusBarContent += ` ${this.fileName}`;
         this.plugin.statusBarTrackerEl.setText(this.plugin.statusBarContent);
     }

@@ -35,7 +35,7 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 }
 
 
-export default class AdvancedSnapshotsPlugin extends Plugin {
+export default class WordflowTrackerPlugin extends Plugin {
 	settings: MyPluginSettings;
 	private activeTrackers: Map<string, boolean> = new Map(); // for multiple notes editing	
     private pathToNameMap: Map<string|undefined, string> = new Map(); // 新增：反向映射用于重命名检测
@@ -46,13 +46,13 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		const debouncedHandler = this.instantDebounce(this.activeDocHandler.bind(this), 50);
+		const docRecorder = recorder();
 
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('dice', 'Record wordflow', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
 			new Notice('Try recording wordflows to note!');
 			
-			const docRecorder = recorder();
 
 			docRecorder(this);
 
@@ -86,12 +86,13 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
+			id: 'record-edit-changes-to-periodic-note',
+			name: 'Record edit changes to periodic note',
 			callback: () => {
-				new SampleModal(this.app).open();
+				docRecorder(this);
 			}
 		});
+/*
 		// This adds an editor command that can perform some operation on the current editor instance
 		this.addCommand({
 			id: 'sample-editor-command',
@@ -120,6 +121,7 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 				}
 			}
 		});
+*/
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SampleSettingTab(this.app, this));
@@ -169,8 +171,11 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 		*/
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		this.registerInterval(window.setInterval(() => {
+			docRecorder(this);
+		}, Number(this.settings.autoRecordInterval) * 1000));
 	}
+	
 
 	// add private functions since here
 	private activeDocHandler(){
@@ -292,9 +297,9 @@ class SampleModal extends Modal {
 }
 
 class SampleSettingTab extends PluginSettingTab {
-	plugin: AdvancedSnapshotsPlugin;
+	plugin: WordflowTrackerPlugin;
 
-	constructor(app: App, plugin: AdvancedSnapshotsPlugin) {
+	constructor(app: App, plugin: WordflowTrackerPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

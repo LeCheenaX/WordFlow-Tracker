@@ -1,5 +1,5 @@
 import {MyPluginSettings} from "./main";
-import AdvancedSnapshotsPlugin from "./main";
+import WordflowTrackerPlugin from "./main";
 import { DocTracker } from './DocTracker';
 import { Setting, TFile } from 'obsidian';
 import moment from 'moment';
@@ -10,7 +10,7 @@ const END_POSITION = "````";
 
 export function recorder(){
     // something
-    return async function(plugin:AdvancedSnapshotsPlugin){
+    return async function(plugin:WordflowTrackerPlugin){
         //xxxxx
         let recordNoteName = moment().format(plugin.settings.periodicNoteFormat);
         let recordNotePath = plugin.settings.periodicNoteFolder + recordNoteName + '.md';
