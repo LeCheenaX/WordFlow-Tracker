@@ -1,8 +1,12 @@
 ## Introduction
-![e02aa240869c6cd942b7f4881bf3901](https://github.com/user-attachments/assets/8979f3f6-53a4-4353-b2f5-ba91286f7f2a)
+![image](https://github.com/user-attachments/assets/e8af3671-0277-4d35-9161-4b9df8e2f0fb)
+
 WorkFlow Tracker is a lite plugin that track your edits on each note and automatically record these edits statistics to your periodic note, like your daily note. 
+
 You can customize which data to be recorded in [[#Supported regular expressions]] below. 
+
 You can also customize how the data to be recorded, like inserting a table or a list to the specified position of your note. 
+
 ![44b4ed09c7c6821f4ace21393df0395](https://github.com/user-attachments/assets/36fdf7f9-173d-46f5-bb92-b7ce5b634b03)
 
 
