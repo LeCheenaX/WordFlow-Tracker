@@ -8,7 +8,7 @@ import { DocTracker } from './DocTracker';
 import {recorder} from './recorder';
 
 // Remember to rename these classes and interfaces!
-const DEBUG = true as const;
+const DEBUG = false as const;
 
 export interface MyPluginSettings {
 	periodicNoteFolder: string;
