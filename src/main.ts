@@ -1,20 +1,37 @@
 // add EditorTransaction
-import { App, debounce, Editor, EventRef, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
+import { App, debounce, Editor, EventRef, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TextAreaComponent, TFile } from 'obsidian';
 //import { EditorState, StateField, Extension, ChangeSet, Transaction } from "@codemirror/state";
 import { historyField, history } from "@codemirror/commands";
 //import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from "@codemirror/view";
 //import { wordsCounter } from "./stats";
 import { DocTracker } from './DocTracker';
+//import {recorder} from './recorder';
 
 // Remember to rename these classes and interfaces!
 const DEBUG = true as const;
 
 interface MyPluginSettings {
-	mySetting: string;
+	periodicNoteFolder: string;
+	periodicNoteFormat: string;
+	recordType: string;
+	tableQuery: string;
+	bulletListQuery: string;
+	timeFormat: string;
+	sortBy: string;
+	isDescend: boolean;
+	autoRecordInterval: string;
 }
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+	periodicNoteFolder: '',
+	periodicNoteFormat: 'YYYY-MM-DD',
+	recordType: 'table',
+	tableQuery: `\n| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| \${modifiedNoteName} | \${editedWords} | \${lastModifiedTime} |`,
+	bulletListQuery: `- \${modifiedNoteName}\n    - eTimes: \${editedTimes}\n    - eWords: \${editedWords}`,
+	timeFormat: 'YYYY-MM-DD | hh:mm',
+	sortBy: 'lastModifiedTime',
+	isDescend: true,
+	autoRecordInterval: '120',
 }
 
 
@@ -31,61 +48,13 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 		const debouncedHandler = this.instantDebounce(this.activeDocHandler.bind(this), 50);
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Advanced Snapshots', (evt: MouseEvent) => {
+		const ribbonIconEl = this.addRibbonIcon('dice', 'Record wordflow', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
-			new Notice('Try opening snapshots!');
-			new SampleModal(this.app).open(); // open a SampleModal
-			/* Test starts */
-			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-			if (!activeView || activeView.getMode() !== "source") {
-			new Notice('⚠️ 没有找到活动的Markdown编辑器'); 
-			//new Notice(`当前模式：${Helloview.getMode()}`);
-			return;
-			}
+			new Notice('Try recording wordflows to note!');
+			
+			//const docRecorder = recorder();
 
-			try {
-				// @ts-expect-error: 获取CodeMirror State 并跳过Obsidian类型检查
-				let cmState: EditorCMState = activeView.editor.cm.state;
-				
-
-				if (!cmState) {
-					new Notice('❌ 无法获取CodeMirror状态');
-					return;
-					}
-				
-				//let doc0 = cmState.sliceDoc(0); // 提取当前编辑器文本
-				//console.log("初始:", doc0);
-
-
-				let historyF = cmState.field(historyField);
-				console.log("history:",{
-					doc: cmState.doc,
-					historyField: cmState.field(historyField)
-				});
-
-				let lastIndex = historyF.done.length - 1;
-				console.log(`当前历史记录总数: ${historyF.done.length}，最后索引: ${lastIndex}`);
-
-				if (historyF.done > 1){ // exclude the initial state where history field has one blank done object, but has length 1
-					console.log("可撤销历史事件1:", historyF.done[1]);				
-					console.log("可撤销历史事件1:", historyF.done[1].changes); // 返回changeSet对象
-					historyF.done[lastIndex].changes.iterChanges((fromA:Number, toA:Number, fromB:Number, toB:Number, inserted: string | Text) => {
-						console.log(`Change from ${fromA} to ${toA} in original document, from ${fromB} to ${toB} in new document, inserted: ${inserted}`);
-						// For Mobile Test
-						new Notice(`History change line: ${fromA} ~  ${toA}`);
-					});
-
-					if (historyF.done[1].changes) // For Mobile Test
-					{
-						new Notice("History Change OK");					
-					}
-				}
-	
-				
-			}
-			catch (error) {
-				console.error("发生错误:", error);
-			}
+			//docRecorder(this.settings,this.trackerMap);
 
 			// 获取所有 Leaf 中打开的文件 (包含多个窗格)
 			const getAllOpenFiles = (): TFile[] => {
@@ -334,16 +303,139 @@ class SampleSettingTab extends PluginSettingTab {
 		const {containerEl} = this;
 
 		containerEl.empty();
+		
+		new Setting(containerEl)
+			.setName('Periodic note folder')
+			.setDesc('Set the folder for daily notes or weekly note to place, which should correspond to the same folder of Obsidian daily note plugin and of templater plugin(if installed).')
+			.addText(text => text
+				.setPlaceholder('set daily note folder')
+				.setValue(this.plugin.settings.periodicNoteFolder)
+				.onChange(async (value) => {
+					this.plugin.settings.periodicNoteFolder = value;
+					await this.plugin.saveSettings();
+				})
+			);
 
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
+			.setName('Periodic note format')
+			.setDesc('Set the file name for newly created daily notes or weekly note, which should correspond to the same format setting of Obsidian daily note plugin and of templater plugin(if installed).')
 			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
+				.setValue(this.plugin.settings.periodicNoteFormat)
 				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
+					this.plugin.settings.periodicNoteFormat = value;
 					await this.plugin.saveSettings();
-				}));
+				})
+			);
+
+		new Setting(containerEl)
+			.setName('Record content type')
+			.setDesc('Select a type of content to record on specified notes.')
+			.addDropdown(d => d
+				.addOption('table', 'table')
+				.addOption('bullet list', 'bullet list')
+				.onChange(async (value) => {
+					this.plugin.settings.recordType = value;
+					await this.plugin.saveSettings();
+					await this.updateQuery(); // warning: must to be put after saving
+				})
+			);
+
+		this.makeMultilineTextSetting(
+			new Setting(containerEl)
+				.setName('Wordflow recording query')
+				.setDesc('Modified the query with \'${}\' syntax, see doc for supported expressions.\n')
+				.addTextArea(text => {
+					this.QueryComponent = text;
+					if (this.plugin.settings.recordType == 'table'){
+						text.setValue(this.plugin.settings.tableQuery);
+						text.onChange(async (value) => {
+							this.plugin.settings.tableQuery = value;
+							await this.plugin.saveSettings();
+						})
+					}
+					if (this.plugin.settings.recordType == 'bullet list'){
+						text.setValue(this.plugin.settings.bulletListQuery);
+						text.onChange(async (value) => {
+							this.plugin.settings.bulletListQuery = value;
+							await this.plugin.saveSettings();
+						})
+					}				
+				})
+		);	
+		
+		new Setting(containerEl)
+			.setName('Sort by')
+			.setDesc('Select a type of variables to add recording items in a sequence.')
+			.addDropdown(d => d
+				.addOption('lastModifiedTime', 'lastModifiedTime')
+				.addOption('changedWords', 'editedWords')
+				.addOption('changedTimes', 'editedTimes')
+				.addOption('editedPercentage', 'editedPercentage')
+				.addOption('fileName', 'modifiedNoteName')
+				.onChange(async (value) => {
+					this.plugin.settings.sortBy = value;
+					await this.plugin.saveSettings();
+					await this.updateQuery(); // warning: must to be put after saving
+				})
+			)
+			.addDropdown(d => d
+				.addOption('true', 'Descend')
+				.addOption('false', 'Ascend')
+				.onChange(async (value) => {
+					this.plugin.settings.isDescend = (value === 'true')?true:false;
+					await this.plugin.saveSettings();
+					await this.updateQuery(); // warning: must to be put after saving
+				})
+			);
+
+		new Setting(containerEl)
+			.setName('Last modified time format')
+			.setDesc('Set the format of \'${lastModifiedTime}\' to record on notes.')
+			.addText(text => text
+				.setPlaceholder('YYYY-MM-DD | hh:mm')
+				.setValue(this.plugin.settings.timeFormat)
+				.onChange(async (value) => {
+					this.plugin.settings.timeFormat = value;
+					await this.plugin.saveSettings();
+				})
+			);
+		
+		new Setting(containerEl)
+			.setName('Automatic recording interval')
+			.setDesc('Set the interval in seconds, influencing when the plugin should save all tracked records and implement them on periodic notes.')
+			.addText(text => text
+				.setValue(this.plugin.settings.autoRecordInterval)
+				.onChange(async (value) => {
+					this.plugin.settings.autoRecordInterval = value;
+					await this.plugin.saveSettings();
+				})
+			);
 	}
+
+	private QueryComponent?: TextAreaComponent;
+
+	private async updateQuery() {
+		if (!this.QueryComponent) return;
+		switch (this.plugin.settings.recordType){
+			case 'table': this.QueryComponent.setValue(this.plugin.settings.tableQuery); break;
+			case 'bullet list': this.QueryComponent.setValue(this.plugin.settings.bulletListQuery); break;
+		}
+	};
+
+	// modified from https://github.com/obsidian-tasks-group/obsidian-tasks/blob/main/src/Config/SettingsTab.ts#L842
+	private makeMultilineTextSetting(setting: Setting) {
+		const { settingEl, infoEl, controlEl } = setting;
+		const textEl: HTMLElement | null = controlEl.querySelector('textarea');
+	
+		// Not a setting with a text field
+		if (textEl === null) {
+			return;
+		}
+	
+		settingEl.style.display = 'block';
+		infoEl.style.marginRight = '0px';
+		infoEl.style.marginBottom = '8px';
+		textEl.style.minWidth = '-webkit-fill-available';
+		textEl.style.minHeight = '100px';
+	};
 }

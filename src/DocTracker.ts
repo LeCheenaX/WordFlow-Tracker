@@ -11,6 +11,7 @@ export class DocTracker{
     public changedTimes: number = 0;
     public changedWords: number = 0;
     public isActive: boolean = false;
+    public lastModifiedTime: number;
     public docLength: number = 0;
     
     
@@ -25,14 +26,9 @@ export class DocTracker{
         this.initialize();
     }
 
-    private initialize() {
+    private async initialize() {
 
-        if(!this.activeEditor) {
-            if(DEBUG) console.log("DocTracker.initialize: No active editor!");
-            return;
-        }
-
-        this.activate();
+        await this.activate();
 
         if (DEBUG) console.log(`DocTracker.initialize: created for ${this.fileName}`);
     }
@@ -138,11 +134,13 @@ export class DocTracker{
         
         this.lastDone = currentDone;
         this.lastUndone = currentUndone;
+        this.lastModifiedTime = history.prevTime;
         this.updateStatusBarTracker();
         
         console.log(`DocTracker.trackChanges: [${this.fileName}]:`, {
             currentChangedTimes: this.changedTimes,
-            currentChangedWords: this.changedWords
+            currentChangedWords: this.changedWords,
+            lastModifiedTime: this.lastModifiedTime,
         });
     }
 
