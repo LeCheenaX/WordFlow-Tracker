@@ -5,17 +5,17 @@ import { historyField, history } from "@codemirror/commands";
 //import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from "@codemirror/view";
 //import { wordsCounter } from "./stats";
 import { DocTracker } from './DocTracker';
-//import {recorder} from './recorder';
+import {recorder} from './recorder';
 
 // Remember to rename these classes and interfaces!
 const DEBUG = true as const;
 
-interface MyPluginSettings {
+export interface MyPluginSettings {
 	periodicNoteFolder: string;
 	periodicNoteFormat: string;
 	recordType: string;
-	tableQuery: string;
-	bulletListQuery: string;
+	tableSyntax: string;
+	bulletListSyntax: string;
 	timeFormat: string;
 	sortBy: string;
 	isDescend: boolean;
@@ -26,9 +26,9 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 	periodicNoteFolder: '',
 	periodicNoteFormat: 'YYYY-MM-DD',
 	recordType: 'table',
-	tableQuery: `\n| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| \${modifiedNoteName} | \${editedWords} | \${lastModifiedTime} |`,
-	bulletListQuery: `- \${modifiedNoteName}\n    - eTimes: \${editedTimes}\n    - eWords: \${editedWords}`,
-	timeFormat: 'YYYY-MM-DD | hh:mm',
+	tableSyntax: `\n| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| \${modifiedNoteName} | \${editedWords} | \${lastModifiedTime} |`,
+	bulletListSyntax: `- \${modifiedNoteName}\n    - eTimes: \${editedTimes}\n    - eWords: \${editedWords}`,
+	timeFormat: 'YYYY-MM-DD HH:mm',
 	sortBy: 'lastModifiedTime',
 	isDescend: true,
 	autoRecordInterval: '120',
@@ -52,9 +52,9 @@ export default class AdvancedSnapshotsPlugin extends Plugin {
 			// Called when the user clicks the icon.
 			new Notice('Try recording wordflows to note!');
 			
-			//const docRecorder = recorder();
+			const docRecorder = recorder();
 
-			//docRecorder(this.settings,this.trackerMap);
+			docRecorder(this);
 
 			// 获取所有 Leaf 中打开的文件 (包含多个窗格)
 			const getAllOpenFiles = (): TFile[] => {
@@ -336,27 +336,27 @@ class SampleSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.recordType = value;
 					await this.plugin.saveSettings();
-					await this.updateQuery(); // warning: must to be put after saving
+					await this.updateSyntax(); // warning: must to be put after saving
 				})
 			);
 
 		this.makeMultilineTextSetting(
 			new Setting(containerEl)
-				.setName('Wordflow recording query')
-				.setDesc('Modified the query with \'${}\' syntax, see doc for supported expressions.\n')
+				.setName('Wordflow recording syntax')
+				.setDesc('Modified the syntax with \'${}\' syntax, see doc for supported regular expressions.\n')
 				.addTextArea(text => {
-					this.QueryComponent = text;
+					this.SyntaxComponent = text;
 					if (this.plugin.settings.recordType == 'table'){
-						text.setValue(this.plugin.settings.tableQuery);
+						text.setValue(this.plugin.settings.tableSyntax);
 						text.onChange(async (value) => {
-							this.plugin.settings.tableQuery = value;
+							this.plugin.settings.tableSyntax = value;
 							await this.plugin.saveSettings();
 						})
 					}
 					if (this.plugin.settings.recordType == 'bullet list'){
-						text.setValue(this.plugin.settings.bulletListQuery);
+						text.setValue(this.plugin.settings.bulletListSyntax);
 						text.onChange(async (value) => {
-							this.plugin.settings.bulletListQuery = value;
+							this.plugin.settings.bulletListSyntax = value;
 							await this.plugin.saveSettings();
 						})
 					}				
@@ -368,14 +368,14 @@ class SampleSettingTab extends PluginSettingTab {
 			.setDesc('Select a type of variables to add recording items in a sequence.')
 			.addDropdown(d => d
 				.addOption('lastModifiedTime', 'lastModifiedTime')
-				.addOption('changedWords', 'editedWords')
-				.addOption('changedTimes', 'editedTimes')
+				.addOption('editedWords', 'editedWords')
+				.addOption('editedTimes', 'editedTimes')
 				.addOption('editedPercentage', 'editedPercentage')
-				.addOption('fileName', 'modifiedNoteName')
+				.addOption('modifiedNoteName', 'modifiedNoteName')
 				.onChange(async (value) => {
 					this.plugin.settings.sortBy = value;
 					await this.plugin.saveSettings();
-					await this.updateQuery(); // warning: must to be put after saving
+					await this.updateSyntax(); // warning: must to be put after saving
 				})
 			)
 			.addDropdown(d => d
@@ -384,7 +384,7 @@ class SampleSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.isDescend = (value === 'true')?true:false;
 					await this.plugin.saveSettings();
-					await this.updateQuery(); // warning: must to be put after saving
+					await this.updateSyntax(); // warning: must to be put after saving
 				})
 			);
 
@@ -412,13 +412,13 @@ class SampleSettingTab extends PluginSettingTab {
 			);
 	}
 
-	private QueryComponent?: TextAreaComponent;
+	private SyntaxComponent?: TextAreaComponent;
 
-	private async updateQuery() {
-		if (!this.QueryComponent) return;
+	private async updateSyntax() {
+		if (!this.SyntaxComponent) return;
 		switch (this.plugin.settings.recordType){
-			case 'table': this.QueryComponent.setValue(this.plugin.settings.tableQuery); break;
-			case 'bullet list': this.QueryComponent.setValue(this.plugin.settings.bulletListQuery); break;
+			case 'table': this.SyntaxComponent.setValue(this.plugin.settings.tableSyntax); break;
+			case 'bullet list': this.SyntaxComponent.setValue(this.plugin.settings.bulletListSyntax); break;
 		}
 	};
 

@@ -11,7 +11,7 @@ export class DocTracker{
     public changedTimes: number = 0;
     public changedWords: number = 0;
     public isActive: boolean = false;
-    public lastModifiedTime: number;
+    public lastModifiedTime: number; // unix timestamp
     public docLength: number = 0;
     
     
@@ -166,6 +166,8 @@ export class DocTracker{
 
         this.lastDone = (history.done.length>1)? history.done.length: 1;
         this.lastUndone = history.undone.length;
+        //@ts-expect-error
+        this.docLength = this.activeEditor?.editor.cm.state.doc.length;
 
         // 创建独立防抖实例
         this.debouncedTracker = debounce(this.trackChanges.bind(this), 1000, true); // Modified from official value 500 ms to 1000 ms, for execution delay. 
