@@ -1,7 +1,7 @@
 ## Introduction
-![image](https://github.com/user-attachments/assets/e8af3671-0277-4d35-9161-4b9df8e2f0fb)
-
 WorkFlow Tracker is a lite plugin that track your edits on each note and automatically record these edits statistics to your periodic note, like your daily note. 
+
+![image](https://github.com/user-attachments/assets/e8af3671-0277-4d35-9161-4b9df8e2f0fb)
 
 You can customize which data to be recorded in [[#Supported regular expressions]] below. 
 
@@ -21,7 +21,7 @@ We fetch the edit statistcs by access the history field of Obsidian editor, whic
 | ${modifiedNoteName}    | the name of modified note |
 | ${editedWords} | the number of words you edited in a period per note |
 | ${editedTimes} | the number of edits in a period per note. In Obsidian rule, if you input 2 characters in more than 0.5 second, they will be considered 2 edits |
-| ${editedPercentage} | the rate of edited words of original words, in a period of editing per note. Very useful when you want to track if the edits are little changes or huge efforts |
+| ${editedPercentage} | (alpha) the rate of edited words of original words, in a period of editing per note. Very useful when you want to track if the edits are little changes or huge efforts |
 | ${lastModifiedTime} | the last modified time of your note that is recorded to periodic note, you can specify the format of this item in plugin settings |
 
 
