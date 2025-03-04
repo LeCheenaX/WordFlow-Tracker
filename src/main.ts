@@ -10,7 +10,7 @@ import {recorder} from './recorder';
 // Remember to rename these classes and interfaces!
 const DEBUG = false as const;
 
-export interface MyPluginSettings {
+export interface WordflowSettings {
 	periodicNoteFolder: string;
 	periodicNoteFormat: string;
 	recordType: string;
@@ -22,7 +22,7 @@ export interface MyPluginSettings {
 	autoRecordInterval: string;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
+const DEFAULT_SETTINGS: WordflowSettings = {
 	periodicNoteFolder: '',
 	periodicNoteFormat: 'YYYY-MM-DD',
 	recordType: 'table',
@@ -36,7 +36,7 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 
 
 export default class WordflowTrackerPlugin extends Plugin {
-	settings: MyPluginSettings;
+	settings: WordflowSettings;
 	private activeTrackers: Map<string, boolean> = new Map(); // for multiple notes editing	
     private pathToNameMap: Map<string|undefined, string> = new Map(); // 新增：反向映射用于重命名检测
 	public trackerMap: Map<string, DocTracker> = new Map<string, DocTracker>(); // give up nested map
@@ -79,7 +79,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		});
 		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
+		//ribbonIconEl.addClass('my-plugin-ribbon-class');
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		this.statusBarTrackerEl = this.addStatusBarItem();
@@ -124,7 +124,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 */
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new WordflowSettingTab(this.app, this));
 
 		/* Registered Events */	
 		// Update tracking files after rename events
@@ -222,7 +222,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			this.trackerMap.get(activeFileName)?.activate();
 		}
 		await sleep(50); // for the process completion
-
+/*
 		if(DEBUG){	
 			const trackerEntries:any = [];
 			this.trackerMap.forEach((tracker, fileName) => {
@@ -234,6 +234,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			});
 			console.log("Current trackerMap:", trackerEntries);
 		}
+*/
 	};
 
 	private instantDebounce<T extends (...args: any[]) => void>(
@@ -278,7 +279,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 }
-
+/*
 class SampleModal extends Modal {
 	constructor(app: App) {
 		super(app);
@@ -295,8 +296,8 @@ class SampleModal extends Modal {
 		contentEl.empty();
 	}
 }
-
-class SampleSettingTab extends PluginSettingTab {
+*/
+class WordflowSettingTab extends PluginSettingTab {
 	plugin: WordflowTrackerPlugin;
 
 	constructor(app: App, plugin: WordflowTrackerPlugin) {
@@ -308,6 +309,7 @@ class SampleSettingTab extends PluginSettingTab {
 		const {containerEl} = this;
 
 		containerEl.empty();
+		containerEl.classList.add('wordflow-setting-tab');
 		
 		new Setting(containerEl)
 			.setName('Periodic note folder')
@@ -436,11 +438,13 @@ class SampleSettingTab extends PluginSettingTab {
 		if (textEl === null) {
 			return;
 		}
-	
-		settingEl.style.display = 'block';
+		settingEl.classList.add('wordflow-multiline-setting');
+    	infoEl.classList.add('wordflow-info');
+    	textEl.classList.add('wordflow-textarea');
+	/*	settingEl.style.display = 'block';
 		infoEl.style.marginRight = '0px';
 		infoEl.style.marginBottom = '8px';
 		textEl.style.minWidth = '-webkit-fill-available';
-		textEl.style.minHeight = '100px';
+		textEl.style.minHeight = '100px';*/
 	};
 }

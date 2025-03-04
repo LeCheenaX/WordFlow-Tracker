@@ -1,0 +1,13 @@
+.wordflow-setting-tab .wordflow-multiline-setting {
+    display: block;
+}
+
+.wordflow-setting-tab .wordflow-info {
+    margin-right: 0;
+    margin-bottom: 8px;
+}
+
+.wordflow-setting-tab .wordflow-textarea {
+    min-width: -webkit-fill-available;
+    min-height: 80px;
+}

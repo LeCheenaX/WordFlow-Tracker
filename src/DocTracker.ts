@@ -30,7 +30,7 @@ export class DocTracker{
 
         await this.activate();
 
-        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.fileName}`);
+//        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.fileName}`);
     }
 
     private trackChanges() {
@@ -65,7 +65,7 @@ export class DocTracker{
         const undoneDiff: number = currentUndone - this.lastUndone; // warn: may be reset to 0 when undo and do sth. 
         const historyCleared: number = ((currentDone + undoneDiff) < this.lastDone)?(this.lastDone - 100 - undoneDiff):0; // cannot use <= lastDone	because of a debounce bug	
         const wordsCt = wordsCounter();
-
+/*
         if(DEBUG){
             //@ts-expect-error
             let doc = this.activeEditor.editor.cm.state.sliceDoc(0); // return string
@@ -89,7 +89,7 @@ export class DocTracker{
 				console.log("DocTracker.trackChanges: Detected ", historyCleared, " cleared history events!");
 			}       
         }
-
+*/
 
         // done | need to exclude the case where initial history done state has blank value but length is 1
         // done | need to ensure that toA will not change before printing, as a long changes may be joining into one done event. This requires to check if no inputting and if yes pause 0.5 second.
@@ -101,10 +101,11 @@ export class DocTracker{
                     const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA,toA); 
                     inserted = inserted.toString();
                     const mWords = wordsCt(theOther) + wordsCt(inserted);
-                    if (DEBUG){
+/*                    if (DEBUG){
                         console.log(`Do adding texts: "${theOther}" from ${fromA} to ${toA} in current document, \ndo deleting texts: "${inserted}" from ${fromB} to ${toB} in current document.`);
                         console.log("Modified Words: ", mWords);
                     }
+*/
                     this.changedWords += mWords;	
                     
                 });
@@ -120,10 +121,11 @@ export class DocTracker{
                 const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA,toA);
                 inserted = inserted.toString();
                 const mWords = wordsCt(inserted)+wordsCt(theOther);
-                if (DEBUG) {
+/*                if (DEBUG) {
                     console.log(`Undo adding texts: "${inserted}" from ${fromB} to ${toB} from previous document, \nundo deleting texts: "${theOther}" from ${fromA} to ${toA} from previous document.`);
                     console.log("Modified Words: ", mWords);	
                 }
+*/                    
                 this.changedWords += mWords;	
             });
 
@@ -137,11 +139,12 @@ export class DocTracker{
         this.lastModifiedTime = history.prevTime;
         this.updateStatusBarTracker();
         
-        console.log(`DocTracker.trackChanges: [${this.fileName}]:`, {
+/*        console.log(`DocTracker.trackChanges: [${this.fileName}]:`, {
             currentChangedTimes: this.changedTimes,
             currentChangedWords: this.changedWords,
             lastModifiedTime: this.lastModifiedTime,
         });
+*/        
     }
 
     private updateStatusBarTracker(){
@@ -182,7 +185,7 @@ export class DocTracker{
 
     public release(){       
         this.debouncedTracker.run();  
-        if (DEBUG) console.log(`Tracker released for: ${this.fileName}`);    
+//        if (DEBUG) console.log(`Tracker released for: ${this.fileName}`);    
     }; 
 
     public deactivate(){
@@ -192,7 +195,7 @@ export class DocTracker{
         if (this.isActive) {
             this.release();
             this.isActive = false; // ensure that this will only run once
-            if (DEBUG) console.log("DocTracker.deactivate: Set ", this.fileName," inactive!"); // debug
+//            if (DEBUG) console.log("DocTracker.deactivate: Set ", this.fileName," inactive!"); // debug
         }       
     }
 }

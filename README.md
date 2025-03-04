@@ -27,5 +27,5 @@ We fetch the edit statistcs by access the history field of Obsidian editor, whic
 
 ## Manually installing the plugin
 
-Copy over `main.js`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/wordflow-tracker/`.
+Copy over `main.js`, `manifest.json`, `styles.css` to your vault `VaultFolder/.obsidian/plugins/wordflow-tracker/`.
 

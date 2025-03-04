@@ -1,4 +1,4 @@
-import {MyPluginSettings} from "./main";
+import {WordflowSettings} from "./main";
 import WordflowTrackerPlugin from "./main";
 import { DocTracker } from './DocTracker';
 import { Setting, TFile } from 'obsidian';
@@ -39,7 +39,7 @@ function sortReflector(tracker: DocTracker, sortBy: string):any {
     }
 }
 
-function varMap(varName:string, tracker:DocTracker, settings:MyPluginSettings):any {
+function varMap(varName:string, tracker:DocTracker, settings:WordflowSettings):any {
     switch (varName){
         case 'lastModifiedTime': return moment(tracker.lastModifiedTime).format(settings.timeFormat);
         case 'editedWords': return tracker.changedWords;
@@ -50,7 +50,7 @@ function varMap(varName:string, tracker:DocTracker, settings:MyPluginSettings):a
     }
 }
 
-function getRecordData(settings:MyPluginSettings, trackerMap:Map<string, DocTracker>): string {
+function getRecordData(settings:WordflowSettings, trackerMap:Map<string, DocTracker>): string {
     let outPutContent = '';
     
     if (settings.recordType === 'bullet list') {
