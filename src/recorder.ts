@@ -34,7 +34,7 @@ function sortReflector(tracker: DocTracker, sortBy: string):any {
         case 'editedWords': return tracker.changedWords;
         case 'editedTimes': return tracker.changedTimes;
         case 'editedPercentage': return (100 * tracker.changedWords / tracker.docLength).toFixed(0).toString() + `%`; // warning: this is not stable.
-        case 'modifiedNoteName': return tracker.fileName;
+        case 'modifiedNote': return tracker.filePath;
         default: throw Error("Cannot recognize sortBy string!");
     }
 }
@@ -45,7 +45,7 @@ function varMap(varName:string, tracker:DocTracker, settings:WordflowSettings):a
         case 'editedWords': return tracker.changedWords;
         case 'editedTimes': return tracker.changedTimes;
         case 'editedPercentage': return (100 * tracker.changedWords / tracker.docLength).toFixed(0).toString() + `%`; // warning: this is not stable.
-        case 'modifiedNoteName': return tracker.fileName;
+        case 'modifiedNote': return tracker.filePath;
         default: throw Error("Cannot recognize var expression!");
     }
 }
@@ -57,7 +57,7 @@ function getRecordData(settings:WordflowSettings, trackerMap:Map<string, DocTrac
         // bullet list处理逻辑
         trackerMap.forEach((docTracker) => {
             const replacedContent = settings.bulletListSyntax
-                .replace(/\${modifiedNoteName}/g, docTracker.fileName)
+                .replace(/\${modifiedNote}/g, docTracker.filePath)
                 .replace(/\${lastModifiedTime}/g, moment(docTracker.lastModifiedTime).format(settings.timeFormat))
                 .replace(/\${editedWords}/g, docTracker.changedWords.toString()) 
                 .replace(/\${editedTimes}/g, docTracker.changedTimes.toString()) 
@@ -95,7 +95,7 @@ function getRecordData(settings:WordflowSettings, trackerMap:Map<string, DocTrac
                 .map(line => line.replace(
                     /\${(\w+)}/g, 
                     (_, varName: string) => {
-                        const value = varMap(varName,tracker, settings);
+                        const value = varMap(varName, tracker, settings);
  
                         return String(value ?? '');
                     }

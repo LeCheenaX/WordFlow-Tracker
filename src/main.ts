@@ -8,7 +8,7 @@ import { DocTracker } from './DocTracker';
 import {recorder} from './recorder';
 
 // Remember to rename these classes and interfaces!
-const DEBUG = false as const;
+const DEBUG = true as const;
 
 export interface WordflowSettings {
 	periodicNoteFolder: string;
@@ -26,8 +26,8 @@ const DEFAULT_SETTINGS: WordflowSettings = {
 	periodicNoteFolder: '',
 	periodicNoteFormat: 'YYYY-MM-DD',
 	recordType: 'table',
-	tableSyntax: `\n| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| \${modifiedNoteName} | \${editedWords} | \${lastModifiedTime} |`,
-	bulletListSyntax: `- \${modifiedNoteName}\n    - eTimes: \${editedTimes}\n    - eWords: \${editedWords}`,
+	tableSyntax: `\n| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| [[\${modifiedNote}]] | \${editedWords} | \${lastModifiedTime} |`,
+	bulletListSyntax: `- \${modifiedNote}\n    - eTimes: \${editedTimes}\n    - eWords: \${editedWords}`,
 	timeFormat: 'YYYY-MM-DD HH:mm',
 	sortBy: 'lastModifiedTime',
 	isDescend: true,
@@ -47,35 +47,15 @@ export default class WordflowTrackerPlugin extends Plugin {
 		await this.loadSettings();
 		const debouncedHandler = this.instantDebounce(this.activeDocHandler.bind(this), 50);
 		const docRecorder = recorder();
+		const potentialEditors = this.getAllOpenedFiles();
+//		if (DEBUG) console.log("Following files were opened:", potentialEditors.map(f => f)); 
 
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('dice', 'Record wordflow', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
 			new Notice('Try recording wordflows to note!');
 			
-
 			docRecorder(this);
-
-			// 获取所有 Leaf 中打开的文件 (包含多个窗格)
-			const getAllOpenFiles = (): TFile[] => {
-				const files: TFile[] = [];
-				
-				this.app.workspace.iterateAllLeaves(leaf => {
-				if (leaf.view?.getViewType() === 'markdown') {
-					const file = (leaf.view as any).file;
-					if (file instanceof TFile) {
-					files.push(file);
-					}
-				}
-				});
-				
-				return files;
-			};
-			
-			// 使用示例
-			const openFiles = getAllOpenFiles();
-			console.log("已打开文件:", openFiles.map(f => f.path)); // warning, this may log duplicate files if you have duplicate views
-
 
 		});
 		// Perform additional things with the ribbon
@@ -92,7 +72,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				docRecorder(this);
 			}
 		});
-/*
+		/*
 		// This adds an editor command that can perform some operation on the current editor instance
 		this.addCommand({
 			id: 'sample-editor-command',
@@ -121,7 +101,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				}
 			}
 		});
-*/
+		*/
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new WordflowSettingTab(this.app, this));
@@ -185,8 +165,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 			const activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
 			//if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
 
-			this.trackerMap.forEach((tracker, fileName) => {
-				if (fileName !== activeEditor?.file?.basename){
+			this.trackerMap.forEach((tracker, filePath) => {
+				if (filePath !== activeEditor?.file?.path){ 
 					tracker.deactivate();
 				}
 			});
@@ -195,7 +175,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		}
 		else{
 			// deregister all inactive files
-			this.trackerMap.forEach((tracker, fileName)=>{
+			this.trackerMap.forEach((tracker, filePath)=>{
 				tracker.deactivate();
 			});
 		}
@@ -204,22 +184,22 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 	// 新增的保护性激活方法
 	private async safeActivateTracker(activeEditor: MarkdownView | null) {	
-		if (!activeEditor?.file?.basename) return;
+		if (!activeEditor?.file?.path) return; 
 
-		let activeFileName = activeEditor?.file?.basename;
+		let activeFilePath = activeEditor?.file?.path; 
 		// rename后更新路径映射
-        this.pathToNameMap.set(activeEditor?.file?.path, activeFileName);
+        this.pathToNameMap.set(activeEditor?.file?.path, activeFilePath);
 
 		//console.log("Calling:", activeFileName, " activeState:", this.trackerMap.get(activeFileName)?.isActive) // debug
 		// normal process
 
-		if (!this.trackerMap.has(activeFileName)){
+		if (!this.trackerMap.has(activeFilePath)){
 		// track active File
-		const newTracker = new DocTracker(activeFileName, activeEditor, this);
-		this.trackerMap.set(activeFileName, newTracker);
+		const newTracker = new DocTracker(activeFilePath, activeEditor, this);
+		this.trackerMap.set(activeFilePath, newTracker);
 		} 
 		else{
-			this.trackerMap.get(activeFileName)?.activate();
+			this.trackerMap.get(activeFilePath)?.activate();
 		}
 		await sleep(50); // for the process completion
 /*
@@ -233,8 +213,50 @@ export default class WordflowTrackerPlugin extends Plugin {
 				});
 			});
 			console.log("Current trackerMap:", trackerEntries);
+			const potentialEditors2 = this.getAllOpenedFiles();
+			console.log("Following files were opened:", potentialEditors2.map(f => f)); 
 		}
 */
+	};
+
+	// get markdown files (with path) that are in edit mode from all leaves
+	private getAllOpenedFiles = (): string[] => {
+		const files: string[] = [];
+		const addTFile = (file: string) => {
+			if (!files.contains(file)) files.push(file);
+		}
+		
+		const MDLeaves = this.app.workspace.getLeavesOfType('markdown');
+		//if (DEBUG) console.log("MD Leaves:", MDLeaves);
+		if (MDLeaves.length < 1) return files;
+		MDLeaves.forEach(leaf => {
+			//console.log(leaf);
+			//if (leaf.view?.getMode() == 'source'){ // Warning: file must have been opened to have function 'getMode()', this influences only start up loading files in saved workspace 
+			// Use getState() instead of getMode() and getFile()
+			if (leaf.view?.getState().mode == 'source'){ // includes preview mode and source mode
+				// @ts-expect-error
+				addTFile(leaf.view.getState().file); // get file path of TFile, or get file path directly, and then add to array | which to get depends on if the files have been opened or not. 
+			}; 
+			// @ts-expect-error
+			if (leaf.history.backHistory.length > 0){
+				// @ts-expect-error
+				leaf.history.backHistory.forEach( item => {
+					if (item.state.state.mode == 'source'){				
+						addTFile(item.state.state.file); 
+					}
+				})
+			}
+			// @ts-expect-error
+			if (leaf.history.forwardHistory.length > 0){
+				// @ts-expect-error
+				leaf.history.forwardHistory.forEach( item => {
+					if (item.state.state.mode == 'source'){			
+						addTFile(item.state.state.file);
+					}
+				})
+			}	
+		})
+		return files;
 	};
 
 	private instantDebounce<T extends (...args: any[]) => void>(
@@ -268,7 +290,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 	  }
 
 	onunload() {
-
+    	this.trackerMap.clear();
 	}
 
 	async loadSettings() {
@@ -378,7 +400,7 @@ class WordflowSettingTab extends PluginSettingTab {
 				.addOption('editedWords', 'editedWords')
 				.addOption('editedTimes', 'editedTimes')
 				.addOption('editedPercentage', 'editedPercentage')
-				.addOption('modifiedNoteName', 'modifiedNoteName')
+				.addOption('modifiedNote', 'modifiedNote')
 				.onChange(async (value) => {
 					this.plugin.settings.sortBy = value;
 					await this.plugin.saveSettings();
@@ -438,13 +460,9 @@ class WordflowSettingTab extends PluginSettingTab {
 		if (textEl === null) {
 			return;
 		}
+		// for styles.css
 		settingEl.classList.add('wordflow-multiline-setting');
     	infoEl.classList.add('wordflow-info');
     	textEl.classList.add('wordflow-textarea');
-	/*	settingEl.style.display = 'block';
-		infoEl.style.marginRight = '0px';
-		infoEl.style.marginBottom = '8px';
-		textEl.style.minWidth = '-webkit-fill-available';
-		textEl.style.minHeight = '100px';*/
 	};
 }

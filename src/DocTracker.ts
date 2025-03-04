@@ -3,7 +3,7 @@ import WordflowTrackerPlugin from "./main";
 import { wordsCounter } from "./stats";
 import { historyField } from "@codemirror/commands";
 
-const DEBUG = false as const;
+const DEBUG = true as const;
 
 export class DocTracker{
     public lastDone: number = 0;
@@ -14,12 +14,11 @@ export class DocTracker{
     public lastModifiedTime: number; // unix timestamp
     public docLength: number = 0;
     
-    
     private debouncedTracker: ReturnType<typeof debounce>;
     private editorListener: EventRef | null = null;
 
     constructor(
-        public fileName: string,      
+        public filePath: string,      
         private activeEditor: MarkdownView | null,    
         private plugin: WordflowTrackerPlugin,
     ) {
@@ -30,11 +29,11 @@ export class DocTracker{
 
         await this.activate();
 
-//        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.fileName}`);
+//        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.filePath}`);
     }
 
     private trackChanges() {
-        //if (DEBUG) console.log("DocTracker.trackChanges: tracking history changes of ", this.activeEditor?.file?.basename);
+        //if (DEBUG) console.log("DocTracker.trackChanges: tracking history changes of ", this.activeEditor?.file?.path);
 
         // direct way to prove means cm destoyed, without having to find activeEditor.cm.destroyed: true.
         /*if (!this.activeEditor?.file) { 
@@ -53,9 +52,8 @@ export class DocTracker{
             return;
         } // protection
         */
-
         // @ts-expect-error
-        const history = this.activeEditor.editor.cm.state.field(historyField);
+        const history = this.activeEditor?.editor.cm.state.field(historyField, false); // done on 1.0.1 | abandon false positive errors prompting
         
         const currentDone = history.done.length;
         const currentUndone = history.undone.length;
@@ -139,7 +137,7 @@ export class DocTracker{
         this.lastModifiedTime = history.prevTime;
         this.updateStatusBarTracker();
         
-/*        console.log(`DocTracker.trackChanges: [${this.fileName}]:`, {
+/*        console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
             currentChangedTimes: this.changedTimes,
             currentChangedWords: this.changedWords,
             lastModifiedTime: this.lastModifiedTime,
@@ -149,7 +147,7 @@ export class DocTracker{
 
     private updateStatusBarTracker(){
         this.plugin.statusBarContent = 'eTimes: '+`${this.changedTimes}`+' eWords: '+ `${this.changedWords}`;
-        if(DEBUG) this.plugin.statusBarContent += ` ${this.fileName}`;
+        if(DEBUG) this.plugin.statusBarContent += ` ${this.filePath}`;
         this.plugin.statusBarTrackerEl.setText(this.plugin.statusBarContent);
     }
 
@@ -162,7 +160,7 @@ export class DocTracker{
         if(this.isActive) return; // ensure currently not active
 
         this.activeEditor = this.plugin.app.workspace.getActiveViewOfType(MarkdownView); 
-
+//        if (DEBUG) console.log("DocTracker.activate: editor:", this.activeEditor)
         await sleep(10); // Warning: cm will be delayed for 3-5 ms to be bound to the updated editor.
         // @ts-expect-error
         const history = this.activeEditor?.editor.cm.state.field(historyField); // reference will be destroyed after initialization
@@ -185,7 +183,7 @@ export class DocTracker{
 
     public release(){       
         this.debouncedTracker.run();  
-//        if (DEBUG) console.log(`Tracker released for: ${this.fileName}`);    
+//        if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);    
     }; 
 
     public deactivate(){
@@ -195,8 +193,18 @@ export class DocTracker{
         if (this.isActive) {
             this.release();
             this.isActive = false; // ensure that this will only run once
-//            if (DEBUG) console.log("DocTracker.deactivate: Set ", this.fileName," inactive!"); // debug
+//            if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"); // debug
         }       
+    }
+    // Warning: Do not use! This will destroy even the editor of Obsidian! Let Obsidian decide when to destroy!
+    public destroy(){
+        this.deactivate();        
+        this.activeEditor = null;
+        this.plugin.trackerMap.delete(this.filePath); 
+        // prevent more than one calls
+        this.destroy = () => {
+            throw new Error('DocTracker instance already destroyed');
+        };
     }
 }
 
