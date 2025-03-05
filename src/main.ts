@@ -322,7 +322,6 @@ export default class WordflowTrackerPlugin extends Plugin {
 			tracker.deactivate();
 		})
     	this.trackerMap.clear();
-		this.leafNum = 1;
 	}
 
 	async loadSettings() {
