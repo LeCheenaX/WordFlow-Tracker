@@ -146,8 +146,8 @@ export class DocTracker{
     }
 
     private updateStatusBarTracker(){
-        this.plugin.statusBarContent = 'eTimes: '+`${this.changedTimes}`+' eWords: '+ `${this.changedWords}`;
-        if(DEBUG) this.plugin.statusBarContent += ` ${this.filePath}`;
+        this.plugin.statusBarContent = `${this.changedTimes}` + ' edits: ' + `${this.changedWords}` + ' words';
+        //if(DEBUG) this.plugin.statusBarContent += ` ${this.filePath}`;
         this.plugin.statusBarTrackerEl.setText(this.plugin.statusBarContent);
     }
 

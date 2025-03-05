@@ -46,16 +46,15 @@ export default class WordflowTrackerPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		const debouncedHandler = this.instantDebounce(this.activeDocHandler.bind(this), 50);
-		const docRecorder = recorder();
-		const potentialEditors = this.getAllOpenedFiles();
-//		if (DEBUG) console.log("Following files were opened:", potentialEditors.map(f => f)); 
+		// Warning: don't change the delay, we need 50ms delay to trigger activeDocHandler twice when opening new files. 
+//		if (DEBUG) console.log("Following files were opened:", this.potentialEditors.map(f => f)); 
 
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('dice', 'Record wordflow', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
 			new Notice('Try recording wordflows to note!');
 			
-			docRecorder(this);
+			this.docRecorder(this);
 
 		});
 		// Perform additional things with the ribbon
@@ -69,7 +68,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			id: 'record-edit-changes-to-periodic-note',
 			name: 'Record edit changes to periodic note',
 			callback: () => {
-				docRecorder(this);
+				this.docRecorder(this);
 			}
 		});
 		/*
@@ -152,45 +151,70 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		this.registerInterval(window.setInterval(() => {
-			docRecorder(this);
+			this.docRecorder(this);
 		}, Number(this.settings.autoRecordInterval) * 1000));
 	}
 	
 
 	// add private functions since here
-	private activeDocHandler(){
+	private async activeDocHandler(){	
+		await sleep(
+			(this.app.workspace.getActiveViewOfType(MarkdownView))? 0 : 200 // set delay for newly opened file to fetch the actual view, while maintaining the ability to fast switch files			
+		)
+		
+//		console.log("trackerMap",this.trackerMap);
+		//console.log("editor:", this.app.workspace.getActiveViewOfType(MarkdownView)); // bug & warning: get null when open new files, get old files if no delay
 		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source"){
-			if (DEBUG) new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
+//			if (DEBUG) new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
 			// done | need to improve when plugin starts, the cursor must at active document
 			const activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
-			//if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
+//			if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
 
-			this.trackerMap.forEach((tracker, filePath) => {
-				if (filePath !== activeEditor?.file?.path){ 
+			this.activateTracker(activeEditor); // activate without delay
+
+			await sleep(100); // set delay for getting the correct opened files for deactivating and deleting Map
+			const potentialEditors = new Set(this.getAllOpenedFiles());
+//			console.log(potentialEditors) // debug
+			this.trackerMap.forEach(async (tracker, filePath) => {
+				if(potentialEditors.has(filePath)) {
+					if (filePath !== activeEditor?.file?.path) tracker.deactivate();
+				}
+				else{
 					tracker.deactivate();
+					this.docRecorder(this);
+					this.trackerMap.delete(filePath);
+//					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
 				}
 			});
 
-			this.safeActivateTracker(activeEditor); // done | bug: this will trigger printing multiple times in the same note when editor-changed.
+			
 		}
 		else{
 			// deregister all inactive files
-			this.trackerMap.forEach((tracker, filePath)=>{
-				tracker.deactivate();
+			await sleep(100); // set delay for getting the correct opened files for deactivating and deleting Map
+			const potentialEditors = new Set(this.getAllOpenedFiles());
+//			console.log(potentialEditors) // debug
+			this.trackerMap.forEach(async (tracker, filePath)=>{
+				if(potentialEditors.has(filePath)) tracker.deactivate();
+				else{
+					tracker.deactivate();
+					this.docRecorder(this);
+					this.trackerMap.delete(filePath);
+//					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
+				}
 			});
 		}
 	};
 
 
-	// 新增的保护性激活方法
-	private async safeActivateTracker(activeEditor: MarkdownView | null) {	
+	// create or activate DocTracker
+	private async activateTracker(activeEditor: MarkdownView | null) {	
 		if (!activeEditor?.file?.path) return; 
-
 		let activeFilePath = activeEditor?.file?.path; 
 		// rename后更新路径映射
         this.pathToNameMap.set(activeEditor?.file?.path, activeFilePath);
 
-		//console.log("Calling:", activeFileName, " activeState:", this.trackerMap.get(activeFileName)?.isActive) // debug
+//		console.log("Calling:", activeFilePath, " activeState:", this.trackerMap.get(activeFilePath)?.isActive) // debug
 		// normal process
 
 		if (!this.trackerMap.has(activeFilePath)){
@@ -201,7 +225,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 		else{
 			this.trackerMap.get(activeFilePath)?.activate();
 		}
-		await sleep(50); // for the process completion
+		//await sleep(50); // for the process completion
+	};
 /*
 		if(DEBUG){	
 			const trackerEntries:any = [];
@@ -217,7 +242,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 			console.log("Following files were opened:", potentialEditors2.map(f => f)); 
 		}
 */
-	};
+	// the docRecorder
+	private docRecorder = recorder();
 
 	// get markdown files (with path) that are in edit mode from all leaves
 	private getAllOpenedFiles = (): string[] => {
@@ -259,6 +285,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 		return files;
 	};
 
+	//private debouncedDeactivator = debounce()
+
 	private instantDebounce<T extends (...args: any[]) => void>(
 		fn: T,
 		wait: number
@@ -276,7 +304,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			  clearTimeout(timeoutId);
 			  timeoutId = null;
 			}
-			
+
 			// run immediately
 			fn.apply(this, args);
 			lastCallTime = now;
@@ -290,7 +318,11 @@ export default class WordflowTrackerPlugin extends Plugin {
 	  }
 
 	onunload() {
+		this.trackerMap.forEach((tracker, filePath)=>{
+			tracker.deactivate();
+		})
     	this.trackerMap.clear();
+		this.leafNum = 1;
 	}
 
 	async loadSettings() {
