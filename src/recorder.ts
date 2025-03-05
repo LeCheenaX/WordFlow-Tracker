@@ -105,11 +105,12 @@ function getRecordData(settings:WordflowSettings, trackerMap:Map<string, DocTrac
 
         // 组装完整表格
         outPutContent = [
+            '\n',
             header,
             separator,
             ...rows.flatMap(r => r.split('\n'))
         ].join('\n');
     }
     
-    return outPutContent.trim();
+    return outPutContent;
 }
