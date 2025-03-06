@@ -5,7 +5,7 @@ import { historyField, history } from "@codemirror/commands";
 //import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from "@codemirror/view";
 //import { wordsCounter } from "./stats";
 import { DocTracker } from './DocTracker';
-import {recorder} from './recorder';
+import { DataRecorder } from './DataRecorder';
 
 // Remember to rename these classes and interfaces!
 const DEBUG = true as const;
@@ -31,7 +31,7 @@ const DEFAULT_SETTINGS: WordflowSettings = {
 	timeFormat: 'YYYY-MM-DD HH:mm',
 	sortBy: 'lastModifiedTime',
 	isDescend: true,
-	autoRecordInterval: '120',
+	autoRecordInterval: '0', // disable
 }
 
 
@@ -42,9 +42,11 @@ export default class WordflowTrackerPlugin extends Plugin {
 	public trackerMap: Map<string, DocTracker> = new Map<string, DocTracker>(); // give up nested map
 	public statusBarTrackerEl: HTMLElement; // for status bar tracking
 	public statusBarContent: string; // for status bar content editing
+	private DocRecorder: DataRecorder;
 
 	async onload() {
 		await this.loadSettings();
+		this.DocRecorder = new DataRecorder(this, this.trackerMap);
 		const debouncedHandler = this.instantDebounce(this.activeDocHandler.bind(this), 50);
 		// Warning: don't change the delay, we need 50ms delay to trigger activeDocHandler twice when opening new files. 
 //		if (DEBUG) console.log("Following files were opened:", this.potentialEditors.map(f => f)); 
@@ -54,7 +56,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			// Called when the user clicks the icon.
 			new Notice('Try recording wordflows to note!');
 			
-			this.docRecorder(this);
+			this.DocRecorder.record();
 
 		});
 		// Perform additional things with the ribbon
@@ -68,7 +70,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			id: 'record-edit-changes-to-periodic-note',
 			name: 'Record edit changes to periodic note',
 			callback: () => {
-				this.docRecorder(this);
+				this.DocRecorder.record();
 			}
 		});
 		/*
@@ -150,9 +152,11 @@ export default class WordflowTrackerPlugin extends Plugin {
 		*/
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => {
-			this.docRecorder(this);
-		}, Number(this.settings.autoRecordInterval) * 1000));
+		if (this.settings.autoRecordInterval && Number(this.settings.autoRecordInterval) != 0){
+			this.registerInterval(window.setInterval(() => {
+				this.DocRecorder.record();
+			}, Number(this.settings.autoRecordInterval) * 1000));
+		}
 	}
 	
 
@@ -181,7 +185,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				}
 				else{
 					tracker.deactivate();
-					this.docRecorder(this);
+					this.DocRecorder.record();
 					this.trackerMap.delete(filePath);
 //					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
 				}
@@ -198,7 +202,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				if(potentialEditors.has(filePath)) tracker.deactivate();
 				else{
 					tracker.deactivate();
-					this.docRecorder(this);
+					this.DocRecorder.record();
 					this.trackerMap.delete(filePath);
 //					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
 				}
@@ -242,8 +246,6 @@ export default class WordflowTrackerPlugin extends Plugin {
 			console.log("Following files were opened:", potentialEditors2.map(f => f)); 
 		}
 */
-	// the docRecorder
-	private docRecorder = recorder();
 
 	// get markdown files (with path) that are in edit mode from all leaves
 	private getAllOpenedFiles = (): string[] => {
@@ -462,7 +464,7 @@ class WordflowSettingTab extends PluginSettingTab {
 		
 		new Setting(containerEl)
 			.setName('Automatic recording interval')
-			.setDesc('Set the interval in seconds, influencing when the plugin should save all tracked records and implement them on periodic notes.')
+			.setDesc('Set the interval in seconds, influencing when the plugin should save all tracked records and implement them on periodic notes. Set to 0 to disable. ')
 			.addText(text => text
 				.setValue(this.plugin.settings.autoRecordInterval)
 				.onChange(async (value) => {
