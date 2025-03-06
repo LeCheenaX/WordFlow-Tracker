@@ -67,8 +67,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'record-edit-changes-to-periodic-note',
-			name: 'Record edit changes to periodic note',
+			id: 'record-edit-changes-on-all-notes-to-periodic-note',
+			name: 'Record edit changes on all notes to periodic note',
 			callback: () => {
 				this.DocRecorder.record();
 			}
@@ -185,7 +185,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				}
 				else{
 					tracker.deactivate();
-					this.DocRecorder.record();
+					this.DocRecorder.record(tracker);
 					this.trackerMap.delete(filePath);
 //					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
 				}
@@ -202,7 +202,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				if(potentialEditors.has(filePath)) tracker.deactivate();
 				else{
 					tracker.deactivate();
-					this.DocRecorder.record();
+					this.DocRecorder.record(tracker);
 					this.trackerMap.delete(filePath);
 //					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
 				}

@@ -196,6 +196,12 @@ export class DocTracker{
 //            if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"); // debug
         }       
     }
+
+    public resetEdit(){
+        this.changedTimes = 0;
+        this.changedWords = 0;
+    }
+
     // Warning: Do not use! This will destroy even the editor of Obsidian! Let Obsidian decide when to destroy!
     public destroy(){
         this.deactivate();        

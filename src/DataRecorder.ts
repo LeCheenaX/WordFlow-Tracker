@@ -153,7 +153,7 @@ export class DataRecorder {
         this.bulletListSyntax = this.plugin.settings.bulletListSyntax;
     }
 
-    public async record(): Promise<void> {
+    public async record(tracker?:DocTracker): Promise<void> {
         // Get the target note file
         const recordNote = await this.getOrCreateRecordNote();
         if (!recordNote) {
@@ -165,7 +165,7 @@ export class DataRecorder {
         await this.loadExistingData(recordNote);
         
         // Load tracker data
-        this.loadTrackerData();
+        this.loadTrackerData(tracker);
         
         // Merge data
         const mergedData = this.mergeData();
@@ -184,7 +184,7 @@ export class DataRecorder {
             try {
                 await this.plugin.app.vault.create(recordNotePath, '');
                 // Wait for file creation to complete
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
             } catch (error) {
                 console.error("Failed to create record note:", error);
@@ -245,11 +245,16 @@ export class DataRecorder {
         }
     }
 
-    private loadTrackerData(): void {
+    private loadTrackerData(p_tracker?:DocTracker): void {
         this.newDataMap.clear();
-        
-        for (const [filePath, tracker] of this.trackerMap.entries()) {
-            this.newDataMap.set(filePath, new NewData(tracker));
+        if (!p_tracker){
+            for (const [filePath, tracker] of this.trackerMap.entries()) {
+                this.newDataMap.set(filePath, new NewData(tracker));
+                tracker.resetEdit();
+            }
+        } else {
+            this.newDataMap.set(p_tracker.filePath, new NewData(p_tracker)); // only record given data
+            p_tracker.resetEdit();
         }
     }
 
