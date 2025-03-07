@@ -5,7 +5,7 @@ WorkFlow Tracker is a lite plugin that track your edits on each note and automat
 
 You can customize which data to be recorded in [[#Supported regular expressions]] below. 
 
-You can also customize how the data to be recorded, like inserting a table or a list(Alpha testing) to the specified position of your note. 
+You can also customize how the data to be recorded, like inserting a table or a list to the specified position of your note. 
 
 ![44b4ed09c7c6821f4ace21393df0395](https://github.com/user-attachments/assets/36fdf7f9-173d-46f5-bb92-b7ce5b634b03)
 
