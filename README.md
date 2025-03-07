@@ -5,7 +5,7 @@ WorkFlow Tracker is a lite plugin that track your edits on each note and automat
 
 You can customize which data to be recorded in [[#Supported regular expressions]] below. 
 
-You can also customize how the data to be recorded, like inserting a table or a list to the specified position of your note. 
+You can also customize how the data to be recorded, like inserting a table or a list(Alpha testing) to the specified position of your note. 
 
 ![44b4ed09c7c6821f4ace21393df0395](https://github.com/user-attachments/assets/36fdf7f9-173d-46f5-bb92-b7ce5b634b03)
 
@@ -18,12 +18,14 @@ We fetch the edit statistcs by access the history field of Obsidian editor, whic
 ## Supported regular expressions
 | Regular Expression  | Description |
 | ------------------- | ------------------- |
-| ${modifiedNoteName}    | the name of modified note |
+| ${modifiedNote}    | the Obsidian path to modified note |
 | ${editedWords} | the number of words you edited in a period per note |
 | ${editedTimes} | the number of edits in a period per note. In Obsidian rule, if you input 2 characters in more than 0.5 second, they will be considered 2 edits |
-| ${editedPercentage} | (alpha) the rate of edited words of original words, in a period of editing per note. Very useful when you want to track if the edits are little changes or huge efforts |
+| ${editedPercentage} | (Alpha testing) the rate of edited words of original words, in a period of editing per note. Very useful when you want to track if the edits are little changes or huge efforts |
 | ${lastModifiedTime} | the last modified time of your note that is recorded to periodic note, you can specify the format of this item in plugin settings |
 
+## Development Roadmap
+See [Development Roadmap](https://github.com/LeCheenaX/WordFlow-Tracker/wiki/Development-RoadMap) for known issues and planned features! 
 
 ## Manually installing the plugin
 
