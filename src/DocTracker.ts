@@ -1,4 +1,4 @@
-import { debounce, Editor, EventRef, MarkdownView, Plugin, TFile,View, ViewState } from "obsidian";
+import { debounce, Editor, EventRef, MarkdownView, Plugin, TFile, Stat, View, ViewState } from "obsidian";
 import WordflowTrackerPlugin from "./main";
 import { wordsCounter } from "./stats";
 import { historyField } from "@codemirror/commands";
@@ -26,7 +26,7 @@ export class DocTracker{
     }
 
     private async initialize() {
-
+        this.lastModifiedTime = Number(this.plugin.app.vault.getFileByPath(this.filePath)?.stat.mtime);
         await this.activate();
 
 //        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.filePath}`);
@@ -134,10 +134,10 @@ export class DocTracker{
         
         this.lastDone = currentDone;
         this.lastUndone = currentUndone;
-        this.lastModifiedTime = history.prevTime;
+        this.lastModifiedTime = Number(history.prevTime);
         this.updateStatusBarTracker();
-        
-/*        console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
+/*        
+        console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
             currentChangedTimes: this.changedTimes,
             currentChangedWords: this.changedWords,
             lastModifiedTime: this.lastModifiedTime,

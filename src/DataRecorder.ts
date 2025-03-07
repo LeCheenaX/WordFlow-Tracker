@@ -4,124 +4,6 @@ import { DocTracker } from './DocTracker';
 import { TFile } from 'obsidian';
 import moment from 'moment';
 
-// Class to represent data from existing records
-class ExistingData {
-    filePath: string;
-    lastModifiedTime: string;
-    editedWords: number;
-    editedTimes: number;
-    editedPercentage: string;
-    
-    constructor(filePath: string) {
-        this.filePath = filePath;
-        this.lastModifiedTime = '';
-        this.editedWords = 0;
-        this.editedTimes = 0;
-        this.editedPercentage = '0%';
-    }
-    
-    // Parse a table row into an ExistingData object
-    static fromTableRow(row: string): ExistingData | null {
-        const parts = row.split('|').map(part => part.trim()).filter(Boolean);
-        if (parts.length < 1) return null;
-        
-        const entry = new ExistingData(parts[0].replace(/^\[\[+|\]\]+$/g, '')); // require file path to be in the first column, and drop the '[[]]'.
-        
-        // Try to extract numeric values using regex - more robust than position-based extraction
-        for (let i = 1; i < parts.length; i++) {
-            const cell = parts[i];
-            
-            // Look for edited words (typically just a number)
-            if (/^\d+$/.test(cell)) {
-                if (entry.editedWords === 0) {
-                    entry.editedWords = parseInt(cell);
-                    continue;
-                } else if (entry.editedTimes === 0) {
-                    entry.editedTimes = parseInt(cell);
-                    continue;
-                }
-            }
-            
-            // Look for percentage format
-            if (cell.endsWith('%')) {
-                entry.editedPercentage = cell;
-                continue;
-            }
-            
-            // Assume a formatted date/time string
-            if (cell.includes(':') || /\d{2}\/\d{2}\/\d{4}/.test(cell)) {
-                entry.lastModifiedTime = cell;
-            }
-        }
-        
-        return entry;
-    }
-}
-
-// Class to represent data from new DocTracker objects
-class NewData {
-    filePath: string;
-    lastModifiedTime: number;
-    editedWords: number;
-    editedTimes: number;
-    editedPercentage: string;
-    docLength: number;
-    
-    constructor(tracker: DocTracker) {
-        this.filePath = tracker.filePath;
-        this.lastModifiedTime = tracker.lastModifiedTime;
-        this.editedWords = tracker.changedWords;
-        this.editedTimes = tracker.changedTimes;
-        this.docLength = tracker.docLength;
-        this.editedPercentage = (100 * tracker.changedWords / tracker.docLength).toFixed(0) + '%';
-    }
-}
-
-// Result of merging existing and new data
-class MergedData {
-    filePath: string;
-    lastModifiedTime: number | string;
-    editedWords: number;
-    editedTimes: number;
-    editedPercentage: string;
-    docLength: number;
-    isNew: boolean;
-    
-    constructor(newData?: NewData, existingData?: ExistingData) {
-        if (newData) {
-            this.filePath = newData.filePath;
-            this.lastModifiedTime = newData.lastModifiedTime;
-            this.editedWords = newData.editedWords;
-            this.editedTimes = newData.editedTimes;
-            this.docLength = newData.docLength;
-            this.editedPercentage = newData.editedPercentage;
-            this.isNew = true;
-        } else if (existingData) {
-            this.filePath = existingData.filePath;
-            this.lastModifiedTime = existingData.lastModifiedTime;
-            this.editedWords = existingData.editedWords;
-            this.editedTimes = existingData.editedTimes;
-            this.docLength = 1; // Default value
-            this.editedPercentage = existingData.editedPercentage;
-            this.isNew = false;
-        } else {
-            throw new Error("MergedData requires either newData or existingData");
-        }
-    }
-    
-    // Merge existing data into this record
-    mergeWith(existingData: ExistingData): void {
-        // Add to accumulating fields
-        this.editedWords += existingData.editedWords;
-        this.editedTimes += existingData.editedTimes;
-        
-        // Recalculate percentage
-        this.editedPercentage = (100 * this.editedWords / this.docLength).toFixed(0) + '%';
-        
-        // Keep other fields from new data (timestamp, etc.)
-    }
-}
-
 export class DataRecorder {
     private existingDataMap: Map<string, ExistingData> = new Map();
     private newDataMap: Map<string, NewData> = new Map();
@@ -195,51 +77,94 @@ export class DataRecorder {
         return recordNote;
     }
 
+    private getTableIndex(noteContent: string): number[]{
+        const [headerTemplate, separatorTemplate] = this.tableSyntax
+                .split('\n')
+                .filter(l => l.trim())
+                .slice(0, 2);
+                
+        if (!headerTemplate || !separatorTemplate) {
+            throw Error ('Invalid table syntax!\n Please check in settings.')
+        }
+
+        // Create regex patterns for header and separator
+        // This will match regardless of exact spacing or number of dashes
+        const headerColumns = headerTemplate.split('|')
+            .filter(part => part.trim())
+            .map(part => part.trim());
+            
+        const headerRegexStr = '\\|\\s*' + headerColumns.join('\\s*\\|\\s*') + '\\s*\\|';
+        const headerRegex = new RegExp(headerRegexStr, 'i');
+        
+        // Separator regex - matches any table separator row with the same number of columns
+        const columnCount = headerColumns.length;
+        const separatorRegexStr = `\\|(?:\\s*-+\\s*\\|){${columnCount}}`;
+        const separatorRegex = new RegExp(separatorRegexStr);
+        
+        // Find table in the document
+        const lines = noteContent.split('\n');
+        let tableStartIndex = -1;
+        let tableEndIndex = -1;
+        
+        for (let i = 0; i < lines.length; i++) {
+            if (headerRegex.test(lines[i])) {
+                // Found potential header, check next line for separator
+                if (i + 1 < lines.length && separatorRegex.test(lines[i + 1])) {
+                    tableStartIndex = i;
+                    
+                    // Now find the end of the table
+                    for (let j = tableStartIndex + 2; j < lines.length; j++) {
+                        // Table ends at a blank line or end of document
+                        if (!lines[j] || lines[j].trim() === '') {
+                            tableEndIndex = j - 1;
+                            break;
+                        }
+                        
+                        // Or if we find another table header
+                        if (j + 1 < lines.length && 
+                            headerRegex.test(lines[j]) && 
+                            separatorRegex.test(lines[j + 1])) {
+                            tableEndIndex = j - 1;
+                            break;
+                        }
+                    }
+                    
+                    // If we didn't find a clear end, table goes to end of document
+                    if (tableEndIndex === -1) {
+                        tableEndIndex = lines.length - 1;
+                    }
+                    
+                    break;
+                }
+            }
+        }
+        return [tableStartIndex, tableEndIndex];
+    }
+
     private async loadExistingData(recordNote: TFile): Promise<void> {
         this.existingDataMap.clear();
         
         const noteContent = await this.plugin.app.vault.read(recordNote);
         
         if (this.recordType === 'table') {
-            const [header, separator] = this.tableSyntax
-                .split('\n')
-                .filter(l => l.trim())
-                .slice(0, 2);
-                
-            if (!header || !separator) {
-                console.warn("Invalid table syntax");
-                return;
-            }
-            
-            // Check if table exists in the document
-            if (noteContent.includes(header) && noteContent.includes(separator)) {
-                // Find and extract the table
-                const headerIndex = noteContent.indexOf(header);
-                const separatorIndex = noteContent.indexOf(separator, headerIndex);
-                const afterSeparatorIndex = separatorIndex + separator.length;
-                
-                // Find the end of the table
-                const afterSeparator = noteContent.slice(afterSeparatorIndex);
-                const nextBlankLineIndex = afterSeparator.search(/\n\s*\n/);
-                const tableEndIndex = nextBlankLineIndex === -1 
-                    ? noteContent.length 
-                    : afterSeparatorIndex + nextBlankLineIndex;
-                
-                // Extract existing rows
-                const tableContent = noteContent.slice(headerIndex, tableEndIndex);
-                const tableRows = tableContent.split('\n').filter(line => line.trim());
-                
+            const [tableStartIndex, tableEndIndex] = this.getTableIndex(noteContent);
+            const lines = noteContent.split('\n');
+
+            if ( tableStartIndex != -1){
                 // Process data rows (skip header and separator)
-                const dataRows = tableRows.slice(2);
-                
+                const dataRows = lines.slice(tableStartIndex + 2, tableEndIndex + 1);
+//console.log('existing datarows:',dataRows)
                 // Parse each row into an ExistingData object
                 for (const row of dataRows) {
-                    const parsedData = ExistingData.fromTableRow(row);
-                    if (parsedData) {
-                        this.existingDataMap.set(parsedData.filePath, parsedData);
+                    if (row.trim().startsWith('|') && row.trim().endsWith('|')) {
+                        const parsedData = ExistingData.fromTableRow(row);
+                        if (parsedData) {
+                            this.existingDataMap.set(parsedData.filePath, parsedData);
+                        }
                     }
                 }
             }
+//console.log('existing datamap:',this.existingDataMap)
         } else if (this.recordType === 'bulletList') {
             // Implement bullet list parsing if needed
         }
@@ -254,6 +179,7 @@ export class DataRecorder {
             }
         } else {
             this.newDataMap.set(p_tracker.filePath, new NewData(p_tracker)); // only record given data
+//console.log('newDataMap:', this.newDataMap);
             p_tracker.resetEdit();
         }
     }
@@ -275,6 +201,7 @@ export class DataRecorder {
             }
         }
         
+//console.log('mergedDataMap:', mergedDataMap)
         // Add remaining existing data that has no new updates
         for (const [filePath, existingData] of this.existingDataMap.entries()) {
             if (!mergedDataMap.has(filePath)) {
@@ -405,43 +332,159 @@ export class DataRecorder {
 
     private async updateNote(recordNote: TFile, newContent: string): Promise<void> {
         const noteContent = await this.plugin.app.vault.read(recordNote);
+        const lines = noteContent.split('\n');
         
         if (this.recordType === 'table') {
-            const [header, separator] = this.tableSyntax
-                .split('\n')
-                .filter(l => l.trim())
-                .slice(0, 2);
-                
-            if (header && separator && noteContent.includes(header) && noteContent.includes(separator)) {
-                // Replace existing table
-                const headerIndex = noteContent.indexOf(header);
-                const separatorIndex = noteContent.indexOf(separator, headerIndex);
-                const afterSeparatorIndex = separatorIndex + separator.length;
-                
-                // Find end of table
-                const afterSeparator = noteContent.slice(afterSeparatorIndex);
-                const nextBlankLineIndex = afterSeparator.search(/\n\s*\n/);
-                const tableEndIndex = nextBlankLineIndex === -1 
-                    ? noteContent.length 
-                    : afterSeparatorIndex + nextBlankLineIndex;
-                
-                const beforeTable = noteContent.slice(0, headerIndex);
-                const afterTable = noteContent.slice(tableEndIndex);
+            const [tableStartIndex, tableEndIndex] = this.getTableIndex(noteContent);
+            if (tableStartIndex != -1 && tableEndIndex !== -1){    
+                const beforeTable = lines.slice(0, tableStartIndex).join('\n');
+                const afterTable = lines.slice(tableEndIndex + 1).join('\n');
                 
                 let updatedContent;
-                // Check if beforeTable ends with a newline
-                if (beforeTable.endsWith('\n')) {
-                    updatedContent = beforeTable + newContent + afterTable;
-                } else {
-                    updatedContent = beforeTable + '\n' + newContent + afterTable;
-                }
                 
+                // Ensure proper spacing
+                if (beforeTable.endsWith('\n') || beforeTable === '') {
+                    // If the content before the table ends with a newline or is empty,
+                    // ensure we have exactly two newlines before the table
+                    const linebreaks = beforeTable.endsWith('\n\n') ? '' : 
+                                       beforeTable.endsWith('\n') ? '\n' : '\n\n';
+                                
+                    updatedContent = beforeTable + linebreaks + newContent;
+                } else {
+                    updatedContent = beforeTable + '\n\n' + newContent;
+                }
+
+                updatedContent += (afterTable.startsWith('\n') ? '' : '\n') + afterTable;
+
                 await this.plugin.app.vault.modify(recordNote, updatedContent);
-                return;
+            } else { // no exisitng table found
+                const linebreaks = noteContent.endsWith('\n\n') ? '' : 
+                                   noteContent.endsWith('\n') ? '\n' : '\n\n';
+                await this.plugin.app.vault.modify(recordNote, noteContent + linebreaks + newContent);
+            }
+        } else {
+             // If no existing table found, append to the document
+//console.log("Not table mode")
+            await this.plugin.app.vault.modify(recordNote, noteContent + newContent);
+        }
+    }
+}
+
+// Class to represent data from existing records
+class ExistingData {
+    filePath: string;
+    lastModifiedTime: number|null;
+    editedWords: number;
+    editedTimes: number;
+    editedPercentage: string;
+    
+    constructor(filePath: string) {
+        this.filePath = filePath;
+        this.lastModifiedTime = null;
+        this.editedWords = 0;
+        this.editedTimes = 0;
+        this.editedPercentage = '0%';
+    }
+    
+    // Parse a table row into an ExistingData object
+    static fromTableRow(row: string): ExistingData | null {
+        const parts = row.split('|').map(part => part.trim()).filter(Boolean);
+        if (parts.length < 1) return null;
+        
+        const entry = new ExistingData(parts[0].replace(/^\[\[+|\]\]+$/g, '')); // require file path to be in the first column, and drop the '[[]]'.
+        
+        // Try to extract numeric values using regex - more robust than position-based extraction
+        for (let i = 1; i < parts.length; i++) {
+            const cell = parts[i];
+            
+            // Look for edited words (typically just a number)
+            if (/^\d+$/.test(cell)) {
+                if (entry.editedWords === 0) {
+                    entry.editedWords = parseInt(cell);
+                    continue;
+                } else if (entry.editedTimes === 0) {
+                    entry.editedTimes = parseInt(cell);
+                    continue;
+                }
+            }
+            
+            // Look for percentage format
+            if (cell.endsWith('%')) {
+                entry.editedPercentage = cell;
+                continue;
+            }
+            
+            // Assume a formatted date/time string
+            if (moment(cell) instanceof moment || /\d{2}\/\d{2}\/\d{4}/.test(cell)) {
+                entry.lastModifiedTime = Number(moment(cell).format('x')); // to timestamp
             }
         }
         
-        // If no existing table found, append to the document
-        await this.plugin.app.vault.modify(recordNote, noteContent + newContent);
+        return entry;
     }
 }
+
+// Class to represent data from new DocTracker objects
+class NewData {
+    filePath: string;
+    lastModifiedTime: number;
+    editedWords: number;
+    editedTimes: number;
+    editedPercentage: string;
+    docLength: number;
+    
+    constructor(tracker: DocTracker) {
+        this.filePath = tracker.filePath;
+        this.lastModifiedTime = tracker.lastModifiedTime;
+        this.editedWords = tracker.changedWords;
+        this.editedTimes = tracker.changedTimes;
+        this.docLength = tracker.docLength;
+        this.editedPercentage = (100 * tracker.changedWords / tracker.docLength).toFixed(0) + '%';
+    }
+}
+
+// Result of merging existing and new data
+class MergedData {
+    filePath: string;
+    lastModifiedTime: number | string;
+    editedWords: number;
+    editedTimes: number;
+    editedPercentage: string;
+    docLength: number;
+    isNew: boolean;
+    
+    constructor(newData?: NewData, existingData?: ExistingData) {
+        if (newData) {
+            this.filePath = newData.filePath;
+            this.lastModifiedTime = newData.lastModifiedTime;
+            this.editedWords = newData.editedWords;
+            this.editedTimes = newData.editedTimes;
+            this.docLength = newData.docLength;
+            this.editedPercentage = newData.editedPercentage;
+            this.isNew = true;
+        } else if (existingData) {
+            this.filePath = existingData.filePath;
+            this.lastModifiedTime = existingData.lastModifiedTime? existingData.lastModifiedTime:'';
+            this.editedWords = existingData.editedWords;
+            this.editedTimes = existingData.editedTimes;
+            this.docLength = 1; // Default value
+            this.editedPercentage = existingData.editedPercentage;
+            this.isNew = false;
+        } else {
+            throw new Error("MergedData requires either newData or existingData");
+        }
+    }
+    
+    // Merge existing data into this record
+    mergeWith(existingData: ExistingData): void {
+        // Add to accumulating fields
+        this.editedWords += existingData.editedWords;
+        this.editedTimes += existingData.editedTimes;
+        
+        // Recalculate percentage
+        this.editedPercentage = (100 * this.editedWords / this.docLength).toFixed(0) + '%';
+        
+        // Keep other fields from new data (timestamp, etc.)
+    }
+}
+
