@@ -394,7 +394,8 @@ class WordflowSettingTab extends PluginSettingTab {
 			.setDesc('Select a type of content to record on specified notes.')
 			.addDropdown(d => d
 				.addOption('table', 'table')
-				.addOption('bullet list', 'bullet list')
+				.addOption('bulletList', 'bullet list')
+				.setValue(this.plugin.settings.recordType) // need to show the modified value when next loading
 				.onChange(async (value) => {
 					this.plugin.settings.recordType = value;
 					await this.plugin.saveSettings();
@@ -415,7 +416,7 @@ class WordflowSettingTab extends PluginSettingTab {
 							await this.plugin.saveSettings();
 						})
 					}
-					if (this.plugin.settings.recordType == 'bullet list'){
+					if (this.plugin.settings.recordType == 'bulletList'){
 						text.setValue(this.plugin.settings.bulletListSyntax);
 						text.onChange(async (value) => {
 							this.plugin.settings.bulletListSyntax = value;
@@ -434,6 +435,7 @@ class WordflowSettingTab extends PluginSettingTab {
 				.addOption('editedTimes', 'editedTimes')
 				.addOption('editedPercentage', 'editedPercentage')
 				.addOption('modifiedNote', 'modifiedNote')
+				.setValue(this.plugin.settings.sortBy)
 				.onChange(async (value) => {
 					this.plugin.settings.sortBy = value;
 					await this.plugin.saveSettings();
@@ -443,6 +445,7 @@ class WordflowSettingTab extends PluginSettingTab {
 			.addDropdown(d => d
 				.addOption('true', 'Descend')
 				.addOption('false', 'Ascend')
+				.setValue((this.plugin.settings.isDescend).toString())
 				.onChange(async (value) => {
 					this.plugin.settings.isDescend = (value === 'true')?true:false;
 					await this.plugin.saveSettings();
@@ -480,7 +483,7 @@ class WordflowSettingTab extends PluginSettingTab {
 		if (!this.SyntaxComponent) return;
 		switch (this.plugin.settings.recordType){
 			case 'table': this.SyntaxComponent.setValue(this.plugin.settings.tableSyntax); break;
-			case 'bullet list': this.SyntaxComponent.setValue(this.plugin.settings.bulletListSyntax); break;
+			case 'bulletList': this.SyntaxComponent.setValue(this.plugin.settings.bulletListSyntax); break;
 		}
 	};
 

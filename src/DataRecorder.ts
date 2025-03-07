@@ -14,7 +14,7 @@ export class DataRecorder {
     private sortBy: string;
     private isDescend: boolean;
     private tableSyntax: string;
-    private bulletListSyntax: string;
+    private listSyntax: string;
     
     constructor(       
         private plugin: WordflowTrackerPlugin,
@@ -32,7 +32,7 @@ export class DataRecorder {
         this.sortBy = this.plugin.settings.sortBy;
         this.isDescend = this.plugin.settings.isDescend;
         this.tableSyntax = this.plugin.settings.tableSyntax;
-        this.bulletListSyntax = this.plugin.settings.bulletListSyntax;
+        this.listSyntax = this.plugin.settings.bulletListSyntax;
     }
 
     public async record(tracker?:DocTracker): Promise<void> {
@@ -153,7 +153,7 @@ export class DataRecorder {
             if ( tableStartIndex != -1){
                 // Process data rows (skip header and separator)
                 const dataRows = lines.slice(tableStartIndex + 2, tableEndIndex + 1);
-//console.log('existing datarows:',dataRows)
+//console.log('existing datarows:',dataRows)F
                 // Parse each row into an ExistingData object
                 for (const row of dataRows) {
                     if (row.trim().startsWith('|') && row.trim().endsWith('|')) {
@@ -166,7 +166,8 @@ export class DataRecorder {
             }
 //console.log('existing datamap:',this.existingDataMap)
         } else if (this.recordType === 'bulletList') {
-            // Implement bullet list parsing if needed
+            // Extract and process list groups, then add to map.
+            this.extractListGroups(noteContent);
         }
     }
 
@@ -257,12 +258,14 @@ export class DataRecorder {
     }
 
     private generateContent(mergedData: MergedData[]): string {
-        if (this.recordType === 'bulletList') {
+        switch (this.recordType ) {
+        case 'bulletList':{
             // Implement bullet list generation
             return this.generateBulletList(mergedData);
-        } else {
-            // Default: table format
+        }
+        default: { // Default: table as record type
             return this.generateTable(mergedData);
+        }
         }
     }
     
@@ -270,7 +273,7 @@ export class DataRecorder {
         let output = '\n';
         
         for (const data of mergedData) {
-            let line = this.bulletListSyntax
+            let line = this.listSyntax
                 .replace(/\${modifiedNote}/g, data.filePath)
                 .replace(/\${lastModifiedTime}/g, typeof data.lastModifiedTime === 'number' 
                     ? moment(data.lastModifiedTime).format(this.timeFormat) 
@@ -362,11 +365,226 @@ export class DataRecorder {
                                    noteContent.endsWith('\n') ? '\n' : '\n\n';
                 await this.plugin.app.vault.modify(recordNote, noteContent + linebreaks + newContent);
             }
+        } else if (this.recordType === 'bulletList') {
+            // Get list boundaries
+            const [listStartIndex, listEndIndex] = this.getListIndex(noteContent);
+//console.log([listStartIndex, listEndIndex]);
+            if (listStartIndex != -1 && listEndIndex != -1){
+                const beforeList = lines.slice(0, listStartIndex).join('\n');
+                const afterList = lines.slice(listEndIndex + 1).join('\n');
+                let updatedContent = beforeList + newContent + afterList; 
+                await this.plugin.app.vault.modify(recordNote, updatedContent);
+            } else { // no existing list found
+                await this.plugin.app.vault.modify(recordNote, noteContent + newContent);
+            }
         } else {
-             // If no existing table found, append to the document
-//console.log("Not table mode")
+            // If no existing table found, append to the document
             await this.plugin.app.vault.modify(recordNote, noteContent + newContent);
         }
+    }
+
+    private extractListGroups(noteContent: string): void {
+        this.existingDataMap.clear();
+        const lines = noteContent.split('\n');
+        
+        // Parse the list syntax to extract patterns
+        const syntaxLines = this.listSyntax.split('\n');
+        const lineCount = syntaxLines.length;
+        const patterns = [];
+        
+        // Extract patterns from each line of syntax
+        for (let i = 0; i < lineCount; i++) {
+            const line = syntaxLines[i];
+            const varStart = line.indexOf('${');
+            
+            if (varStart === -1) {
+                patterns.push({ start: line, end: '\n', varName: '' });
+                continue;
+            }
+            
+            const varEnd = line.indexOf('}', varStart);
+            if (varEnd === -1) {
+                patterns.push({ start: line.substring(0, varStart), end: '\n', varName: '' });
+                continue;
+            }
+            
+            const varName = line.substring(varStart + 2, varEnd);
+            patterns.push({
+                start: line.substring(0, varStart),
+                end: line.substring(varEnd + 1),
+                varName
+            });
+        }
+        
+        // Find list groups by matching patterns
+        for (let i = 0; i < lines.length; i++) {
+            let isGroupStart = true;
+            let groupData: Record<string, string> = {};
+            
+            // Check if current line could be start of a list group
+            for (let j = 0; j < lineCount; j++) {
+                const pattern = patterns[j];
+                const lineToCheck = i + j;
+                
+                if (lineToCheck >= lines.length) {
+                    isGroupStart = false;
+                    break;
+                }
+                
+                const currentLine = lines[lineToCheck];
+                const matchesStart = currentLine.startsWith(pattern.start);
+                const matchesEnd = pattern.end === '\n' || 
+                                   currentLine.endsWith(pattern.end.replace('\n', ''));
+                
+                if (!matchesStart || !matchesEnd) {
+                    isGroupStart = false;
+                    break;
+                }
+                
+                // Extract value if pattern has a variable name
+                if (pattern.varName) {
+                    const startPos = pattern.start.length;
+                    const endPos = pattern.end === '\n' ? 
+                                   currentLine.length : 
+                                   currentLine.length - pattern.end.replace('\n', '').length;
+                    
+                    // Map variable names from template to property names in ExistingData
+                    const varValue = currentLine.substring(startPos, endPos);
+                    if (pattern.varName === 'modifiedNote') {
+                        groupData['filePath'] = varValue;
+                    } else {
+                        groupData[pattern.varName] = varValue;
+                    }
+                }
+            }
+            
+            if (isGroupStart) {
+                // Create ExistingData entry if we have a filePath
+                if (groupData.filePath || groupData.modifiedNote) {
+                    const existingData = new ExistingData(groupData.filePath || groupData.modifiedNote);
+                    
+                    // Parse editedWords
+                    if (groupData.editedWords !== undefined) {
+                        existingData.editedWords = parseInt(groupData.editedWords) || 0;
+                    }
+                    
+                    // Parse editedTimes
+                    if (groupData.editedTimes !== undefined) {
+                        existingData.editedTimes = parseInt(groupData.editedTimes) || 0;
+                    }
+                    
+                    // Parse lastModifiedTime if present
+                    if (groupData.lastModifiedTime !== undefined) {
+                        try {
+                            existingData.lastModifiedTime = Date.parse(groupData.lastModifiedTime);
+                        } catch (e) {
+                            existingData.lastModifiedTime = null;
+                        }
+                    } else {
+                        existingData.lastModifiedTime = null;
+                    }
+                    
+                    // Calculate percentage
+                    existingData.editedPercentage = existingData.editedWords > 0 ? 
+                        Math.floor((existingData.editedWords / 1) * 100) + '%' : '0%';
+                    
+                    // Add to map using normalized file path
+                    this.existingDataMap.set(existingData.filePath.replace(/^\[\[+|\]\]+$/g, ''), existingData);
+                }
+                
+                // Skip to the end of this group to continue search
+                i += lineCount - 1;
+            }
+        }
+    }
+    
+    private getListIndex(noteContent: string): [number, number] {
+        const lines = noteContent.split('\n');
+        let startLine = -1;
+        let endLine = -1;
+        
+        // Parse the list syntax to extract patterns
+        const syntaxLines = this.listSyntax.split('\n');
+        const lineCount = syntaxLines.length;
+        const patterns = [];
+        
+        // Extract patterns from each line of syntax
+        for (let i = 0; i < lineCount; i++) {
+            const line = syntaxLines[i];
+            const varStart = line.indexOf('${');
+            
+            if (varStart === -1) {
+                patterns.push({ start: line, end: '\n' });
+                continue;
+            }
+            
+            const varEnd = line.indexOf('}', varStart);
+            if (varEnd === -1) {
+                patterns.push({ start: line.substring(0, varStart), end: '\n' });
+                continue;
+            }
+            
+            patterns.push({
+                start: line.substring(0, varStart),
+                end: line.substring(varEnd + 1)
+            });
+        }
+        
+        // Find list groups by matching patterns
+        for (let i = 0; i < lines.length; i++) {
+            let isGroupStart = true;
+            
+            // Check if current line could be start of a list group
+            for (let j = 0; j < lineCount; j++) {
+                const pattern = patterns[j];
+                const lineToCheck = i + j;
+                
+                if (lineToCheck >= lines.length) {
+                    isGroupStart = false;
+                    break;
+                }
+                
+                const currentLine = lines[lineToCheck];
+                const matchesStart = currentLine.startsWith(pattern.start);
+                const matchesEnd = pattern.end === '\n' || 
+                                  currentLine.endsWith(pattern.end.replace('\n', ''));
+                
+                if (!matchesStart || !matchesEnd) {
+                    isGroupStart = false;
+                    break;
+                }
+            }
+            
+            if (isGroupStart) {
+                // Found a valid list group
+                if (startLine === -1) {
+                    startLine = i;
+                }
+                
+                // Update end line to include this group
+                endLine = i + lineCount - 1;
+                
+                // Skip to the end of this group to continue search
+                i = endLine;
+            }
+        }
+        
+        // Convert line numbers to character positions
+        if (startLine !== -1 && endLine !== -1) {
+            /*let startPos = 0;
+            for (let i = 0; i < startLine; i++) {
+                startPos += lines[i].length + 1; // +1 for newline
+            }
+            
+            let endPos = startPos;
+            for (let i = startLine; i <= endLine; i++) {
+                endPos += lines[i].length + 1;
+            }
+            */
+            return [startLine, endLine];
+        }
+        
+        return [-1, -1]; // No list groups found
     }
 }
 
