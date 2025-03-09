@@ -1,20 +1,25 @@
 ## Introduction
 WorkFlow Tracker is a lite plugin that track your edits on each note and automatically record these edits statistics to your periodic note, like your daily note. 
 
-![image](https://github.com/user-attachments/assets/e8af3671-0277-4d35-9161-4b9df8e2f0fb)
+![image](https://github.com/user-attachments/assets/bb8e3ba5-7e10-4576-b8b3-0d839a7ffa2f)
 
-You can customize which data to be recorded in [[#Supported regular expressions]] below. 
 
-You can also customize how the data to be recorded, like inserting a table or a list(Alpha testing) to the specified position of your note. 
 
-![44b4ed09c7c6821f4ace21393df0395](https://github.com/user-attachments/assets/36fdf7f9-173d-46f5-bb92-b7ce5b634b03)
 
+## Core Features
+- Tracking the number of edits, editied words per note. This will reflect on the status bar at the bottom of note. 
+- Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes. The tracker will be set to 0 once the note is recorded.
+- (planned) Display changes in a svg style to show the original contents v.s. modified contents. 
+- ![image](https://github.com/user-attachments/assets/b4bc50e8-89d2-4d9f-bf99-2cfcd14e1569)
+- Customization of which data to be recorded, see in [[#Supported regular expressions]] below. 
+- Customization of how the data to be recorded, like inserting a table or a list to the specified position of your note. (Currently only have one option to insert to the bottom)
 
 ### How does this plugin collect data?
 > All statics are fetched by diectly reading the Obsidian data, without adding additional thread to record the data, which means that enabling the recording will bring almost no performance loss or extra RAM occupation.
 
 We fetch the edit statistcs by access the history field of Obsidian editor, which is the place to store the undo/redo history of Obsidian. No extra history database is created, thus don't worry about the burdens in large vault. 
-
+## Settings 
+![44b4ed09c7c6821f4ace21393df0395](https://github.com/user-attachments/assets/36fdf7f9-173d-46f5-bb92-b7ce5b634b03)
 ## Supported regular expressions
 | Regular Expression  | Description |
 | ------------------- | ------------------- |
