@@ -1,7 +1,7 @@
 import {WordflowSettings} from "./main";
 import WordflowTrackerPlugin from "./main";
 import { DocTracker } from './DocTracker';
-import { TFile } from 'obsidian';
+import { Notice, TFile } from 'obsidian';
 import moment from 'moment';
 
 export class DataRecorder {
@@ -24,7 +24,7 @@ export class DataRecorder {
         this.loadSettings();
     }
 
-    private loadSettings(){
+    public loadSettings(){
         this.periodicNoteFolder = this.plugin.settings.periodicNoteFolder;
         this.periodicNoteFormat = this.plugin.settings.periodicNoteFormat;
         this.recordType = this.plugin.settings.recordType;
@@ -33,6 +33,7 @@ export class DataRecorder {
         this.isDescend = this.plugin.settings.isDescend;
         this.tableSyntax = this.plugin.settings.tableSyntax;
         this.listSyntax = this.plugin.settings.bulletListSyntax;
+        //new Notice(`Setting changed! Record type:${this.recordType}`)
     }
 
     public async record(tracker?:DocTracker): Promise<void> {
@@ -68,6 +69,7 @@ export class DataRecorder {
                 // Wait for file creation to complete
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
+                new Notice(`Periodic note ${recordNotePath} doesn't exist!\n Auto created under ${this.periodicNoteFolder}. `)
             } catch (error) {
                 console.error("Failed to create record note:", error);
                 return null;
@@ -340,27 +342,18 @@ export class DataRecorder {
         if (this.recordType === 'table') {
             const [tableStartIndex, tableEndIndex] = this.getTableIndex(noteContent);
             if (tableStartIndex != -1 && tableEndIndex !== -1){    
-                const beforeTable = lines.slice(0, tableStartIndex).join('\n');
-                const afterTable = lines.slice(tableEndIndex + 1).join('\n');
+                const tableContent = lines.slice(tableStartIndex, tableEndIndex + 1).join('\n');
                 
-                let updatedContent;
-                
-                // Ensure proper spacing
-                if (beforeTable.endsWith('\n') || beforeTable === '') {
-                    // If the content before the table ends with a newline or is empty,
-                    // ensure we have exactly two newlines before the table
-                    const linebreaks = beforeTable.endsWith('\n\n') ? '' : 
-                                       beforeTable.endsWith('\n') ? '\n' : '\n\n';
-                                
-                    updatedContent = beforeTable + linebreaks + newContent;
-                } else {
-                    updatedContent = beforeTable + '\n\n' + newContent;
+                // Ensure proper spacing for the new content
+                let formattedNewContent = newContent;
+                if (!formattedNewContent.endsWith('\n')) {
+                    formattedNewContent += '\n';
                 }
-
-                updatedContent += (afterTable.startsWith('\n') ? '' : '\n') + afterTable;
-
-                await this.plugin.app.vault.modify(recordNote, updatedContent);
-            } else { // no exisitng table found
+                
+                await this.plugin.app.vault.process(recordNote, (data) => {
+                    return data.replace(tableContent, formattedNewContent.trim());
+                });
+            } else { // no existing table found
                 const linebreaks = noteContent.endsWith('\n\n') ? '' : 
                                    noteContent.endsWith('\n') ? '\n' : '\n\n';
                 await this.plugin.app.vault.modify(recordNote, noteContent + linebreaks + newContent);
@@ -368,18 +361,29 @@ export class DataRecorder {
         } else if (this.recordType === 'bulletList') {
             // Get list boundaries
             const [listStartIndex, listEndIndex] = this.getListIndex(noteContent);
-//console.log([listStartIndex, listEndIndex]);
+            
             if (listStartIndex != -1 && listEndIndex != -1){
-                const beforeList = lines.slice(0, listStartIndex).join('\n');
-                const afterList = lines.slice(listEndIndex + 1).join('\n');
-                let updatedContent = beforeList + newContent + afterList; 
-                await this.plugin.app.vault.modify(recordNote, updatedContent);
+                const listContent = lines.slice(listStartIndex, listEndIndex + 1).join('\n');
+                
+                // Ensure proper spacing for the new content
+                let formattedNewContent = newContent;
+                if (!formattedNewContent.endsWith('\n')) {
+                    formattedNewContent += '\n';
+                }
+                
+                await this.plugin.app.vault.process(recordNote, (data) => {
+                    return data.replace(listContent, formattedNewContent.trim());
+                });
             } else { // no existing list found
-                await this.plugin.app.vault.modify(recordNote, noteContent + newContent);
+                const linebreaks = noteContent.endsWith('\n\n') ? '' : 
+                                   noteContent.endsWith('\n') ? '\n' : '\n\n';
+                await this.plugin.app.vault.modify(recordNote, noteContent + linebreaks + newContent);
             }
         } else {
-            // If no existing table found, append to the document
-            await this.plugin.app.vault.modify(recordNote, noteContent + newContent);
+            // If no existing content of the right type found, append to the document
+            const linebreaks = noteContent.endsWith('\n\n') ? '' : 
+                               noteContent.endsWith('\n') ? '\n' : '\n\n';
+            await this.plugin.app.vault.modify(recordNote, noteContent + linebreaks + newContent);
         }
     }
 

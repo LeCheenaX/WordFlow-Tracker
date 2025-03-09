@@ -1,5 +1,5 @@
 // add EditorTransaction
-import { App, debounce, Editor, EventRef, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TextAreaComponent, TFile } from 'obsidian';
+import { App, debounce, Editor, EventRef, MarkdownView, Modal, Notice, normalizePath, Plugin, PluginSettingTab, Setting, TextAreaComponent, TFile } from 'obsidian';
 //import { EditorState, StateField, Extension, ChangeSet, Transaction } from "@codemirror/state";
 import { historyField, history } from "@codemirror/commands";
 //import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from "@codemirror/view";
@@ -42,7 +42,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 	public trackerMap: Map<string, DocTracker> = new Map<string, DocTracker>(); // give up nested map
 	public statusBarTrackerEl: HTMLElement; // for status bar tracking
 	public statusBarContent: string; // for status bar content editing
-	private DocRecorder: DataRecorder;
+	public DocRecorder: DataRecorder;
 
 	async onload() {
 		await this.loadSettings();
@@ -373,8 +373,9 @@ class WordflowSettingTab extends PluginSettingTab {
 				.setPlaceholder('set daily note folder')
 				.setValue(this.plugin.settings.periodicNoteFolder)
 				.onChange(async (value) => {
-					this.plugin.settings.periodicNoteFolder = value;
+					this.plugin.settings.periodicNoteFolder = normalizePath(value);
 					await this.plugin.saveSettings();
+					this.plugin.DocRecorder.loadSettings();
 				})
 			);
 
@@ -386,6 +387,7 @@ class WordflowSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.periodicNoteFormat = value;
 					await this.plugin.saveSettings();
+					this.plugin.DocRecorder.loadSettings();
 				})
 			);
 
@@ -400,6 +402,7 @@ class WordflowSettingTab extends PluginSettingTab {
 					this.plugin.settings.recordType = value;
 					await this.plugin.saveSettings();
 					await this.updateSyntax(); // warning: must to be put after saving
+					this.plugin.DocRecorder.loadSettings();
 				})
 			);
 
@@ -414,6 +417,7 @@ class WordflowSettingTab extends PluginSettingTab {
 						text.onChange(async (value) => {
 							this.plugin.settings.tableSyntax = value;
 							await this.plugin.saveSettings();
+							this.plugin.DocRecorder.loadSettings();
 						})
 					}
 					if (this.plugin.settings.recordType == 'bulletList'){
@@ -421,6 +425,7 @@ class WordflowSettingTab extends PluginSettingTab {
 						text.onChange(async (value) => {
 							this.plugin.settings.bulletListSyntax = value;
 							await this.plugin.saveSettings();
+							this.plugin.DocRecorder.loadSettings();
 						})
 					}				
 				})
@@ -440,6 +445,7 @@ class WordflowSettingTab extends PluginSettingTab {
 					this.plugin.settings.sortBy = value;
 					await this.plugin.saveSettings();
 					await this.updateSyntax(); // warning: must to be put after saving
+					this.plugin.DocRecorder.loadSettings();
 				})
 			)
 			.addDropdown(d => d
@@ -450,6 +456,7 @@ class WordflowSettingTab extends PluginSettingTab {
 					this.plugin.settings.isDescend = (value === 'true')?true:false;
 					await this.plugin.saveSettings();
 					await this.updateSyntax(); // warning: must to be put after saving
+					this.plugin.DocRecorder.loadSettings();
 				})
 			);
 
@@ -462,6 +469,7 @@ class WordflowSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.timeFormat = value;
 					await this.plugin.saveSettings();
+					this.plugin.DocRecorder.loadSettings();
 				})
 			);
 		
@@ -473,6 +481,7 @@ class WordflowSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.autoRecordInterval = value;
 					await this.plugin.saveSettings();
+					this.plugin.DocRecorder.loadSettings();
 				})
 			);
 	}
