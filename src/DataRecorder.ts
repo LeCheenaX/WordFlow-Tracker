@@ -33,7 +33,7 @@ export class DataRecorder {
         this.isDescend = this.plugin.settings.isDescend;
         this.tableSyntax = this.plugin.settings.tableSyntax;
         this.listSyntax = this.plugin.settings.bulletListSyntax;
-        //new Notice(`Setting changed! Record type:${this.recordType}`)
+        //new Notice(`Setting changed! Record type:${this.recordType}`, 3000)
     }
 
     public async record(tracker?:DocTracker): Promise<void> {
@@ -69,7 +69,7 @@ export class DataRecorder {
                 // Wait for file creation to complete
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
-                new Notice(`Periodic note ${recordNotePath} doesn't exist!\n Auto created under ${this.periodicNoteFolder}. `)
+                new Notice(`Periodic note ${recordNotePath} doesn't exist!\n Auto created under ${this.periodicNoteFolder}. `, 3000)
             } catch (error) {
                 console.error("Failed to create record note:", error);
                 return null;

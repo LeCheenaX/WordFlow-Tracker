@@ -1,5 +1,5 @@
 // add EditorTransaction
-import { App, debounce, Editor, EventRef, MarkdownView, Modal, Notice, normalizePath, Plugin, PluginSettingTab, Setting, TextAreaComponent, TFile } from 'obsidian';
+import { App, ButtonComponent, debounce, Editor, EventRef, MarkdownView, Modal, Notice, normalizePath, Plugin, PluginSettingTab, Setting, TextAreaComponent, TFile } from 'obsidian';
 //import { EditorState, StateField, Extension, ChangeSet, Transaction } from "@codemirror/state";
 import { historyField, history } from "@codemirror/commands";
 //import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from "@codemirror/view";
@@ -26,8 +26,8 @@ const DEFAULT_SETTINGS: WordflowSettings = {
 	periodicNoteFolder: '',
 	periodicNoteFormat: 'YYYY-MM-DD',
 	recordType: 'table',
-	tableSyntax: `\n| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| [[\${modifiedNote}]] | \${editedWords} | \${lastModifiedTime} |`,
-	bulletListSyntax: `- \${modifiedNote}\n    - eTimes: \${editedTimes}\n    - eWords: \${editedWords}`,
+	tableSyntax: `| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| [[\${modifiedNote}]] | \${editedWords} | \${lastModifiedTime} |`,
+	bulletListSyntax: `- \${modifiedNote}\n    - Edits: \${editedTimes}\n    - Edited Words: \${editedWords}`,
 	timeFormat: 'YYYY-MM-DD HH:mm',
 	sortBy: 'lastModifiedTime',
 	isDescend: true,
@@ -54,7 +54,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('file-clock', 'Record wordflows from edited notes', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
-			new Notice(`Try recording wordflows to periodic note!`);
+			new Notice(`Try recording wordflows to periodic note!`, 3000);
 			
 			this.DocRecorder.record();
 
@@ -71,7 +71,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			name: 'Record wordflows from edited notes to periodic note',
 			callback: () => {
 				this.DocRecorder.record();
-				new Notice(`Try recording wordflows to periodic note!`);
+				new Notice(`Try recording wordflows to periodic note!`, 3000);
 			}
 		});
 		/*
@@ -156,7 +156,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		if (this.settings.autoRecordInterval && Number(this.settings.autoRecordInterval) != 0){
 			this.registerInterval(window.setInterval(() => {
 				this.DocRecorder.record();
-				new Notice(`Try recording wordflows to periodic note!`);
+				new Notice(`Try recording wordflows to periodic note!`, 3000);
 			}, Number(this.settings.autoRecordInterval) * 1000));
 		}
 	}
@@ -336,16 +336,43 @@ export default class WordflowTrackerPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 }
-/*
-class SampleModal extends Modal {
-	constructor(app: App) {
+
+class ConfirmationModal extends Modal {
+	constructor(
+	    app: App,
+		private message: string,
+		private onConfirm: () => Promise<void>
+	) {
 		super(app);
 	}
-
+	
 	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-
+	    const { contentEl } = this;
+		
+		contentEl.createEl("h3", { 
+		  text: "⚠️ Confirmation ",
+		  cls: "confirm-title" 
+		});
+		
+		contentEl.createEl("p", {
+		  text: this.message,
+		  cls: "confirm-message"
+		});
+	
+		const buttonContainer = contentEl.createDiv("confirm-cancel-buttons");
+		
+		new ButtonComponent(buttonContainer)
+		  .setButtonText("Confirm")
+		  .setClass("mod-warning")
+		  .onClick(async () => {
+			await this.onConfirm();
+			this.close();
+		  });
+	
+		new ButtonComponent(buttonContainer)
+		  .setButtonText("Cancel")
+		  .setClass("mod-neutral")
+		  .onClick(() => this.close());
 	}
 
 	onClose() {
@@ -353,7 +380,7 @@ class SampleModal extends Modal {
 		contentEl.empty();
 	}
 }
-*/
+
 class WordflowSettingTab extends PluginSettingTab {
 	plugin: WordflowTrackerPlugin;
 
@@ -366,7 +393,7 @@ class WordflowSettingTab extends PluginSettingTab {
 		const {containerEl} = this;
 
 		containerEl.empty();
-		containerEl.classList.add('wordflow-setting-tab');
+		containerEl.classList.add('wordflow-setting-tab'); // for styles.css
 		
 		new Setting(containerEl)
 			.setName('Periodic note folder')
@@ -385,6 +412,7 @@ class WordflowSettingTab extends PluginSettingTab {
 			.setName('Periodic note format')
 			.setDesc('Set the file name for newly created daily notes or weekly note, which should correspond to the same format setting of Obsidian daily note plugin and of templater plugin(if installed).')
 			.addText(text => text
+				.setPlaceholder('YYYY-MM-DD')
 				.setValue(this.plugin.settings.periodicNoteFormat)
 				.onChange(async (value) => {
 					this.plugin.settings.periodicNoteFormat = value;
@@ -393,6 +421,8 @@ class WordflowSettingTab extends PluginSettingTab {
 				})
 			);
 
+		new Setting(containerEl).setName('Recording').setHeading();
+		
 		new Setting(containerEl)
 			.setName('Record content type')
 			.setDesc('Select a type of content to record on specified notes.')
@@ -479,6 +509,7 @@ class WordflowSettingTab extends PluginSettingTab {
 			.setName('Automatic recording interval')
 			.setDesc('Set the interval in seconds, influencing when the plugin should save all tracked records and implement them on periodic notes. Set to 0 to disable. ')
 			.addText(text => text
+				.setPlaceholder('Set to 0 to disable')
 				.setValue(this.plugin.settings.autoRecordInterval)
 				.onChange(async (value) => {
 					this.plugin.settings.autoRecordInterval = value;
@@ -486,6 +517,18 @@ class WordflowSettingTab extends PluginSettingTab {
 					this.plugin.DocRecorder.loadSettings();
 				})
 			);
+
+		new Setting(containerEl).setName('Restore options').setHeading();
+
+		new Setting(containerEl)
+			.setName('Reset settings')
+			.setDesc('Reset all settings to the default value.')
+			.addButton(btn => btn
+				  .setButtonText('Reset settings')
+				  .setWarning()
+				  //.setIcon('alert-triangle')
+				  .onClick(() => this.confirmReset())
+			)
 	}
 
 	private SyntaxComponent?: TextAreaComponent;
@@ -512,4 +555,25 @@ class WordflowSettingTab extends PluginSettingTab {
     	infoEl.classList.add('wordflow-info');
     	textEl.classList.add('wordflow-textarea');
 	};
+
+	private confirmReset(){
+	new ConfirmationModal(
+		  this.app,
+		  "Are you sure to reset all settings of wordflow tracker?",
+		  () => this.resetSettings()
+		).open();
+	}
+
+	private async resetSettings() {
+		try {
+		  this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS)
+		  await this.plugin.saveSettings();
+		  new Notice('✅ Settings are reset to default!', 3000);
+		  await sleep(100);
+		  this.display();
+		} catch (error) {
+		  console.error("Could not reset settings:", error);
+		  new Notice('❌ Could not reset settings! Check console!', 5000);
+		}
+	  }
 }
