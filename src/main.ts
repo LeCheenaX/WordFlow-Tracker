@@ -52,9 +52,9 @@ export default class WordflowTrackerPlugin extends Plugin {
 //		if (DEBUG) console.log("Following files were opened:", this.potentialEditors.map(f => f)); 
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Record wordflow', (evt: MouseEvent) => {
+		const ribbonIconEl = this.addRibbonIcon('file-clock', 'Record wordflows from edited notes', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
-			new Notice('Try recording wordflows to note!');
+			new Notice(`Try recording wordflows to periodic note!`);
 			
 			this.DocRecorder.record();
 
@@ -67,10 +67,11 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'record-edit-changes-on-all-notes-to-periodic-note',
-			name: 'Record edit changes on all notes to periodic note',
+			id: 'record-wordflows-from-edited-notes-to-periodic-note',
+			name: 'Record wordflows from edited notes to periodic note',
 			callback: () => {
 				this.DocRecorder.record();
+				new Notice(`Try recording wordflows to periodic note!`);
 			}
 		});
 		/*
@@ -155,6 +156,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		if (this.settings.autoRecordInterval && Number(this.settings.autoRecordInterval) != 0){
 			this.registerInterval(window.setInterval(() => {
 				this.DocRecorder.record();
+				new Notice(`Try recording wordflows to periodic note!`);
 			}, Number(this.settings.autoRecordInterval) * 1000));
 		}
 	}
