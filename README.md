@@ -11,7 +11,7 @@ WorkFlow Tracker is a lite plugin that track your edits on each note and automat
 - Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes. The tracker will be set to 0 once the note is recorded.
 - (planned) Display changes in a svg style to show the original contents v.s. modified contents. 
 - ![image](https://github.com/user-attachments/assets/b4bc50e8-89d2-4d9f-bf99-2cfcd14e1569)
-- Customization of which data to be recorded, see in [[#Supported regular expressions]] below. 
+- Customization of which data to be recorded with ${dataName}, see in [[#Supported String Interpolations]] below. 
 - Customization of how the data to be recorded, like inserting a table or a list to the specified position of your note. (Currently only have one option to insert to the bottom)
 
 ### How does this plugin collect data?
@@ -20,8 +20,8 @@ WorkFlow Tracker is a lite plugin that track your edits on each note and automat
 We fetch the edit statistcs by access the history field of Obsidian editor, which is the place to store the undo/redo history of Obsidian. No extra history database is created, thus don't worry about the burdens in large vault. 
 ## Settings 
 ![44b4ed09c7c6821f4ace21393df0395](https://github.com/user-attachments/assets/36fdf7f9-173d-46f5-bb92-b7ce5b634b03)
-## Supported regular expressions
-| Regular Expression  | Description |
+### Supported String Interpolations
+| String Interpolation  | Description |
 | ------------------- | ------------------- |
 | ${modifiedNote}    | the Obsidian path to modified note |
 | ${editedWords} | the number of words you edited in a period per note |
