@@ -3,9 +3,6 @@ WorkFlow Tracker is a lite plugin that track your edits on each note and automat
 
 ![image](https://github.com/user-attachments/assets/bb8e3ba5-7e10-4576-b8b3-0d839a7ffa2f)
 
-
-
-
 ## Core Features
 - Tracking the number of edits, editied words per note. This will reflect on the status bar at the bottom of note. 
 - Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes. The tracker will be set to 0 once the note is recorded.
@@ -18,8 +15,10 @@ WorkFlow Tracker is a lite plugin that track your edits on each note and automat
 > All statics are fetched by diectly reading the Obsidian data, without adding additional thread to record the data, which means that enabling the recording will bring almost no performance loss or extra RAM occupation.
 
 We fetch the edit statistcs by access the history field of Obsidian editor, which is the place to store the undo/redo history of Obsidian. No extra history database is created, thus don't worry about the burdens in large vault. 
+
 ## Settings 
 ![44b4ed09c7c6821f4ace21393df0395](https://github.com/user-attachments/assets/36fdf7f9-173d-46f5-bb92-b7ce5b634b03)
+
 ### Supported String Interpolations
 | String Interpolation  | Description |
 | ------------------- | ------------------- |
@@ -32,7 +31,15 @@ We fetch the edit statistcs by access the history field of Obsidian editor, whic
 ## Development Roadmap
 See [Development Roadmap](https://github.com/LeCheenaX/WordFlow-Tracker/wiki/Development-RoadMap) for known issues and planned features! 
 
-## Manually installing the plugin
+## Installation
+### Manually installing the plugin
 
 Copy over `main.js`, `manifest.json`, `styles.css` to your vault `VaultFolder/.obsidian/plugins/wordflow-tracker/`.
 
+### Install via BRAT
+See [BRAT docs](https://github.com/TfTHacker/obsidian42-brat).
+
+## Similar plugins
+This lite plugin tries to offer unique experience for tracking edits periodically with least obstacles. However, you can try the following alternatives if interested: 
+- [Obsipulse plugin](https://github.com/jsifalda/obsipulse-plugin)
+- [Daily File Logger](https://github.com/ashlovepink/daily-file-logger)
