@@ -16,8 +16,7 @@ WorkFlow Tracker is a lite plugin that track your edits on each note and automat
 - (planned) Display changes in a svg style to show the original contents v.s. modified contents. 
   ![image](https://github.com/user-attachments/assets/b4bc50e8-89d2-4d9f-bf99-2cfcd14e1569)
 - Customization of which data to be recorded with ${dataName}, see in [Supported String Interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) below. 
-- Customization of how the data to be recorded, like inserting a table or a list to the specified position of your note. (Currently only have one option to insert to the bottom)
-
+- Customization of how the data to be recorded, like inserting a table or a list to the specified position of your note. 
 ### How does this plugin collect data?
 
 We fetch the edit statistcs by access the history field of Obsidian editor, which is the place to store the undo/redo history of Obsidian. 
