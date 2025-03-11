@@ -448,7 +448,7 @@ class WordflowSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Insert to position')
-			.setDesc('If using a custom position, the start position and end position must exist and be unique in periodic note! Make sure your template is correctly applied while creating new periodic note. ')
+			.setDesc('Insert to this position if no previous record exist. If using a custom position, the start position and end position must exist and be unique in periodic note! Make sure your template is correctly applied while creating new periodic note. ')
 			.addDropdown(d => d
 				.addOption('bottom', 'bottom')
 				.addOption('custom', 'custom position')
