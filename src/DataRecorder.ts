@@ -3,18 +3,23 @@ import WordflowTrackerPlugin from "./main";
 import { DocTracker } from './DocTracker';
 import { Notice, TFile } from 'obsidian';
 import moment from 'moment';
+import { TableParser } from './TableParser';
+import { BulletListParser, ListParser } from './ListParser';
+import { error } from "console";
 
 export class DataRecorder {
-    private existingDataMap: Map<string, ExistingData> = new Map();
+    public existingDataMap: Map<string, ExistingData> = new Map();
     private newDataMap: Map<string, NewData> = new Map();
     private periodicNoteFolder: string;
     private periodicNoteFormat: string;
-    private recordType: string;
-    private timeFormat: string;
-    private sortBy: string;
-    private isDescend: boolean;
-    private tableSyntax: string;
-    private listSyntax: string;
+    public recordType: string;
+    public timeFormat: string;
+    public sortBy: string;
+    public isDescend: boolean;
+    public tableSyntax: string;
+    public listSyntax: string;
+    // private classes
+    private Parser: TableParser | BulletListParser;
     
     constructor(       
         private plugin: WordflowTrackerPlugin,
@@ -34,6 +39,22 @@ export class DataRecorder {
         this.tableSyntax = this.plugin.settings.tableSyntax;
         this.listSyntax = this.plugin.settings.bulletListSyntax;
         //new Notice(`Setting changed! Record type:${this.recordType}`, 3000)
+        this.loadParsers();
+    }
+
+    private loadParsers(){
+        switch (this.recordType){
+        case 'table': 
+            this.Parser = new TableParser(this);
+            break;
+        case 'bulletList': 
+            this.Parser = new BulletListParser(this);
+            break;
+        default: 
+            throw new Error('Record type is not defined in this recorder!')
+        }
+
+        this.Parser.loadSettings()
     }
 
     public async record(tracker?:DocTracker): Promise<void> {
@@ -454,19 +475,17 @@ export class DataRecorder {
                     
                     // Map variable names from template to property names in ExistingData
                     const varValue = currentLine.substring(startPos, endPos);
-                    if (pattern.varName === 'modifiedNote') {
-                        groupData['filePath'] = varValue;
-                    } else {
+                    
                         groupData[pattern.varName] = varValue;
-                    }
+                    
                 }
             }
             
             if (isGroupStart) {
                 // Create ExistingData entry if we have a filePath
-                if (groupData.filePath || groupData.modifiedNote) {
-                    const existingData = new ExistingData(groupData.filePath || groupData.modifiedNote);
-                    
+                if (groupData.modifiedNote) {
+                    const existingData = new ExistingData();
+                    existingData.filePath = groupData.modifiedNote;
                     // Parse editedWords
                     if (groupData.editedWords !== undefined) {
                         existingData.editedWords = parseInt(groupData.editedWords) || 0;
@@ -593,15 +612,14 @@ export class DataRecorder {
 }
 
 // Class to represent data from existing records
-class ExistingData {
+export class ExistingData {
     filePath: string;
     lastModifiedTime: number|null;
     editedWords: number;
     editedTimes: number;
     editedPercentage: string;
     
-    constructor(filePath: string) {
-        this.filePath = filePath;
+    constructor() {
         this.lastModifiedTime = null;
         this.editedWords = 0;
         this.editedTimes = 0;
@@ -613,7 +631,8 @@ class ExistingData {
         const parts = row.split('|').map(part => part.trim()).filter(Boolean);
         if (parts.length < 1) return null;
         
-        const entry = new ExistingData(parts[0].replace(/^\[\[+|\]\]+$/g, '')); // require file path to be in the first column, and drop the '[[]]'.
+        const entry = new ExistingData(); 
+        entry.filePath = parts[0].replace(/^\[\[+|\]\]+$/g, ''); // require file path to be in the first column, and drop the '[[]]'.
         
         // Try to extract numeric values using regex - more robust than position-based extraction
         for (let i = 1; i < parts.length; i++) {
@@ -647,7 +666,7 @@ class ExistingData {
 }
 
 // Class to represent data from new DocTracker objects
-class NewData {
+export class NewData {
     filePath: string;
     lastModifiedTime: number;
     editedWords: number;
@@ -666,7 +685,7 @@ class NewData {
 }
 
 // Result of merging existing and new data
-class MergedData {
+export class MergedData {
     filePath: string;
     lastModifiedTime: number | string;
     editedWords: number;
