@@ -6,13 +6,15 @@
 ## 介绍
 WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插件，并自动将这些编辑数据记录到你的周期性笔记中，例如日记、周记。
 
-![image](https://github.com/user-attachments/assets/bb8e3ba5-7e10-4576-b8b3-0d839a7ffa2f)
+![image](https://github.com/user-attachments/assets/64275f7a-81ed-4d5a-aebb-273a135659d6)
 
 ## 核心功能
 - 跟踪每个笔记的编辑次数和编辑字数。这将在笔记底部的状态栏中显示。
+
+  ![image](https://github.com/user-attachments/assets/88e1d16b-893f-46a4-aa66-210a372ef753)
 - 在笔记关闭时自动记录修改的数据。或者，使用命令或按钮记录所有笔记。记录后，跟踪器将重置为0。
 - （计划中）以SVG样式显示更改，展示原始内容与修改内容的对比。
-- ![image](https://github.com/user-attachments/assets/b4bc50e8-89d2-4d9f-bf99-2cfcd14e1569)
+  ![image](https://github.com/user-attachments/assets/b4bc50e8-89d2-4d9f-bf99-2cfcd14e1569)
 - 自定义要记录的数据，使用${dataName}语法，详见下方[支持的字符串插值](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/README_ZH_CN.md#%E6%94%AF%E6%8C%81%E7%9A%84%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%8F%92%E5%80%BC)。
 - 自定义数据记录的方式，例如将表格或列表插入到笔记的指定位置。（目前仅提供插入文档底部的选项）
 
@@ -26,7 +28,22 @@ WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插
 > 该插件收集的临时数据在记录到指定的周期笔记中后即自动销毁，Obsidian本体也会在关闭应用后清理所有历史数据。
 
 ## 设置
-![44b4ed09c7c6821f4ace21393df0395](https://github.com/user-attachments/assets/36fdf7f9-173d-46f5-bb92-b7ce5b634b03)
+![image](https://github.com/user-attachments/assets/6a1544be-a579-4744-8391-bf0e1c8fa298)
+### 基础设置
+- 周期笔记文件夹 (Periodic note folder)：设置每日笔记、周记等周期笔记的存放文件夹路径。需与以下插件配置保持完全一致:
+	- Obsidian 原生「日记」插件
+	- Templater 模板插件（若已安装）
+- 周期笔记格式 (Periodic note format)：设置新创建的周期笔记（如日/周记）的文件名格式。需与以下插件配置保持完全一致:
+	- Obsidian 原生「日记」插件
+	- Templater 模板插件（若已安装）
+### 记录设置
+- 记录内容类型 (Record content type)：选择在周期笔记中插入内容的格式类型。当前支持:
+	- 表格 (Table) : 以表格形式记录（⚠️ 使用表格时，modifiedNote 必须位于第一列）
+	- 无序列表 (Bullet List) : 以列表形式记录
+- 插入位置 (Insert to position)：支持底部插入和自定义插入
+	- ⚠️ 若选择「自定义位置」需满足: 起始标记 (start position) 和结束标记 (end position) 必须在周期笔记中存在且唯一
+	- 确保创建新周期笔记时模板已正确应用这些标记
+- Wordflow 记录语法 (Wordflow recording syntax)：通过字符串插值自定义记录内容，如使用 ${modifiedNote} 获取修改笔记的路径，或使用 [[${modifiedNote}]] 格式生成笔记链接。
 
 ### 支持的字符串插值
 | 字符串插值  | 描述 |
