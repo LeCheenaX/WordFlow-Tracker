@@ -23,7 +23,7 @@ We fetch the edit statistcs by access the history field of Obsidian editor, whic
 - No extra data file is created or exposed. This resolves the privacy concerns.
 
 > All statics are fetched by diectly reading the Obsidian data, without adding additional thread to record the data, which means that enabling the recording will bring almost no performance loss or extra RAM occupation.
-
+> 
 > The temporary edit stats collected by the plugin are destroyed after recording to your note, and the Obsidian will destory the history data after you close the application.  
 
 
