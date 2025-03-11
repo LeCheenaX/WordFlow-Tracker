@@ -19,19 +19,27 @@ export interface WordflowSettings {
 	timeFormat: string;
 	sortBy: string;
 	isDescend: boolean;
+	filterZero: boolean;
 	autoRecordInterval: string;
+	insertPlace: string;
+	insertPlaceStart: string;
+	insertPlaceEnd: string;
 }
 
 const DEFAULT_SETTINGS: WordflowSettings = {
 	periodicNoteFolder: '',
 	periodicNoteFormat: 'YYYY-MM-DD',
 	recordType: 'table',
+	insertPlace: 'bottom',
 	tableSyntax: `| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| [[\${modifiedNote}]] | \${editedWords} | \${lastModifiedTime} |`,
 	bulletListSyntax: `- \${modifiedNote}\n    - Edits: \${editedTimes}\n    - Edited Words: \${editedWords}`,
 	timeFormat: 'YYYY-MM-DD HH:mm',
 	sortBy: 'lastModifiedTime',
 	isDescend: true,
+	filterZero: true,
 	autoRecordInterval: '0', // disable
+	insertPlaceStart: '',
+	insertPlaceEnd: '',
 }
 
 
@@ -438,6 +446,55 @@ class WordflowSettingTab extends PluginSettingTab {
 				})
 			);
 
+		new Setting(containerEl)
+			.setName('Insert to position')
+			.setDesc('If using a custom position, the start position and end position must exist and be unique in periodic note! Make sure your template is correctly applied while creating new periodic note. ')
+			.addDropdown(d => d
+				.addOption('bottom', 'bottom')
+				.addOption('custom', 'custom position')
+				.setValue(this.plugin.settings.insertPlace) // need to show the modified value when next loading
+				.onChange(async (value) => {
+					this.plugin.settings.insertPlace = value;
+					await this.plugin.saveSettings();
+					// Show or hide subsettings based on dropdown value
+					this.toggleCustomPositionSettings(value === 'custom');
+					this.plugin.DocRecorder.loadSettings();
+				})
+			);
+
+		const customSettingsContainer = containerEl.createDiv();
+		customSettingsContainer.id = "custom-position-settings";
+		// Add custom CSS to remove separation between settings
+		customSettingsContainer.addClass('wordflow-custom-container');
+		// Initially set visibility based on current value
+        this.toggleCustomPositionSettings(this.plugin.settings.insertPlace === 'custom');
+
+		const insertPlaceStart = new Setting(customSettingsContainer)
+            .setName('Start position')
+            .setDesc('The records should be inserted after this content. Content between start position and end position would be replaced during recording. ')
+            .addTextArea(text => text
+                .setValue(this.plugin.settings.insertPlaceStart || '')
+				.setPlaceholder('Replace with your periodic note content that exist in the periodic note template.\nFor example: ## Modified Note')
+                .onChange(async (value) => {
+                    this.plugin.settings.insertPlaceStart = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.DocRecorder.loadSettings();
+                }));
+		const insertPlaceEnd = new Setting(customSettingsContainer)
+			.setName('End position')
+            .setDesc('The records should be inserted before this content. Content between start position and end position would be replaced during recording. ')
+			.addTextArea(text => text
+				.setValue(this.plugin.settings.insertPlaceEnd || '')
+				.setPlaceholder('Replace with your periodic note content that exist in the periodic note template.\nFor example: ## The next title after \'## Modified Note\'. ')
+				.onChange(async (value) => {
+					this.plugin.settings.insertPlaceEnd = value;
+					await this.plugin.saveSettings();
+					this.plugin.DocRecorder.loadSettings();
+				}));
+
+		this.makeMultilineTextSetting(insertPlaceStart);
+		this.makeMultilineTextSetting(insertPlaceEnd);
+
 		this.makeMultilineTextSetting(
 			new Setting(containerEl)
 				.setName('Wordflow recording syntax')
@@ -476,7 +533,6 @@ class WordflowSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.sortBy = value;
 					await this.plugin.saveSettings();
-					await this.updateSyntax(); // warning: must to be put after saving
 					this.plugin.DocRecorder.loadSettings();
 				})
 			)
@@ -487,7 +543,18 @@ class WordflowSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.isDescend = (value === 'true')?true:false;
 					await this.plugin.saveSettings();
-					await this.updateSyntax(); // warning: must to be put after saving
+					this.plugin.DocRecorder.loadSettings();
+				})
+			);
+		
+		new Setting(containerEl)
+			.setName('Filter out non-modified notes')
+			.setDesc('Whether the opened notes that are not modified should be excluded while recording. If not excluded, you will get any opened file under editing mode recorded. ')
+			.addToggle(t => t
+				.setValue(this.plugin.settings.filterZero)
+				.onChange(async (value) => {
+					this.plugin.settings.filterZero = value;
+					await this.plugin.saveSettings();			
 					this.plugin.DocRecorder.loadSettings();
 				})
 			);
@@ -540,6 +607,13 @@ class WordflowSettingTab extends PluginSettingTab {
 			case 'bulletList': this.SyntaxComponent.setValue(this.plugin.settings.bulletListSyntax); break;
 		}
 	};
+
+	private toggleCustomPositionSettings(show: boolean) {
+        const customSettingsContainer = document.getElementById("custom-position-settings");
+        if (customSettingsContainer) {
+            customSettingsContainer.style.display = show ? "block" : "none";
+        }
+    }
 
 	// modified from https://github.com/obsidian-tasks-group/obsidian-tasks/blob/main/src/Config/SettingsTab.ts#L842
 	private makeMultilineTextSetting(setting: Setting) {

@@ -16,8 +16,13 @@ export class DataRecorder {
     public timeFormat: string;
     public sortBy: string;
     public isDescend: boolean;
+    public filterZero: boolean;
     public tableSyntax: string;
     public listSyntax: string;
+    public insertPlace: string;
+    public insertPlaceStart: string;
+    public insertPlaceEnd: string;
+
     // private classes
     private Parser: TableParser | BulletListParser;
     
@@ -36,8 +41,12 @@ export class DataRecorder {
         this.timeFormat = this.plugin.settings.timeFormat;
         this.sortBy = this.plugin.settings.sortBy;
         this.isDescend = this.plugin.settings.isDescend;
+        this.filterZero = this.plugin.settings.filterZero;
         this.tableSyntax = this.plugin.settings.tableSyntax;
         this.listSyntax = this.plugin.settings.bulletListSyntax;
+        this.insertPlace = this.plugin.settings.insertPlace;
+        this.insertPlaceStart = this.plugin.settings.insertPlaceStart;
+        this.insertPlaceEnd = this.plugin.settings.insertPlaceEnd;
         //new Notice(`Setting changed! Record type:${this.recordType}`, 3000)
         this.loadParsers();
     }
@@ -76,7 +85,15 @@ export class DataRecorder {
         
         // Generate and update content
         const newContent = this.Parser.generateContent(mergedData);
-        await this.updateNote(recordNote, newContent);
+
+        switch (this.insertPlace){
+        case 'custom':
+            await this.updateNoteToCustom(recordNote, newContent);
+            break;
+        default: // default insert to bottom if not found
+            await this.updateNoteToBottom(recordNote, newContent);
+            break;
+        }
     }
 
     private async getOrCreateRecordNote(): Promise<TFile | null> {
@@ -111,11 +128,15 @@ export class DataRecorder {
         this.newDataMap.clear();
         if (!p_tracker){
             for (const [filePath, tracker] of this.trackerMap.entries()) {
+                if (!this.filterZero || tracker.changedTimes!=0){
                 this.newDataMap.set(filePath, new NewData(tracker));
+                }
                 tracker.resetEdit();
             }
         } else {
+            if (!this.filterZero || p_tracker.changedTimes!=0){
             this.newDataMap.set(p_tracker.filePath, new NewData(p_tracker)); // only record given data
+            }
 //console.log('newDataMap:', this.newDataMap);
             p_tracker.resetEdit();
         }
@@ -195,7 +216,7 @@ export class DataRecorder {
     
 
 
-    private async updateNote(recordNote: TFile, newContent: string): Promise<void> {
+    private async updateNoteToBottom(recordNote: TFile, newContent: string): Promise<void> {
         const noteContent = await this.plugin.app.vault.read(recordNote);
         const lines = noteContent.split('\n');
         
@@ -203,7 +224,7 @@ export class DataRecorder {
                 
         if (existingContent){
             await this.plugin.app.vault.process(recordNote, (data) => {
-                return data.replace(existingContent, newContent);
+                return data.replace(existingContent, newContent.trimStart());
             });
         } else { // If no existing content of the right type found, append to the end of document
             const linebreaks = noteContent.endsWith('\n\n') ? '' : 
@@ -212,6 +233,30 @@ export class DataRecorder {
             await this.plugin.app.vault.process(recordNote, (data) => {
                 return data.concat( linebreaks + newContent);
             });
+        }
+    }
+
+    private async updateNoteToCustom(recordNote: TFile, newContent: string): Promise<void> {
+        const noteContent = await this.plugin.app.vault.read(recordNote);
+        
+        if ((this.insertPlaceStart == '') || (this.insertPlaceEnd == '')){
+            throw Error (`Could not replace content without setting start place and end place!`);
+        }
+
+        const regex = new RegExp(`${this.insertPlaceStart}[\\s\\S]*?(?=${this.insertPlaceEnd})`);
+        if (regex.test(noteContent)) {  
+            await this.plugin.app.vault.process(recordNote, (data) => {
+                // build regular expressions across lines but not greedy matching
+                const regex = new RegExp(
+                  `(${this.insertPlaceStart})(.*?)(${this.insertPlaceEnd})`, 
+                  's' // dotAll mode
+                );
+            
+                return data.replace(regex, `$1\n${newContent}\n$3`);
+              });
+        } else {
+            new Error("⚠️ ERROR updating note: " + recordNote.path + "! Check console error.");
+            console.error(`⚠️ ERROR: The given pattern "${this.insertPlaceStart} ... ${this.insertPlaceEnd}" is not found in ${recordNote.path}!`);
         }
     }
 

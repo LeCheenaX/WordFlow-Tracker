@@ -161,10 +161,11 @@ export class TableParser{
         
         // Assemble the complete table
         return [
+            '',
             header,
             separator,
             ...rows
-        ].join('\n').trim();
+        ].join('\n').trimEnd();
     }
 
     

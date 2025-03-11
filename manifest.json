@@ -1,9 +1,9 @@
 {
 	"id": "wordflow-tracker",
 	"name": "Wordflow Tracker",
-	"version": "1.0.5",
+	"version": "1.1.0",
 	"minAppVersion": "1.7.0",
-	"description": "Automatically track the changes and stats you made on every note in Obsidian, recording changes to your daily note in any format you like!",
+	"description": "Track the changes and stats of your edited note files automatically. Record the modified notes and statistics to your daily note with various customizations!.",
 	"author": "LeCheenaX",
 	"authorUrl": "https://github.com/LeCheenaX",
 	"fundingUrl": "to-be-continued",

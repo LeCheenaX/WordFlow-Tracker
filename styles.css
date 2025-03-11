@@ -11,3 +11,13 @@
     min-width: -webkit-fill-available;
     min-height: 80px;
 }
+
+.wordflow-custom-container .setting-item {
+    border-top: none;
+    padding-top: 0;
+}
+
+.wordflow-custom-container .setting-item:first-child {
+    border-top: 1px solid var(--background-modifier-border);
+    padding-top: 12px;
+}
