@@ -2,10 +2,10 @@ import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
 import moment from 'moment';
 
 export class BulletListParser{
-    private recordType: string;
+    //private recordType: string;
     private timeFormat: string;
-    private sortBy: string;
-    private isDescend: boolean;
+    //private sortBy: string;
+    //private isDescend: boolean;
     private syntax: string;
 
     // special variables
@@ -19,14 +19,14 @@ export class BulletListParser{
 
     public loadSettings(){
         this.timeFormat = this.DataRecorder.timeFormat;
-        this.sortBy = this.DataRecorder.sortBy;
-        this.isDescend = this.DataRecorder.isDescend;
+        //this.sortBy = this.DataRecorder.sortBy;
+        //this.isDescend = this.DataRecorder.isDescend;
         this.syntax = this.DataRecorder.listSyntax;
         this.setBulletListPatterns(); // has varName
         this.setPatterns(); // doesnot has varName
     }
 
-    public async extractData(noteContent: string): Promise< Map<string, ExistingData> | null > {
+    public async extractData(noteContent: string): Promise< Map<string, ExistingData> > {
         const lines = noteContent.split('\n');
         const existingDataMap: Map<string, ExistingData> = new Map();
 
@@ -108,7 +108,7 @@ export class BulletListParser{
             }
         }
 
-        return (existingDataMap.size > 0)? existingDataMap : null;
+        return existingDataMap;
     }
 
     // get the starting index of the array, element of which records the line number and the line content of the noteContent
@@ -159,6 +159,20 @@ export class BulletListParser{
         return (startLine !== -1 && endLine !== -1)? [startLine, endLine]: [-1, -1]; 
     }
 
+    public getContent(noteContent: string): string | null {
+        // Get list boundaries
+        const [startIndex, endIndex] = this.getIndex(noteContent);
+        const lines = noteContent.split('\n');
+            
+        if (startIndex != -1 && endIndex != -1){
+            const listContent = lines.slice(startIndex, endIndex + 1).join('\n');
+            
+            return listContent;
+        } else {
+            return null;
+        }
+    }
+
     public generateContent(mergedData: MergedData[]): string {
         // Implement bullet list generation
         let output = '\n';
@@ -173,10 +187,10 @@ export class BulletListParser{
                 .replace(/\${editedTimes}/g, data.editedTimes.toString())
                 .replace(/\${editedPercentage}/g, data.editedPercentage);
             
-            output += line + '\n';
+            output += (line.endsWith('\n'))? line : line + '\n';
         }
         
-        return output;
+        return output.trim();
     }
 
     private setBulletListPatterns(){
@@ -240,10 +254,10 @@ export class BulletListParser{
 
 // used for list data that belong to a single list group, not multiple list groups
 export class ListParser{
-    private recordType: string;
+    //private recordType: string;
     private timeFormat: string;
-    private sortBy: string;
-    private isDescend: boolean;
+    //private sortBy: string;
+    //private isDescend: boolean;
     private syntax: string;
 
     // special variables
@@ -257,8 +271,8 @@ export class ListParser{
 
     public loadSettings(){
         this.timeFormat = this.DataRecorder.timeFormat;
-        this.sortBy = this.DataRecorder.sortBy;
-        this.isDescend = this.DataRecorder.isDescend;
+        //this.sortBy = this.DataRecorder.sortBy;
+        //this.isDescend = this.DataRecorder.isDescend;
         this.syntax = this.DataRecorder.listSyntax;
         this.setListPatterns(); // has varName
         this.setPatterns(); // doesnot has varName
@@ -272,7 +286,7 @@ export class ListParser{
             let isGroupStart = true;
             let groupData: Record<string, string> = {};
             
-            // Check if current line could be start of a list group
+          // Check if current line could be start of a list group
             for (let j = 0; j < this.patternLineNum; j++) {
                 const pattern = this.listPatterns[j];
                 const lineToCheck = i + j;
