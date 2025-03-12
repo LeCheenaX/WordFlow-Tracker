@@ -16,8 +16,7 @@ WorkFlow Tracker is a lite plugin that track your edits on each note and automat
 - (planned) Display changes in a svg style to show the original contents v.s. modified contents. 
   ![image](https://github.com/user-attachments/assets/b4bc50e8-89d2-4d9f-bf99-2cfcd14e1569)
 - Customization of which data to be recorded with ${dataName}, see in [Supported String Interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) below. 
-- Customization of how the data to be recorded, like inserting a table or a list to the specified position of your note. (Currently only have one option to insert to the bottom)
-
+- Customization of how the data to be recorded, like inserting a table or a list to the specified position of your note. 
 ### How does this plugin collect data?
 
 We fetch the edit statistcs by access the history field of Obsidian editor, which is the place to store the undo/redo history of Obsidian. 
@@ -29,16 +28,16 @@ We fetch the edit statistcs by access the history field of Obsidian editor, whic
 > The temporary edit stats collected by the plugin are destroyed after recording to your note, and the Obsidian will destory the history data after you close the application.  
 
 
-## Settings 
+## Settings that worth mentioning
 ![image](https://github.com/user-attachments/assets/6a1544be-a579-4744-8391-bf0e1c8fa298)
 ### Basic
-- Periodic note folder： Set the folder for daily notes or weekly note to place, which should correspond to the same folder of Obsidian daily note plugin and of templater plugin(if installed).
-- Periodic note format： Set the file name for newly created daily notes or weekly note, which should correspond to the same format setting of Obsidian daily note plugin and of templater plugin(if installed).
+- **Periodic note folder：** Set the folder for daily notes or weekly note to place, which should correspond to the same folder of Obsidian daily note plugin and of templater plugin(if installed).
+- **Periodic note format：** Set the file name for newly created daily notes or weekly note, which should correspond to the same format setting of Obsidian daily note plugin and of templater plugin(if installed).
 ### Recording Settings
-- Record content type: Select a type of content to record on specified notes. Currently, table and bullet list are supported.
+- **Record content type:** Select a type of content to record on specified notes. Currently, table and bullet list are supported.
 	- Note: when using a table format, the modified note must be at the first column.  
-- Insert to position: If using a custom position, the start position and end position must exist and be unique in periodic note! Make sure your template is correctly applied while creating new periodic note.
-- Wordflow recording syntax: Used for customizaing recording content. The regular expressions are supported with '${modifiedNote}', you can also generate link to the note by using a '[[${modifiedNote}]]'.
+- **Insert to position:** If using a custom position, the start position and end position must exist and be unique in periodic note! Make sure your template is correctly applied while creating new periodic note.
+- **Wordflow recording syntax:** Used for customizaing recording content. The regular expressions are supported with '${modifiedNote}', you can also generate link to the note by using a '[[${modifiedNote}]]'.
 
 ### Supported String Interpolations
 | String Interpolation  | Description |

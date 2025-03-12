@@ -16,7 +16,7 @@ WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插
 - （计划中）以SVG样式显示更改，展示原始内容与修改内容的对比。
   ![image](https://github.com/user-attachments/assets/b4bc50e8-89d2-4d9f-bf99-2cfcd14e1569)
 - 自定义要记录的数据，使用${dataName}语法，详见下方[支持的字符串插值](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/README_ZH_CN.md#%E6%94%AF%E6%8C%81%E7%9A%84%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%8F%92%E5%80%BC)。
-- 自定义数据记录的方式，例如将表格或列表插入到笔记的指定位置。（目前仅提供插入文档底部的选项）
+- 自定义数据记录的方式，例如将表格或列表插入到笔记的指定位置。
 
 ### 此插件如何收集数据？
 
