@@ -21,3 +21,14 @@
     border-top: 1px solid var(--background-modifier-border);
     padding-top: 12px;
 }
+
+
+.wordflow-sortby-container .setting-item:first-child {
+    border-top: 1px solid var(--background-modifier-border);
+    padding-top: 12px;
+}
+
+.wordflow-mtime-format-container .setting-item:first-child {
+    border-top: 1px solid var(--background-modifier-border);
+    padding-top: 12px;
+}
