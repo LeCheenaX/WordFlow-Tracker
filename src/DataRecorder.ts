@@ -1,10 +1,10 @@
-import {WordflowSettings} from "./main";
 import WordflowTrackerPlugin from "./main";
 import { DocTracker } from './DocTracker';
 import { Notice, TFile } from 'obsidian';
 import moment from 'moment';
 import { TableParser } from './TableParser';
 import { BulletListParser, ListParser } from './ListParser';
+import { MetaDataParser } from "./MetaDataParser";
 import { error } from "console";
 
 export class DataRecorder {
@@ -19,12 +19,13 @@ export class DataRecorder {
     public filterZero: boolean;
     public tableSyntax: string;
     public listSyntax: string;
+    public metadataSyntax: string;
     public insertPlace: string;
     public insertPlaceStart: string;
     public insertPlaceEnd: string;
 
     // private classes
-    private Parser: TableParser | BulletListParser;
+    private Parser: TableParser | BulletListParser | MetaDataParser;
     
     constructor(       
         private plugin: WordflowTrackerPlugin,
@@ -44,6 +45,7 @@ export class DataRecorder {
         this.filterZero = this.plugin.settings.filterZero;
         this.tableSyntax = this.plugin.settings.tableSyntax;
         this.listSyntax = this.plugin.settings.bulletListSyntax;
+        this.metadataSyntax = this.plugin.settings.metadataSyntax;
         this.insertPlace = this.plugin.settings.insertPlace;
         this.insertPlaceStart = this.plugin.settings.insertPlaceStart;
         this.insertPlaceEnd = this.plugin.settings.insertPlaceEnd;
@@ -58,6 +60,9 @@ export class DataRecorder {
             break;
         case 'bulletList': 
             this.Parser = new BulletListParser(this);
+            break;
+        case 'metadata':
+            this.Parser = new MetaDataParser(this);
             break;
         default: 
             throw new Error('Record type is not defined in this recorder!')
@@ -81,7 +86,12 @@ export class DataRecorder {
         this.loadTrackerData(tracker);
         
         // Merge data
-        const mergedData = this.mergeData();
+        let mergedData: MergedData[];
+        if (this.recordType != 'metadata'){
+            mergedData = this.mergeData();
+        } else {
+            mergedData = this.mergeTotalData();
+        }
         
         // Generate and update content
         const newContent = this.Parser.generateContent(mergedData);
@@ -90,6 +100,9 @@ export class DataRecorder {
         case 'custom':
             await this.updateNoteToCustom(recordNote, newContent);
             break;
+        case 'yaml':
+            await this.updateNoteToYAML(recordNote, newContent);
+            break
         default: // default insert to bottom if not found
             await this.updateNoteToBottom(recordNote, newContent);
             break;
@@ -214,6 +227,23 @@ export class DataRecorder {
         return mergedData;
     }
     
+    private mergeTotalData(): MergedData[] {
+        const ExistingData = this.existingDataMap.get('|M|E|T|A|D|A|T|A|');
+        const MergedTotalData = new MergedData();
+        if (ExistingData){
+        MergedTotalData.totalEdits = ExistingData.totalEdits;
+        MergedTotalData.totalWords = ExistingData.totalWords;
+        } else {
+            MergedTotalData.totalEdits = 0;
+            MergedTotalData.totalWords = 0;
+        }
+        for (const [filePath, newData] of this.newDataMap.entries()) {
+            MergedTotalData.totalEdits += newData.editedTimes;
+            MergedTotalData.totalWords += newData.editedWords;
+        }
+
+        return [MergedTotalData];
+    }
 
 
     private async updateNoteToBottom(recordNote: TFile, newContent: string): Promise<void> {
@@ -260,6 +290,32 @@ export class DataRecorder {
         }
     }
 
+    private async updateNoteToYAML(recordNote: TFile, newContent: string): Promise<void> {
+        const noteContent = await this.plugin.app.vault.read(recordNote);
+        const existingContent: string | null = this.Parser.getContent(noteContent);
+        const [YAMLStartIndex, YAMLEndIndex] = this.Parser.getIndex(noteContent);
+
+        if (existingContent){
+//console.log('existingContent:',existingContent)
+            await this.plugin.app.vault.process(recordNote, (data) => {
+                return data.replace(existingContent, newContent.trim());
+            });
+        } else if(YAMLStartIndex != -1){ // no existing data in yaml
+            await this.plugin.app.vault.process(recordNote, (data) => {
+                const dataLines = data.split('\n');
+                // Insert the new content before the closing '---' line
+                dataLines.splice(YAMLEndIndex, 0, newContent.trimStart());
+//console.log('datalines:',dataLines)
+                return dataLines.join('\n');
+            });
+        } else { // no yaml, create one
+            await this.plugin.app.vault.process(recordNote, (data) => {
+                const yamlHeader = '---\n' + newContent.trim() + '\n---\n';
+                return yamlHeader + data;
+            });
+        }
+    }
+
 }
 
 // Class to represent data from existing records
@@ -269,6 +325,8 @@ export class ExistingData {
     editedWords: number;
     editedTimes: number;
     editedPercentage: string;
+    totalWords: number;
+    totalEdits: number;
     
     constructor() {
         this.lastModifiedTime = null;
@@ -344,6 +402,8 @@ export class MergedData {
     editedPercentage: string;
     docLength: number;
     isNew: boolean;
+    totalWords: number;
+    totalEdits: number;
     
     constructor(newData?: NewData, existingData?: ExistingData) {
         if (newData) {
@@ -363,12 +423,12 @@ export class MergedData {
             this.editedPercentage = existingData.editedPercentage;
             this.isNew = false;
         } else {
-            throw new Error("MergedData requires either newData or existingData");
+            this.filePath = '|M|E|T|A|D|A|T|A|';
         }
     }
     
     // Merge existing data into this record
-    mergeWith(existingData: ExistingData): void {
+    public mergeWith(existingData: ExistingData): void {
         // Add to accumulating fields
         this.editedWords += existingData.editedWords;
         this.editedTimes += existingData.editedTimes;

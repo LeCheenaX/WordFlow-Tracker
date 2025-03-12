@@ -16,6 +16,7 @@ export interface WordflowSettings {
 	recordType: string;
 	tableSyntax: string;
 	bulletListSyntax: string;
+	metadataSyntax: string;
 	timeFormat: string;
 	sortBy: string;
 	isDescend: boolean;
@@ -33,6 +34,7 @@ const DEFAULT_SETTINGS: WordflowSettings = {
 	insertPlace: 'bottom',
 	tableSyntax: `| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| [[\${modifiedNote}]] | \${editedWords} | \${lastModifiedTime} |`,
 	bulletListSyntax: `- \${modifiedNote}\n    - Edits: \${editedTimes}\n    - Edited Words: \${editedWords}`,
+	metadataSyntax: `Total edits: \${totalEdits}\nTotal words: \${totalWords}`,
 	timeFormat: 'YYYY-MM-DD HH:mm',
 	sortBy: 'lastModifiedTime',
 	isDescend: true,
@@ -437,6 +439,7 @@ class WordflowSettingTab extends PluginSettingTab {
 			.addDropdown(d => d
 				.addOption('table', 'table')
 				.addOption('bulletList', 'bullet list')
+				.addOption('metadata', 'metadata(Alpha)')
 				.setValue(this.plugin.settings.recordType) // need to show the modified value when next loading
 				.onChange(async (value) => {
 					this.plugin.settings.recordType = value;
@@ -452,6 +455,7 @@ class WordflowSettingTab extends PluginSettingTab {
 			.addDropdown(d => d
 				.addOption('bottom', 'bottom')
 				.addOption('custom', 'custom position')
+				.addOption('yaml','yaml/frontmatter(Alpha)')
 				.setValue(this.plugin.settings.insertPlace) // need to show the modified value when next loading
 				.onChange(async (value) => {
 					this.plugin.settings.insertPlace = value;
@@ -513,6 +517,14 @@ class WordflowSettingTab extends PluginSettingTab {
 						text.setValue(this.plugin.settings.bulletListSyntax);
 						text.onChange(async (value) => {
 							this.plugin.settings.bulletListSyntax = value;
+							await this.plugin.saveSettings();
+							this.plugin.DocRecorder.loadSettings();
+						})
+					}
+					if (this.plugin.settings.recordType == 'metadata'){
+						text.setValue(this.plugin.settings.metadataSyntax);
+						text.onChange(async (value) => {
+							this.plugin.settings.metadataSyntax = value;
 							await this.plugin.saveSettings();
 							this.plugin.DocRecorder.loadSettings();
 						})
@@ -605,6 +617,7 @@ class WordflowSettingTab extends PluginSettingTab {
 		switch (this.plugin.settings.recordType){
 			case 'table': this.SyntaxComponent.setValue(this.plugin.settings.tableSyntax); break;
 			case 'bulletList': this.SyntaxComponent.setValue(this.plugin.settings.bulletListSyntax); break;
+			case 'metadata': this.SyntaxComponent.setValue(this.plugin.settings.metadataSyntax); break;
 		}
 	};
 
