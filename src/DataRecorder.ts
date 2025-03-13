@@ -1,4 +1,4 @@
-import WordflowTrackerPlugin from "./main";
+import WordflowTrackerPlugin, { RecorderConfig } from "./main";
 import { DocTracker } from './DocTracker';
 import { Notice, TFile } from 'obsidian';
 import moment from 'moment';
@@ -30,12 +30,14 @@ export class DataRecorder {
     constructor(       
         private plugin: WordflowTrackerPlugin,
         private trackerMap: Map<string, DocTracker>, 
+        private config?: RecorderConfig 
         //private tracker?: DocTracker,
     ){
         this.loadSettings();
     }
 
     public loadSettings(){
+        if (!this.config){
         this.periodicNoteFolder = this.plugin.settings.periodicNoteFolder;
         this.periodicNoteFormat = this.plugin.settings.periodicNoteFormat;
         this.recordType = this.plugin.settings.recordType;
@@ -49,6 +51,21 @@ export class DataRecorder {
         this.insertPlace = this.plugin.settings.insertPlace;
         this.insertPlaceStart = this.plugin.settings.insertPlaceStart;
         this.insertPlaceEnd = this.plugin.settings.insertPlaceEnd;
+        } else {
+            this.periodicNoteFolder = this.config.periodicNoteFolder;
+            this.periodicNoteFormat = this.config.periodicNoteFormat;
+            this.recordType = this.config.recordType;
+            this.timeFormat = this.config.timeFormat;
+            this.sortBy = this.config.sortBy;
+            this.isDescend = this.config.isDescend;
+            this.filterZero = this.config.filterZero;
+            this.tableSyntax = this.config.tableSyntax;
+            this.listSyntax = this.config.bulletListSyntax;
+            this.metadataSyntax = this.config.metadataSyntax;
+            this.insertPlace = this.config.insertPlace;
+            this.insertPlaceStart = this.config.insertPlaceStart;
+            this.insertPlaceEnd = this.config.insertPlaceEnd;
+        }
         //new Notice(`Setting changed! Record type:${this.recordType}`, 3000)
         this.loadParsers();
     }
@@ -81,10 +98,10 @@ export class DataRecorder {
         
         // Load existing data
         await this.loadExistingData(recordNote);
-        
+//console.log('try to Load Tracker:',tracker)
         // Load tracker data
         this.loadTrackerData(tracker);
-        
+//console.log('newDataMap:',this.newDataMap)
         // Merge data
         let mergedData: MergedData[];
         if (this.recordType != 'metadata'){
@@ -92,10 +109,10 @@ export class DataRecorder {
         } else {
             mergedData = this.mergeTotalData();
         }
-        
+//console.log('mergedData:',mergedData)
         // Generate and update content
         const newContent = this.Parser.generateContent(mergedData);
-
+//console.log('newContent:',newContent)
         switch (this.insertPlace){
         case 'custom':
             await this.updateNoteToCustom(recordNote, newContent);
@@ -137,21 +154,22 @@ export class DataRecorder {
         this.existingDataMap = await this.Parser.extractData(noteContent);
     }
 
-    private loadTrackerData(p_tracker?:DocTracker): void {
+    private async loadTrackerData(p_tracker?:DocTracker): Promise<void> {
         this.newDataMap.clear();
         if (!p_tracker){
             for (const [filePath, tracker] of this.trackerMap.entries()) {
                 if (!this.filterZero || tracker.changedTimes!=0){
                 this.newDataMap.set(filePath, new NewData(tracker));
                 }
-                tracker.resetEdit();
+                await tracker.resetEdit();
             }
         } else {
+//console.log('trackerClosed:',p_tracker)
             if (!this.filterZero || p_tracker.changedTimes!=0){
             this.newDataMap.set(p_tracker.filePath, new NewData(p_tracker)); // only record given data
             }
 //console.log('newDataMap:', this.newDataMap);
-            p_tracker.resetEdit();
+            await p_tracker.resetEdit();
         }
     }
 
@@ -179,6 +197,7 @@ export class DataRecorder {
                 mergedDataMap.set(filePath, new MergedData(undefined, existingData));
             }
         }
+//console.log('mergedDataMap:',mergedDataMap)
         
         // Convert to array for sorting
         const mergedData = Array.from(mergedDataMap.values());

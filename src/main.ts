@@ -10,7 +10,8 @@ import { DataRecorder } from './DataRecorder';
 // Remember to rename these classes and interfaces!
 const DEBUG = true as const;
 
-export interface WordflowSettings {
+export interface WordflowMetaSettings {
+	name: string;
 	periodicNoteFolder: string;
 	periodicNoteFormat: string;
 	recordType: string;
@@ -27,7 +28,18 @@ export interface WordflowSettings {
 	insertPlaceEnd: string;
 }
 
+export interface WordflowSettings extends WordflowMetaSettings{
+	// for multiple recorders
+	Recorders: RecorderConfig[];
+}
+
+export interface RecorderConfig extends WordflowMetaSettings {
+	id: string;
+	name: string;
+}
+
 const DEFAULT_SETTINGS: WordflowSettings = {
+	name: 'Default Recorder',
 	periodicNoteFolder: '',
 	periodicNoteFormat: 'YYYY-MM-DD',
 	recordType: 'table',
@@ -42,6 +54,9 @@ const DEFAULT_SETTINGS: WordflowSettings = {
 	autoRecordInterval: '0', // disable
 	insertPlaceStart: '',
 	insertPlaceEnd: '',
+
+	// for multiple recorders
+	Recorders: [],
 }
 
 
@@ -52,11 +67,19 @@ export default class WordflowTrackerPlugin extends Plugin {
 	public trackerMap: Map<string, DocTracker> = new Map<string, DocTracker>(); // give up nested map
 	public statusBarTrackerEl: HTMLElement; // for status bar tracking
 	public statusBarContent: string; // for status bar content editing
-	public DocRecorder: DataRecorder;
+	public DocRecorders: DataRecorder[] = [];
 
 	async onload() {
 		await this.loadSettings();
-		this.DocRecorder = new DataRecorder(this, this.trackerMap);
+
+		const defaultRecorder = new DataRecorder(this, this.trackerMap);
+        this.DocRecorders.push(defaultRecorder);
+		for (const recorderConfig of this.settings.Recorders) {
+            const recorder = new DataRecorder(this, this.trackerMap, recorderConfig);
+            this.DocRecorders.push(recorder);
+        }
+
+
 		const debouncedHandler = this.instantDebounce(this.activeDocHandler.bind(this), 50);
 		// Warning: don't change the delay, we need 50ms delay to trigger activeDocHandler twice when opening new files. 
 //		if (DEBUG) console.log("Following files were opened:", this.potentialEditors.map(f => f)); 
@@ -66,7 +89,9 @@ export default class WordflowTrackerPlugin extends Plugin {
 			// Called when the user clicks the icon.
 			new Notice(`Try recording wordflows to periodic note!`, 3000);
 			
-			this.DocRecorder.record();
+			for (const DocRecorder of this.DocRecorders) {
+				DocRecorder.record();
+			}
 
 		});
 		// Perform additional things with the ribbon
@@ -80,7 +105,9 @@ export default class WordflowTrackerPlugin extends Plugin {
 			id: 'record-wordflows-from-edited-notes-to-periodic-note',
 			name: 'Record wordflows from edited notes to periodic note',
 			callback: () => {
-				this.DocRecorder.record();
+				for (const DocRecorder of this.DocRecorders) {
+                    DocRecorder.record();
+                }
 				new Notice(`Try recording wordflows to periodic note!`, 3000);
 			}
 		});
@@ -165,7 +192,9 @@ export default class WordflowTrackerPlugin extends Plugin {
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		if (this.settings.autoRecordInterval && Number(this.settings.autoRecordInterval) != 0){
 			this.registerInterval(window.setInterval(() => {
-				this.DocRecorder.record();
+				for (const DocRecorder of this.DocRecorders) {
+                    DocRecorder.record();
+                }
 				new Notice(`Try recording wordflows to periodic note!`, 3000);
 			}, Number(this.settings.autoRecordInterval) * 1000));
 		}
@@ -197,7 +226,9 @@ export default class WordflowTrackerPlugin extends Plugin {
 				}
 				else{
 					tracker.deactivate();
-					this.DocRecorder.record(tracker);
+					for (const DocRecorder of this.DocRecorders) {
+						DocRecorder.record(tracker);
+					}
 					this.trackerMap.delete(filePath);
 //					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
 				}
@@ -214,7 +245,9 @@ export default class WordflowTrackerPlugin extends Plugin {
 				if(potentialEditors.has(filePath)) tracker.deactivate();
 				else{
 					tracker.deactivate();
-					this.DocRecorder.record(tracker);
+					for (const DocRecorder of this.DocRecorders) {
+						DocRecorder.record(tracker);
+					}
 					this.trackerMap.delete(filePath);
 //					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
 				}
@@ -358,16 +391,18 @@ class ConfirmationModal extends Modal {
 	
 	onOpen() {
 	    const { contentEl } = this;
+		this.containerEl.addClass("confirm-modal");
 		
 		contentEl.createEl("h3", { 
 		  text: "⚠️ Confirmation ",
 		  cls: "confirm-title" 
 		});
 		
-		contentEl.createEl("p", {
-		  text: this.message,
-		  cls: "confirm-message"
+		const messagePara = contentEl.createEl("p", {
+			cls: "confirm-message"
 		});
+
+		messagePara.textContent = this.message;
 	
 		const buttonContainer = contentEl.createDiv("confirm-cancel-buttons");
 		
@@ -393,6 +428,10 @@ class ConfirmationModal extends Modal {
 
 class WordflowSettingTab extends PluginSettingTab {
 	plugin: WordflowTrackerPlugin;
+	// for multiple recorders
+	private activeRecorderIndex: number = 0; // 0 = default recorder
+	private recorderTabs: HTMLElement;
+	private settingsContainer: HTMLElement;
 
 	constructor(app: App, plugin: WordflowTrackerPlugin) {
 		super(app, plugin);
@@ -401,140 +440,348 @@ class WordflowSettingTab extends PluginSettingTab {
 
 	display(): void {
 		const {containerEl} = this;
-
 		containerEl.empty();
-		containerEl.classList.add('wordflow-setting-tab'); // for styles.css
+		containerEl.classList.add('wordflow-setting-tab');
 		
-		new Setting(containerEl)
+		// Create recorder management section
+		this.createRecorderManagementSection(containerEl);
+		
+		// Add separator
+		//containerEl.createEl('hr', { cls: 'settings-separator' });
+		
+		// Create a container for the recorder settings that won't be cleared
+		this.settingsContainer = containerEl.createDiv('recorder-settings-container');
+		
+		// Display settings for active recorder
+		this.displayRecorderSettings(this.activeRecorderIndex);
+	}
+
+	private createRecorderManagementSection(containerEl: HTMLElement): void {
+		
+		// Create recorder selection
+		const recorderSelectionContainer = containerEl.createDiv('recorder-selection-container');
+		
+		// Show currently active recorder
+		let activeRecorderName = this.plugin.settings.name;
+		if (this.activeRecorderIndex > 0) {
+			activeRecorderName = this.plugin.settings.Recorders[this.activeRecorderIndex - 1].name;
+		}
+		
+		const recorderActions = new Setting(recorderSelectionContainer)
+			.setName('Current Recorder')
+			.setDesc('Select which recorder configuration to edit.\nYou can add new recorders to save different sets of statistics to different locations.')
+			.addButton(btn => btn
+				.setButtonText('Add recorder')
+				.setIcon('plus')
+				.setTooltip('Add recorder')
+				//.setCta()
+				.onClick( () => {
+					new ConfirmationModal(
+						this.app,
+						'Please ensure that there are no duplicate record type per note, or undefined behavior will occur!\n\nExample allowed✅:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table;\n\tRecorder2: Periodic note format = YYYY-MM-DD; Record type = bullet list;\nExample allowed✅:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table;\n\tRecorder2: Periodic note format = YYYY-MM; Record type = table;\nExample disallowed❌:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table; Insert to position = bottom;\n\tRecorder2: Periodic note format = YYYY-MM-DD; Record type = table; Insert to position = custom;',
+						async () => {this.createNewRecorder();}
+					).open()
+				})	
+			)
+			.addDropdown(dropdown => {
+				// Add default recorder
+				dropdown.addOption("0", this.plugin.settings.name);
+				
+				// Add additional recorders
+				this.plugin.settings.Recorders.forEach((recorder, index) => {
+					dropdown.addOption((index + 1).toString(), recorder.name);
+				});
+				
+				// Set current selection
+				dropdown.setValue(this.activeRecorderIndex.toString());
+				
+				// Handle selection change
+				dropdown.onChange(value => {
+					this.setActiveRecorder(parseInt(value));
+				});
+			})
+			.addButton(btn => btn
+				.setButtonText('Rename')
+				.setIcon('pencil')
+				.setTooltip('Rename')
+				.onClick(() => {
+					this.renameRecorder(this.activeRecorderIndex -1); 
+				})
+			);
+	
+		// Only show rename/delete for additional recorders
+		if (this.activeRecorderIndex > 0) {
+			recorderActions
+				.addButton(btn => btn
+					.setButtonText('Delete')
+					.setTooltip('Delete')
+					.setIcon('trash')
+					.setWarning()
+					.onClick(() => {
+						this.removeRecorder(this.activeRecorderIndex - 1);
+					})
+				);
+		}
+
+		new Setting(recorderSelectionContainer)
+			.setName('Reset all settings')
+			.setDesc('Reset all settings to the default value.')
+			.addButton(btn => btn
+				  .setButtonText('Reset settings')
+				  .setWarning()
+				  //.setIcon('alert-triangle')
+				  .onClick(() => this.confirmReset())
+			)
+			
+		
+		// Create title for settings section
+		containerEl.createEl('h3', { 
+			text: `⏺️${activeRecorderName} settings`,
+			cls: 'recorder-settings-heading'
+		});
+	}
+
+	private setActiveRecorder(index: number) {
+        this.activeRecorderIndex = index;
+        this.display();
+    }
+
+	private async createNewRecorder() {
+        // Create new recorder with default settings and unique ID
+        const newId = `recorder-${Date.now()}`;
+        const newRecorder: RecorderConfig = {
+            id: newId,
+            name: `Recorder ${this.plugin.settings.Recorders.length + 1}`,
+            periodicNoteFolder: DEFAULT_SETTINGS.periodicNoteFolder,
+            periodicNoteFormat: DEFAULT_SETTINGS.periodicNoteFormat,
+            recordType: DEFAULT_SETTINGS.recordType,
+            tableSyntax: DEFAULT_SETTINGS.tableSyntax,
+            bulletListSyntax: DEFAULT_SETTINGS.bulletListSyntax,
+            metadataSyntax: DEFAULT_SETTINGS.metadataSyntax,
+            timeFormat: DEFAULT_SETTINGS.timeFormat,
+            sortBy: DEFAULT_SETTINGS.sortBy,
+            isDescend: DEFAULT_SETTINGS.isDescend,
+            filterZero: DEFAULT_SETTINGS.filterZero,
+            autoRecordInterval: DEFAULT_SETTINGS.autoRecordInterval,
+            insertPlace: DEFAULT_SETTINGS.insertPlace,
+            insertPlaceStart: DEFAULT_SETTINGS.insertPlaceStart,
+            insertPlaceEnd: DEFAULT_SETTINGS.insertPlaceEnd
+        };
+
+		this.plugin.settings.Recorders.push(newRecorder);
+        await this.plugin.saveSettings();
+        
+        // Create a new recorder instance
+        const recorder = new DataRecorder(this.plugin, this.plugin.trackerMap, newRecorder);
+        this.plugin.DocRecorders.push(recorder);
+        
+        // Switch to the new recorder tab
+        this.setActiveRecorder(this.plugin.settings.Recorders.length);
+    }	
+
+	private async renameRecorder(index: number) {
+		if (index == -1) { // for default recorder
+			const modal = new RecorderRenameModal(
+				this.app, 
+				this.plugin.settings.name,
+				async (newName) => {
+					this.plugin.settings.name = newName;
+					await this.plugin.saveSettings();
+					this.display();
+				});
+			modal.open();
+		} 
+		else {
+			const recorder = this.plugin.settings.Recorders[index];
+			const modal = new RecorderRenameModal(this.app, recorder.name, async (newName) => {
+				this.plugin.settings.Recorders[index].name = newName;
+				await this.plugin.saveSettings();
+				this.display();
+			});
+			modal.open();
+		}
+    }
+    
+    private async removeRecorder(index: number) {
+        const modal = new ConfirmationModal(
+            this.app,
+            `Are you sure you want to remove "${this.plugin.settings.Recorders[index].name}"?`,
+            async () => {
+                // Remove recorder config
+                this.plugin.settings.Recorders.splice(index, 1);
+                await this.plugin.saveSettings();
+                
+                // Remove recorder instance
+                this.plugin.DocRecorders.splice(index + 1, 1);
+                
+                // Reset active tab if needed
+                if (this.activeRecorderIndex > this.plugin.settings.Recorders.length) {
+                    this.activeRecorderIndex = 0;
+                }
+                
+                this.display();
+            }
+        );
+        modal.open();
+    }
+
+	private displayRecorderSettings(index: number) {
+        this.settingsContainer.empty();
+        
+        // Get the correct settings object based on the active index
+        let settings: any;
+        let recorderInstance: DataRecorder;
+        
+        if (index === 0) {
+            // Default recorder uses main settings
+            settings = this.plugin.settings;
+            recorderInstance = this.plugin.DocRecorders[0];
+        } else {
+            // Additional recorders use their own config
+            settings = this.plugin.settings.Recorders[index - 1];
+            recorderInstance = this.plugin.DocRecorders[index];
+        }
+        
+        // Display all settings using the selected configuration
+        this.createRecorderSettingsUI(settings, recorderInstance, index);
+    }
+
+	private createRecorderSettingsUI(settings: any, recorderInstance: DataRecorder, index: number) {
+		const container = this.settingsContainer; // do not use containerEl, instead, use container to pass the new container element
+
+		container.classList.add('wordflow-setting-tab'); // for styles.css
+
+		new Setting(container).setName('Periodic note to record').setHeading();
+		new Setting(container)
 			.setName('Periodic note folder')
 			.setDesc('Set the folder for daily notes or weekly note to place, which should correspond to the same folder of Obsidian daily note plugin and of templater plugin(if installed).')
 			.addText(text => text
 				.setPlaceholder('set daily note folder')
-				.setValue(this.plugin.settings.periodicNoteFolder)
+				.setValue(settings.periodicNoteFolder)
 				.onChange(async (value) => {
-					this.plugin.settings.periodicNoteFolder = normalizePath(value);
+					settings.periodicNoteFolder = normalizePath(value);
 					await this.plugin.saveSettings();
-					this.plugin.DocRecorder.loadSettings();
+					recorderInstance.loadSettings();
 				})
 			);
 
-		new Setting(containerEl)
+		new Setting(container)
 			.setName('Periodic note format')
 			.setDesc('Set the file name for newly created daily notes or weekly note, which should correspond to the same format setting of Obsidian daily note plugin and of templater plugin(if installed).')
 			.addText(text => text
 				.setPlaceholder('YYYY-MM-DD')
-				.setValue(this.plugin.settings.periodicNoteFormat)
+				.setValue(settings.periodicNoteFormat)
 				.onChange(async (value) => {
-					this.plugin.settings.periodicNoteFormat = value;
+					settings.periodicNoteFormat = value;
 					await this.plugin.saveSettings();
-					this.plugin.DocRecorder.loadSettings();
+					recorderInstance.loadSettings();
 				})
 			);
 
-		new Setting(containerEl).setName('Recording').setHeading();
+		new Setting(container).setName('Recording contents setting').setHeading();
 		
-		new Setting(containerEl)
+		new Setting(container)
 			.setName('Record content type')
 			.setDesc('Select a type of content to record on specified notes.')
 			.addDropdown(d => d
 				.addOption('table', 'table')
 				.addOption('bulletList', 'bullet list')
 				.addOption('metadata', 'metadata(Alpha)')
-				.setValue(this.plugin.settings.recordType) // need to show the modified value when next loading
+				.setValue(settings.recordType) // need to show the modified value when next loading
 				.onChange(async (value) => {
-					this.plugin.settings.recordType = value;
+					settings.recordType = value;
 					await this.plugin.saveSettings();
-					await this.updateSyntax(); // warning: must to be put after saving
-					await this.updateInsertPlace();
+					await this.updateSyntax(settings); // warning: must to be put after saving
+					await this.updateInsertPlace(settings);
 					// Show or hide subsettings based on dropdown value
 					this.toggleSortByVisibility(value !== 'metadata');
 					this.toggleMTimeVisibility(value !== 'metadata');
-					this.plugin.DocRecorder.loadSettings();
+					recorderInstance.loadSettings();
 				})
 			);
 
 		this.makeMultilineTextSetting(
-			new Setting(containerEl)
+			new Setting(container)
 				.setName('Wordflow recording syntax')
 				.setDesc('Modified the syntax with \'${}\' syntax, see doc for supported regular expressions.\n')
 				.addTextArea(text => {
 					this.SyntaxComponent = text;
-					if (this.plugin.settings.recordType == 'table'){
-						text.setValue(this.plugin.settings.tableSyntax);
+					if (settings.recordType == 'table'){
+						text.setValue(settings.tableSyntax);
 						text.onChange(async (value) => {
-							this.plugin.settings.tableSyntax = value;
+							settings.tableSyntax = value;
 							await this.plugin.saveSettings();
-							this.plugin.DocRecorder.loadSettings();
+							recorderInstance.loadSettings();
 						})
 					}
-					if (this.plugin.settings.recordType == 'bulletList'){
-						text.setValue(this.plugin.settings.bulletListSyntax);
+					if (settings.recordType == 'bulletList'){
+						text.setValue(settings.bulletListSyntax);
 						text.onChange(async (value) => {
-							this.plugin.settings.bulletListSyntax = value;
+							settings.bulletListSyntax = value;
 							await this.plugin.saveSettings();
-							this.plugin.DocRecorder.loadSettings();
+							recorderInstance.loadSettings();
 						})
 					}
-					if (this.plugin.settings.recordType == 'metadata'){
-						text.setValue(this.plugin.settings.metadataSyntax);
+					if (settings.recordType == 'metadata'){
+						text.setValue(settings.metadataSyntax);
 						text.onChange(async (value) => {
-							this.plugin.settings.metadataSyntax = value;
+							settings.metadataSyntax = value;
 							await this.plugin.saveSettings();
-							this.plugin.DocRecorder.loadSettings();
+							recorderInstance.loadSettings();
 						})
 					}				
 				})
 		);	
 		
-		new Setting(containerEl)
+		new Setting(container)
 			.setName('Insert to position')
 			.setDesc('Insert to this position if no previous record exist. If using a custom position, the start position and end position must exist and be unique in periodic note! Make sure your template is correctly applied while creating new periodic note. ')
 			.addDropdown(d => {
 				this.InsertPlaceComponent = d;
-			    if (this.plugin.settings.recordType === 'metadata') {
+			    if (settings.recordType === 'metadata') {
 					d.addOption('yaml', 'yaml/frontmatter(Alpha)');
 				} else {
 					d.addOption('bottom', 'bottom');
 					d.addOption('custom', 'custom position');
 				}
-			   d.setValue(this.plugin.settings.insertPlace)
+			   d.setValue(settings.insertPlace)
 				.onChange(async (value) => {
-					this.plugin.settings.insertPlace = value;
+					settings.insertPlace = value;
 					await this.plugin.saveSettings();
 					// Show or hide subsettings based on dropdown value
 					this.toggleCustomPositionSettings(value === 'custom');
-					this.plugin.DocRecorder.loadSettings();
+					recorderInstance.loadSettings();
 				})
 			});
 
-		const customSettingsContainer = containerEl.createDiv();
+		const customSettingsContainer = container.createDiv();
 		customSettingsContainer.id = "custom-position-settings";
 		// Add custom CSS to remove separation between settings
 		customSettingsContainer.addClass('wordflow-custom-container');
 		// Initially set visibility based on current value
-        this.toggleCustomPositionSettings(this.plugin.settings.insertPlace === 'custom');
+        this.toggleCustomPositionSettings(settings.insertPlace === 'custom');
 
 		const insertPlaceStart = new Setting(customSettingsContainer)
             .setName('Start position')
             .setDesc('The records should be inserted after this content. Content between start position and end position would be replaced during recording. ')
             .addTextArea(text => text
-                .setValue(this.plugin.settings.insertPlaceStart || '')
+                .setValue(settings.insertPlaceStart || '')
 				.setPlaceholder('Replace with your periodic note content that exist in the periodic note template.\nFor example: ## Modified Note')
                 .onChange(async (value) => {
-                    this.plugin.settings.insertPlaceStart = value;
+                    settings.insertPlaceStart = value;
                     await this.plugin.saveSettings();
-                    this.plugin.DocRecorder.loadSettings();
+                    recorderInstance.loadSettings();
                 }));
 		const insertPlaceEnd = new Setting(customSettingsContainer)
 			.setName('End position')
             .setDesc('The records should be inserted before this content. Content between start position and end position would be replaced during recording. ')
 			.addTextArea(text => text
-				.setValue(this.plugin.settings.insertPlaceEnd || '')
+				.setValue(settings.insertPlaceEnd || '')
 				.setPlaceholder('Replace with your periodic note content that exist in the periodic note template.\nFor example: ## The next title after \'## Modified Note\'. ')
 				.onChange(async (value) => {
-					this.plugin.settings.insertPlaceEnd = value;
+					settings.insertPlaceEnd = value;
 					await this.plugin.saveSettings();
-					this.plugin.DocRecorder.loadSettings();
+					recorderInstance.loadSettings();
 				}));
 
 		this.makeMultilineTextSetting(insertPlaceStart);
@@ -542,12 +789,12 @@ class WordflowSettingTab extends PluginSettingTab {
 
 		
 		
-		const sortBySettingsContainer = containerEl.createDiv();
+		const sortBySettingsContainer = container.createDiv();
 		sortBySettingsContainer.id = "sort-by-settings";
 		// Add custom CSS to remove separation between settings
 		sortBySettingsContainer.addClass('wordflow-sortby-container');
 		// Initially set visibility based on current value
-        this.toggleSortByVisibility(this.plugin.settings.recordType !== 'metadata');
+        this.toggleSortByVisibility(settings.recordType !== 'metadata');
 
 		const sortBySetting = new Setting(sortBySettingsContainer)
 			.setName('Sort by')
@@ -558,110 +805,98 @@ class WordflowSettingTab extends PluginSettingTab {
 				.addOption('editedTimes', 'editedTimes')
 				.addOption('editedPercentage', 'editedPercentage')
 				.addOption('modifiedNote', 'modifiedNote')
-				.setValue(this.plugin.settings.sortBy)
+				.setValue(settings.sortBy)
 				.onChange(async (value) => {
-					this.plugin.settings.sortBy = value;
+					settings.sortBy = value;
 					await this.plugin.saveSettings();
-					this.plugin.DocRecorder.loadSettings();
+					recorderInstance.loadSettings();
 				})
 			)
 			.addDropdown(d => d
 				.addOption('true', 'Descend')
 				.addOption('false', 'Ascend')
-				.setValue((this.plugin.settings.isDescend).toString())
+				.setValue((settings.isDescend).toString())
 				.onChange(async (value) => {
-					this.plugin.settings.isDescend = (value === 'true')?true:false;
+					settings.isDescend = (value === 'true')?true:false;
 					await this.plugin.saveSettings();
-					this.plugin.DocRecorder.loadSettings();
+					recorderInstance.loadSettings();
 				})
 			);
 
-		const mTimeFormatSettingsContainer = containerEl.createDiv();
+		const mTimeFormatSettingsContainer = container.createDiv();
 		mTimeFormatSettingsContainer.id = "mtime-format-settings";
 		// Add custom CSS to remove separation between settings
 		mTimeFormatSettingsContainer.addClass('wordflow-mtime-format-container');
 		// Initially set visibility based on current value
-		this.toggleMTimeVisibility(this.plugin.settings.recordType !== 'metadata');
+		this.toggleMTimeVisibility(settings.recordType !== 'metadata');
 
 		const mTimeFormatSetting = new Setting(mTimeFormatSettingsContainer)
 			.setName('Last modified time format')
 			.setDesc('Set the format of \'${lastModifiedTime}\' to record on notes.')
 			.addText(text => text
 				.setPlaceholder('YYYY-MM-DD | hh:mm')
-				.setValue(this.plugin.settings.timeFormat)
+				.setValue(settings.timeFormat)
 				.onChange(async (value) => {
-					this.plugin.settings.timeFormat = value;
+					settings.timeFormat = value;
 					await this.plugin.saveSettings();
-					this.plugin.DocRecorder.loadSettings();
+					recorderInstance.loadSettings();
 				})
 			);
-
-		new Setting(containerEl)
+			
+		new Setting(container).setName('Recording options').setHeading();
+		new Setting(container)
 			.setName('Filter out non-modified notes')
 			.setDesc('Whether the opened notes that are not modified should be excluded while recording. If not excluded, you will get any opened file under editing mode recorded. ')
 			.addToggle(t => t
-				.setValue(this.plugin.settings.filterZero)
+				.setValue(settings.filterZero)
 				.onChange(async (value) => {
-					this.plugin.settings.filterZero = value;
+					settings.filterZero = value;
 					await this.plugin.saveSettings();			
-					this.plugin.DocRecorder.loadSettings();
+					recorderInstance.loadSettings();
 				})
 			);
 		
-		new Setting(containerEl)
+		new Setting(container)
 			.setName('Automatic recording interval')
 			.setDesc('Set the interval in seconds, influencing when the plugin should save all tracked records and implement them on periodic notes. Set to 0 to disable. ')
 			.addText(text => text
 				.setPlaceholder('Set to 0 to disable')
-				.setValue(this.plugin.settings.autoRecordInterval)
+				.setValue(settings.autoRecordInterval)
 				.onChange(async (value) => {
-					this.plugin.settings.autoRecordInterval = value;
+					settings.autoRecordInterval = value;
 					await this.plugin.saveSettings();
-					this.plugin.DocRecorder.loadSettings();
+					recorderInstance.loadSettings();
 				})
 			);
-
-		new Setting(containerEl).setName('Restore options').setHeading();
-
-		new Setting(containerEl)
-			.setName('Reset settings')
-			.setDesc('Reset all settings to the default value.')
-			.addButton(btn => btn
-				  .setButtonText('Reset settings')
-				  .setWarning()
-				  //.setIcon('alert-triangle')
-				  .onClick(() => this.confirmReset())
-			)
 	}
 
 	private SyntaxComponent?: TextAreaComponent;
 
-	private async updateSyntax() {
+	private async updateSyntax(settings: any) {
 		if (!this.SyntaxComponent) return;
-		switch (this.plugin.settings.recordType){
-			case 'table': this.SyntaxComponent.setValue(this.plugin.settings.tableSyntax); break;
-			case 'bulletList': this.SyntaxComponent.setValue(this.plugin.settings.bulletListSyntax); break;
-			case 'metadata': this.SyntaxComponent.setValue(this.plugin.settings.metadataSyntax); break;
+		switch (settings.recordType){
+			case 'table': this.SyntaxComponent.setValue(settings.tableSyntax); break;
+			case 'bulletList': this.SyntaxComponent.setValue(settings.bulletListSyntax); break;
+			case 'metadata': this.SyntaxComponent.setValue(settings.metadataSyntax); break;
 		}
 	};
 
 	private InsertPlaceComponent?: DropdownComponent;
-	private async updateInsertPlace(): Promise<void>{
+	private async updateInsertPlace(settings: any): Promise<void>{
 		if (!this.InsertPlaceComponent) return;
 		this.InsertPlaceComponent.selectEl.innerHTML = '';
-		if (this.plugin.settings.recordType == 'metadata'){
+		if (settings.recordType == 'metadata'){
 			this.InsertPlaceComponent.addOption('yaml', 'yaml/frontmatter(Alpha)');
 			this.InsertPlaceComponent.setValue('yaml');
-			this.plugin.settings.insertPlace = 'yaml';
+			settings.insertPlace = 'yaml';
 		} else {
 			this.InsertPlaceComponent.addOption('bottom', 'bottom');
         	this.InsertPlaceComponent.addOption('custom', 'custom position');
 			this.InsertPlaceComponent.setValue('bottom');
-			this.plugin.settings.insertPlace = 'bottom';
+			settings.insertPlace = 'bottom';
 		}
 		this.toggleCustomPositionSettings(false);
 		await this.plugin.saveSettings();
-		this.plugin.DocRecorder.loadSettings();
 	}
 
 	private toggleCustomPositionSettings(show: boolean) {
@@ -720,4 +955,52 @@ class WordflowSettingTab extends PluginSettingTab {
 		  new Notice('❌ Could not reset settings! Check console!', 5000);
 		}
 	  }
+}
+
+class RecorderRenameModal extends Modal {
+    private currentName: string;
+    private onSubmit: (newName: string) => Promise<void>;
+
+    constructor(app: App, currentName: string, onSubmit: (newName: string) => Promise<void>) {
+        super(app);
+        this.currentName = currentName;
+        this.onSubmit = onSubmit;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        
+        contentEl.createEl("h3", { text: "Rename Recorder" });
+        
+        const inputContainer = contentEl.createDiv();
+        const nameInput = inputContainer.createEl("input", { 
+            type: "text",
+            value: this.currentName
+        });
+        nameInput.style.width = "100%";
+        nameInput.focus();
+        
+        const buttonContainer = contentEl.createDiv("recorder-rename-buttons");
+        buttonContainer.style.marginTop = "1rem";
+        
+        new ButtonComponent(buttonContainer)
+            .setButtonText("Save")
+            .setCta()
+            .onClick(async () => {
+                const newName = nameInput.value.trim();
+                if (newName) {
+                    await this.onSubmit(newName);
+                    this.close();
+                }
+            });
+            
+        new ButtonComponent(buttonContainer)
+            .setButtonText("Cancel")
+            .onClick(() => this.close());
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
 }
