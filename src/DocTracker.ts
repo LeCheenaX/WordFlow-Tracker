@@ -197,7 +197,8 @@ export class DocTracker{
         }       
     }
 
-    public resetEdit(){
+    public async resetEdit(){
+        await sleep(500); // for multiple recorders to record before cleared.
         this.changedTimes = 0;
         this.changedWords = 0;
     }
