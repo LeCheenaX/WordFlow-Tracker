@@ -2,14 +2,47 @@
 .recorder-actions-container {
     margin-bottom: 16px;
 }
-
+/*
 .settings-separator {
-    margin: 20px 0;
-}
+    margin: 11.25px 0;
+}*/
 
 .recorder-settings-heading {
-    margin-bottom: 16px;
-    color: var(--text-accent);
+    margin-bottom: 11.25px;
+    /*color: var(--text-accent);*/
+    color: rgb(67, 132, 216);
+}
+
+.confirm-modal .modal {
+    width: auto;
+    max-width: 80vw;
+    min-width: 300px;
+    margin: 0 auto;
+}
+
+.confirm-modal .modal-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.confirm-modal .confirm-message {
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+.confirm-modal .confirm-cancel-buttons button {
+    flex: 1;
+    max-width: 48%;
+}
+
+.confirm-modal .confirm-cancel-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 20px;
+    width: 100%;
+    gap: 16px;
+    flex-direction: row-reverse;
 }
 
 .wordflow-setting-tab .wordflow-multiline-setting {
