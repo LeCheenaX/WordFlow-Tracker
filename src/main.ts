@@ -739,7 +739,7 @@ class WordflowSettingTab extends PluginSettingTab {
 			.addDropdown(d => {
 				this.InsertPlaceComponent = d;
 			    if (settings.recordType === 'metadata') {
-					d.addOption('yaml', 'yaml/frontmatter(Alpha)');
+					d.addOption('yaml', 'yaml(frontmatter)');
 				} else {
 					d.addOption('bottom', 'bottom');
 					d.addOption('custom', 'custom position');
