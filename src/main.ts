@@ -469,20 +469,22 @@ class WordflowSettingTab extends PluginSettingTab {
 		
 		const recorderActions = new Setting(recorderSelectionContainer)
 			.setName('Current Recorder')
-			.setDesc('Select which recorder configuration to edit.\nYou can add new recorders to save different sets of statistics to different locations.')
-			.addButton(btn => btn
-				.setButtonText('Add recorder')
-				.setIcon('plus')
-				.setTooltip('Add recorder')
-				//.setCta()
-				.onClick( () => {
-					new ConfirmationModal(
-						this.app,
-						'Please ensure that there are no duplicate record type per note, or undefined behavior will occur!\n\nExample allowed✅:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table;\n\tRecorder2: Periodic note format = YYYY-MM-DD; Record type = bullet list;\nExample allowed✅:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table;\n\tRecorder2: Periodic note format = YYYY-MM; Record type = table;\nExample disallowed❌:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table; Insert to position = bottom;\n\tRecorder2: Periodic note format = YYYY-MM-DD; Record type = table; Insert to position = custom;',
-						async () => {this.createNewRecorder();}
-					).open()
-				})	
-			)
+			.setDesc('Select which recorder configuration to edit.\nYou can add new recorders to save different sets of statistics to different locations.');
+			// Only show rename/delete for additional recorders
+		if (this.activeRecorderIndex > 0) {
+			recorderActions
+				.addButton(btn => btn
+					.setButtonText('Delete')
+					.setTooltip('Delete')
+					.setIcon('trash')
+					.setWarning()
+					.onClick(() => {
+						this.removeRecorder(this.activeRecorderIndex - 1);
+					})
+				);
+		}
+
+		recorderActions
 			.addDropdown(dropdown => {
 				// Add default recorder
 				dropdown.addOption("0", this.plugin.settings.name);
@@ -507,21 +509,20 @@ class WordflowSettingTab extends PluginSettingTab {
 				.onClick(() => {
 					this.renameRecorder(this.activeRecorderIndex -1); 
 				})
+			)
+			.addButton(btn => btn
+				.setButtonText('Add recorder')
+				.setIcon('plus')
+				.setTooltip('Add recorder')
+				//.setCta()
+				.onClick( () => {
+					new ConfirmationModal(
+						this.app,
+						'Please ensure that there are no duplicate record type per note, or undefined behavior will occur!\n\nExample allowed✅:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table;\n\tRecorder2: Periodic note format = YYYY-MM-DD; Record type = bullet list;\nExample allowed✅:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table;\n\tRecorder2: Periodic note format = YYYY-MM; Record type = table;\nExample disallowed❌:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table; Insert to position = bottom;\n\tRecorder2: Periodic note format = YYYY-MM-DD; Record type = table; Insert to position = custom;',
+						async () => {this.createNewRecorder();}
+					).open()
+				})	
 			);
-	
-		// Only show rename/delete for additional recorders
-		if (this.activeRecorderIndex > 0) {
-			recorderActions
-				.addButton(btn => btn
-					.setButtonText('Delete')
-					.setTooltip('Delete')
-					.setIcon('trash')
-					.setWarning()
-					.onClick(() => {
-						this.removeRecorder(this.activeRecorderIndex - 1);
-					})
-				);
-		}
 
 		new Setting(recorderSelectionContainer)
 			.setName('Reset all settings')

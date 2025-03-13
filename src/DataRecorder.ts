@@ -128,9 +128,10 @@ export class DataRecorder {
 
     private async getOrCreateRecordNote(): Promise<TFile | null> {
         const recordNoteName = moment().format(this.periodicNoteFormat);
-        const recordNotePath = this.periodicNoteFolder + '/' + recordNoteName + '.md';
+        let recordNotePath = (this.periodicNoteFolder.trim() == '')? this.periodicNoteFolder: this.periodicNoteFolder+'/';
+        recordNotePath += recordNoteName + '.md';
         let recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
-        
+console.log(recordNotePath)
         if (!recordNote) {
             try {
                 await this.plugin.app.vault.create(recordNotePath, '');
@@ -139,6 +140,7 @@ export class DataRecorder {
                 recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
                 new Notice(`Periodic note ${recordNotePath} doesn't exist!\n Auto created under ${this.periodicNoteFolder}. `, 3000)
             } catch (error) {
+                new Error(`Failed to create record note: ${error}`)
                 console.error("Failed to create record note:", error);
                 return null;
             }
