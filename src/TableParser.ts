@@ -79,7 +79,7 @@ export class TableParser{
                     tableStartIndex = i;
                     
                     // Now find the end of the table
-                    for (let j = tableStartIndex + 2; j < lines.length; j++) {
+                    for (let j = tableStartIndex + 2; j <= lines.length; j++) {
                         // Case1: Table ends at a blank line or end of document
                         if (!lines[j] || lines[j].trim() === '') {
                             tableEndIndex = j - 1;
@@ -104,7 +104,7 @@ export class TableParser{
                 }
             }
         }
-
+        console.log('tablestart:',tableStartIndex,'tableend:', tableEndIndex)
         return [tableStartIndex, tableEndIndex];
     }
 

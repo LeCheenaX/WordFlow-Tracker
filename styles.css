@@ -1,3 +1,17 @@
+.recorder-selection-container,
+.recorder-actions-container {
+    margin-bottom: 16px;
+}
+
+.settings-separator {
+    margin: 20px 0;
+}
+
+.recorder-settings-heading {
+    margin-bottom: 16px;
+    color: var(--text-accent);
+}
+
 .wordflow-setting-tab .wordflow-multiline-setting {
     display: block;
 }
