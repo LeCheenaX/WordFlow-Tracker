@@ -128,7 +128,7 @@ export class DataRecorder {
 
     private async getOrCreateRecordNote(): Promise<TFile | null> {
         const recordNoteName = moment().format(this.periodicNoteFormat);
-        const recordNotePath = this.periodicNoteFolder + recordNoteName + '.md';
+        const recordNotePath = this.periodicNoteFolder + '/' + recordNoteName + '.md';
         let recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
         
         if (!recordNote) {
