@@ -94,13 +94,14 @@ export class DataRecorder {
             console.error("Failed to get or create record note");
             return;
         }
-        
+console.log('Current Parser:',this.recordType)
         // Load existing data
         await this.loadExistingData(recordNote);
-//console.log('try to Load Tracker:',tracker)
+console.log('existingDataMap:',this.existingDataMap)
+console.log('try to Load Tracker of closed note:',tracker)
         // Load tracker data
         this.loadTrackerData(tracker);
-//console.log('newDataMap:',this.newDataMap)
+console.log('newDataMap:',this.newDataMap)
         // Merge data
         let mergedData: MergedData[];
         if (this.recordType != 'metadata'){
@@ -108,7 +109,7 @@ export class DataRecorder {
         } else {
             mergedData = this.mergeTotalData();
         }
-//console.log('mergedData:',mergedData)
+console.log('mergedData:',mergedData)
         // Generate and update content
         const newContent = this.Parser.generateContent(mergedData);
 //console.log('newContent:',newContent)
@@ -130,7 +131,7 @@ export class DataRecorder {
         let recordNotePath = (this.periodicNoteFolder.trim() == '')? this.periodicNoteFolder: this.periodicNoteFolder+'/';
         recordNotePath += recordNoteName + '.md';
         let recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
-console.log(recordNotePath)
+console.log('recordNotePath:',recordNotePath)
         if (!recordNote) {
             try {
                 await this.plugin.app.vault.create(recordNotePath, '');
@@ -312,9 +313,6 @@ console.log(recordNotePath)
         const existingContent: string | null = await this.Parser.getContent(recordNote);
         const [YAMLStartIndex, YAMLEndIndex]: [number, number] = await this.Parser.getIndex(recordNote);
         
-let cache = this.plugin.app.metadataCache.getFileCache(recordNote);
-console.log('cache:',cache)
-console.log('index from tradition:(', YAMLStartIndex, ', ', YAMLEndIndex,')' )
         if (existingContent){
 //console.log('existingContent:',existingContent)
             await this.plugin.app.vault.process(recordNote, (data) => {

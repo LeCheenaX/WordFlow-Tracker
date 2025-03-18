@@ -26,9 +26,7 @@ export class MetaDataParser{
     }
 
     public async extractData(recordNote: TFile): Promise< Map<string, ExistingData>> {
-        const noteContent = await this.plugin.app.vault.read(recordNote);
         const [startIndex, endIndex] = await this.getIndex(recordNote);
-        const lines = noteContent.split('\n');
         const existingDataMap: Map<string, ExistingData> = new Map();
 
         // Return empty map if no YAML block found
@@ -40,9 +38,8 @@ export class MetaDataParser{
             this.setPatterns();
         }
 
-        let YAMLData: Record<string, string> = {};
-        const YAMLLines = lines.slice(startIndex + 1, endIndex);
-
+        let YAMLData: Record<string, string|undefined> = {};
+        // parse syntax to fetch varName and user customized name for varName variable. Then, read and record user customized name in frontmatter 
         for (const pattern of this.patterns) {
             // Extract the variable name from the pattern
             const syntaxLine = this.syntax.split('\n').find(line => 
@@ -55,22 +52,14 @@ export class MetaDataParser{
             if (varStart <= 1 || varEnd <= varStart) continue;
             
             const varName = syntaxLine.substring(varStart, varEnd);
-            
-            // Check each YAML line for this pattern
-            for (const line of YAMLLines) {
-                if (line.trim().startsWith(pattern.start.trim())) {
-                    // Extract value between pattern.start and pattern.end
-                    const startPos = line.indexOf(pattern.start) + pattern.start.length;
-                    let endPos = line.length;
-                    
-                    if (pattern.end && pattern.end.trim() !== '' && line.includes(pattern.end)) {
-                        endPos = line.indexOf(pattern.end, startPos);
-                    }
-                    
-                    const value = line.substring(startPos, endPos).trim();
-                    YAMLData[varName] = value;
-                    break; // Found match for this pattern, move to next
-                }
+            if(!varName) continue;
+
+            const customName = syntaxLine.trim().substring(0,syntaxLine.indexOf(':')); // user customized name for ${varName}, for example: 'Total Edits' is the custom name for '${totalEdits} as specified in default settings'
+//console.log(`found ${varName}: ${this.plugin.app.metadataCache.getFileCache(recordNote)?.frontmatter?.[customName]}`)
+            if (this.plugin.app.metadataCache.getFileCache(recordNote)?.frontmatter?.[customName]){
+                YAMLData[varName] = this.plugin.app.metadataCache.getFileCache(recordNote)?.frontmatter?.[customName]
+            } else {
+                YAMLData[varName] = undefined;
             }
         }
 
@@ -94,22 +83,12 @@ export class MetaDataParser{
 
     // get the starting index of the array, element of which records the line number and the line content of the noteContent
     public async getIndex(recordNote: TFile): Promise<[number, number]> {
-        const noteContent = await this.plugin.app.vault.read(recordNote);
-        const lines = noteContent.split('\n');
-        let startLine = -1;
-        let endLine = -1;
+        const frontmatterPos = this.plugin.app.metadataCache.getFileCache(recordNote)?.frontmatterPosition
 
         // Check if YAML exists
-        if (lines[0].startsWith('---')){
-            startLine = 0;
-            for (let i = 1; i < lines.length; i++) {
-                if (lines[i].startsWith('---')) {
-                    endLine = i;
-                    return [startLine, endLine];
-                }
-            }
-            if (endLine == -1) {throw Error ('YAML end line is not found, though found the start line!');}
-        } 
+        if (frontmatterPos) {
+            return [frontmatterPos.start.line, frontmatterPos.end.line]
+        }
            
         return [-1, -1];
     }
