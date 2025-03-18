@@ -518,7 +518,7 @@ class WordflowSettingTab extends PluginSettingTab {
 				.onClick( () => {
 					new ConfirmationModal(
 						this.app,
-						'Please ensure that there are no duplicate record type per note, or undefined behavior will occur!\n\nExample allowed✅:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table;\n\tRecorder2: Periodic note format = YYYY-MM-DD; Record type = bullet list;\nExample allowed✅:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table;\n\tRecorder2: Periodic note format = YYYY-MM; Record type = table;\nExample disallowed❌:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table; Insert to position = bottom;\n\tRecorder2: Periodic note format = YYYY-MM-DD; Record type = table; Insert to position = custom;',
+						'Please ensure that there are no duplicate record content type per note, or undefined behavior will occur!\n\nExample allowed✅:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table;\n\tRecorder2: Periodic note format = YYYY-MM-DD; Record type = bullet list;\nExample allowed✅:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table;\n\tRecorder2: Periodic note format = YYYY-MM; Record type = table;\nExample disallowed❌:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table; Insert to position = bottom;\n\tRecorder2: Periodic note format = YYYY-MM-DD; Record type = table; Insert to position = custom;',
 						async () => {this.createNewRecorder();}
 					).open()
 				})	
@@ -543,7 +543,7 @@ class WordflowSettingTab extends PluginSettingTab {
 		});
 		*/
 		new Setting(containerEl)
-			.setName(`⏺️${activeRecorderName} settings`)
+			.setName(`⚙️${activeRecorderName} configurations`)
 			.setHeading()
 			.setClass('recorder-settings-heading')
 	}

@@ -7,10 +7,15 @@
     margin: 11.25px 0;
 }*/
 
-.recorder-settings-heading {
-    margin-bottom: 11.25px;
-    /*color: var(--text-accent);*/
-    color: rgb(67, 132, 216);
+.setting-item.recorder-settings-heading {
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+.setting-item.recorder-settings-heading .setting-item-name {
+    font-size: large;
+    color: var(--text-accent);
+    /*color: rgb(67, 132, 216);*/
 }
 
 .confirm-modal .modal {
