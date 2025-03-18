@@ -72,13 +72,13 @@ export class DataRecorder {
     private loadParsers(){
         switch (this.recordType){
         case 'table': 
-            this.Parser = new TableParser(this);
+            this.Parser = new TableParser(this, this.plugin);
             break;
         case 'bulletList': 
-            this.Parser = new BulletListParser(this);
+            this.Parser = new BulletListParser(this, this.plugin);
             break;
         case 'metadata':
-            this.Parser = new MetaDataParser(this);
+            this.Parser = new MetaDataParser(this, this.plugin);
             break;
         default: 
             throw new Error('Record type is not defined in this recorder!')
@@ -149,10 +149,8 @@ console.log(recordNotePath)
     }
 
 
-    private async loadExistingData(recordNote: TFile): Promise<void> {
-        const noteContent = await this.plugin.app.vault.read(recordNote);
-        
-        this.existingDataMap = await this.Parser.extractData(noteContent);
+    private async loadExistingData(recordNote: TFile): Promise<void> {  
+        this.existingDataMap = await this.Parser.extractData(recordNote);
     }
 
     private async loadTrackerData(p_tracker?:DocTracker): Promise<void> {
@@ -270,7 +268,7 @@ console.log(recordNotePath)
         const noteContent = await this.plugin.app.vault.read(recordNote);
         const lines = noteContent.split('\n');
         
-        const existingContent: string | null = this.Parser.getContent(noteContent);
+        const existingContent: string | null = await this.Parser.getContent(recordNote);
                 
         if (existingContent){
             await this.plugin.app.vault.process(recordNote, (data) => {
@@ -311,10 +309,12 @@ console.log(recordNotePath)
     }
 
     private async updateNoteToYAML(recordNote: TFile, newContent: string): Promise<void> {
-        const noteContent = await this.plugin.app.vault.read(recordNote);
-        const existingContent: string | null = this.Parser.getContent(noteContent);
-        const [YAMLStartIndex, YAMLEndIndex] = this.Parser.getIndex(noteContent);
-
+        const existingContent: string | null = await this.Parser.getContent(recordNote);
+        const [YAMLStartIndex, YAMLEndIndex]: [number, number] = await this.Parser.getIndex(recordNote);
+        
+let cache = this.plugin.app.metadataCache.getFileCache(recordNote);
+console.log('cache:',cache)
+console.log('index from tradition:(', YAMLStartIndex, ', ', YAMLEndIndex,')' )
         if (existingContent){
 //console.log('existingContent:',existingContent)
             await this.plugin.app.vault.process(recordNote, (data) => {

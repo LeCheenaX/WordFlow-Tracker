@@ -1,5 +1,6 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
-import { moment } from 'obsidian';
+import { moment, TFile } from 'obsidian';
+import WordflowTrackerPlugin from "./main";
 
 export class TableParser{
     //private recordType: string;
@@ -7,10 +8,12 @@ export class TableParser{
     //private sortBy: string;
     //private isDescend: boolean;
     private syntax: string;
+    private noteContent: string | null;
     //private existingDataMap: Map<string, ExistingData>;
 
     constructor(
         private DataRecorder: DataRecorder,
+        private plugin: WordflowTrackerPlugin
     ){}
 
     public loadSettings(){
@@ -20,10 +23,11 @@ export class TableParser{
         this.syntax = this.DataRecorder.tableSyntax;
     }
 
-    public async extractData(noteContent: string): Promise< Map<string, ExistingData> > { 
-        const lines = noteContent.split('\n');
+    public async extractData(recordNote: TFile): Promise< Map<string, ExistingData> > { 
+        this.noteContent = await this.plugin.app.vault.read(recordNote);
+        const lines = this.noteContent.split('\n');
         const existingDataMap: Map<string, ExistingData> = new Map();
-        const [tableStartIndex, tableEndIndex] = this.getIndex(noteContent);
+        const [tableStartIndex, tableEndIndex] = await this.getIndex(recordNote);
 
         if ( tableStartIndex != -1){
             // Process data rows (skip header and separator)
@@ -43,7 +47,8 @@ export class TableParser{
         return existingDataMap; 
     }
 
-    public getIndex(noteContent: string): [number, number] {
+    public async getIndex(recordNote: TFile): Promise<[number, number]> {
+        if(!this.noteContent) this.noteContent = await this.plugin.app.vault.read(recordNote);
         const [headerTemplate, separatorTemplate] = this.syntax
                 .split('\n')
                 .filter(l => l.trim())
@@ -68,7 +73,7 @@ export class TableParser{
         const separatorRegex = new RegExp(separatorRegexStr);
         
         // Find table in the document
-        const lines = noteContent.split('\n');
+        const lines = this.noteContent.split('\n');
         let tableStartIndex = -1;
         let tableEndIndex = -1;
         
@@ -108,9 +113,10 @@ export class TableParser{
         return [tableStartIndex, tableEndIndex];
     }
 
-    public getContent(noteContent: string): string | null {
-        const [startIndex, endIndex] = this.getIndex(noteContent);
-        const lines = noteContent.split('\n');
+    public async getContent(recordNote: TFile): Promise<string | null> {
+        if (!this.noteContent) this.noteContent = await this.plugin.app.vault.read(recordNote);
+        const [startIndex, endIndex] = await this.getIndex(recordNote);
+        const lines = this.noteContent.split('\n');
 
         if (startIndex != -1 && endIndex !== -1){    
             const tableContent = lines.slice(startIndex, endIndex + 1).join('\n');

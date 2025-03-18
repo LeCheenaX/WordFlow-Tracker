@@ -1,5 +1,6 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
-import { moment } from 'obsidian';
+import { moment, Plugin, TFile } from 'obsidian';
+import WordflowTrackerPlugin from "./main";
 
 export class BulletListParser{
     //private recordType: string;
@@ -7,6 +8,7 @@ export class BulletListParser{
     //private sortBy: string;
     //private isDescend: boolean;
     private syntax: string;
+    private noteContent: string | null;
 
     // special variables
     private patterns: any[] = [];
@@ -15,6 +17,7 @@ export class BulletListParser{
 
     constructor(
         private DataRecorder: DataRecorder,
+        private plugin: WordflowTrackerPlugin
     ){}
 
     public loadSettings(){
@@ -26,8 +29,9 @@ export class BulletListParser{
         this.setPatterns(); // doesnot has varName
     }
 
-    public async extractData(noteContent: string): Promise< Map<string, ExistingData> > {
-        const lines = noteContent.split('\n');
+    public async extractData(recordNote: TFile): Promise< Map<string, ExistingData> > {
+        this.noteContent = await this.plugin.app.vault.read(recordNote);
+        const lines = this.noteContent.split('\n');
         const existingDataMap: Map<string, ExistingData> = new Map();
 
         // Find list groups by matching patterns
@@ -112,8 +116,9 @@ export class BulletListParser{
     }
 
     // get the starting index of the array, element of which records the line number and the line content of the noteContent
-    public getIndex(noteContent: string): [number, number] {
-        const lines = noteContent.split('\n');
+    public async getIndex(recordNote: TFile): Promise<[number, number]> {
+        if(!this.noteContent) this.noteContent = await this.plugin.app.vault.read(recordNote);
+        const lines = this.noteContent.split('\n');
         let startLine = -1;
         let endLine = -1;
 
@@ -159,10 +164,11 @@ export class BulletListParser{
         return (startLine !== -1 && endLine !== -1)? [startLine, endLine]: [-1, -1]; 
     }
 
-    public getContent(noteContent: string): string | null {
+    public async getContent(recordNote: TFile): Promise<string | null> {
         // Get list boundaries
-        const [startIndex, endIndex] = this.getIndex(noteContent);
-        const lines = noteContent.split('\n');
+        if(!this.noteContent) this.noteContent = await this.plugin.app.vault.read(recordNote);
+        const [startIndex, endIndex] = await this.getIndex(recordNote);
+        const lines = this.noteContent.split('\n');
             
         if (startIndex != -1 && endIndex != -1){
             const listContent = lines.slice(startIndex, endIndex + 1).join('\n');

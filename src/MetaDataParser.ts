@@ -1,5 +1,6 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
-import { moment } from 'obsidian';
+import { MetadataCache, moment, TFile } from 'obsidian';
+import WordflowTrackerPlugin from "./main";
 
 export class MetaDataParser{
     //private recordType: string;
@@ -7,12 +8,14 @@ export class MetaDataParser{
     //private sortBy: string;
     //private isDescend: boolean;
     private syntax: string;
+    //private noteContent: string | null;
 
     // special variables
     private patterns: any[] = [];
 
     constructor(
         private DataRecorder: DataRecorder,
+        private plugin: WordflowTrackerPlugin
     ){}
 
     public loadSettings(){
@@ -22,8 +25,9 @@ export class MetaDataParser{
         this.syntax = this.DataRecorder.metadataSyntax;
     }
 
-    public async extractData(noteContent: string): Promise< Map<string, ExistingData>> {
-        const [startIndex, endIndex] = this.getIndex(noteContent);
+    public async extractData(recordNote: TFile): Promise< Map<string, ExistingData>> {
+        const noteContent = await this.plugin.app.vault.read(recordNote);
+        const [startIndex, endIndex] = await this.getIndex(recordNote);
         const lines = noteContent.split('\n');
         const existingDataMap: Map<string, ExistingData> = new Map();
 
@@ -89,7 +93,8 @@ export class MetaDataParser{
     }
 
     // get the starting index of the array, element of which records the line number and the line content of the noteContent
-    public getIndex(noteContent: string): [number, number] {
+    public async getIndex(recordNote: TFile): Promise<[number, number]> {
+        const noteContent = await this.plugin.app.vault.read(recordNote);
         const lines = noteContent.split('\n');
         let startLine = -1;
         let endLine = -1;
@@ -109,8 +114,9 @@ export class MetaDataParser{
         return [-1, -1];
     }
 
-    public getContent(noteContent: string): string | null {
-        const [startIndex, endIndex] = this.getIndex(noteContent);
+    public async getContent(recordNote: TFile): Promise<string | null> {
+        const noteContent = await this.plugin.app.vault.read(recordNote);
+        const [startIndex, endIndex] = await this.getIndex(recordNote);
         const lines = noteContent.split('\n');
         
         // Return null if no YAML block found
