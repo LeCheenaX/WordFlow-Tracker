@@ -1,7 +1,6 @@
 import WordflowTrackerPlugin, { RecorderConfig } from "./main";
 import { DocTracker } from './DocTracker';
-import { Notice, TFile } from 'obsidian';
-import moment from 'moment';
+import { moment, Notice, TFile } from 'obsidian';
 import { TableParser } from './TableParser';
 import { BulletListParser, ListParser } from './ListParser';
 import { MetaDataParser } from "./MetaDataParser";

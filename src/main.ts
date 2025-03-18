@@ -1,7 +1,7 @@
 // add EditorTransaction
 import { App, ButtonComponent, debounce, Editor, EventRef, MarkdownView, Modal, Notice, normalizePath, Plugin, PluginSettingTab, Setting, TextAreaComponent, TFile, DropdownComponent } from 'obsidian';
 //import { EditorState, StateField, Extension, ChangeSet, Transaction } from "@codemirror/state";
-import { historyField, history } from "@codemirror/commands";
+//import { historyField, history } from "@codemirror/commands";
 //import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from "@codemirror/view";
 //import { wordsCounter } from "./stats";
 import { DocTracker } from './DocTracker';
@@ -468,7 +468,7 @@ class WordflowSettingTab extends PluginSettingTab {
 		}
 		
 		const recorderActions = new Setting(recorderSelectionContainer)
-			.setName('Current Recorder')
+			.setName('Current recorder')
 			.setDesc('Select which recorder configuration to edit.\nYou can add new recorders to save different sets of statistics to different locations.');
 			// Only show rename/delete for additional recorders
 		if (this.activeRecorderIndex > 0) {
@@ -536,10 +536,16 @@ class WordflowSettingTab extends PluginSettingTab {
 			
 		
 		// Create title for settings section
+		/*
 		containerEl.createEl('h3', { 
 			text: `⏺️${activeRecorderName} settings`,
 			cls: 'recorder-settings-heading'
 		});
+		*/
+		new Setting(containerEl)
+			.setName(`⏺️${activeRecorderName} settings`)
+			.setHeading()
+			.setClass('recorder-settings-heading')
 	}
 
 	private setActiveRecorder(index: number) {
@@ -679,7 +685,7 @@ class WordflowSettingTab extends PluginSettingTab {
 				})
 			);
 
-		new Setting(container).setName('Recording contents setting').setHeading();
+		new Setting(container).setName('Recording contents').setHeading();
 		
 		new Setting(container)
 			.setName('Record content type')
@@ -844,7 +850,7 @@ class WordflowSettingTab extends PluginSettingTab {
 				})
 			);
 			
-		new Setting(container).setName('Recording options').setHeading();
+		new Setting(container).setName('Recording miscellaneous').setHeading();
 		new Setting(container)
 			.setName('Filter out non-modified notes')
 			.setDesc('Whether the opened notes that are not modified should be excluded while recording. If not excluded, you will get any opened file under editing mode recorded. ')
@@ -971,7 +977,9 @@ class RecorderRenameModal extends Modal {
     onOpen() {
         const { contentEl } = this;
         
-        contentEl.createEl("h3", { text: "Rename Recorder" });
+		new Setting(contentEl)
+			.setName("Rename recorder")
+			.setHeading
         
         const inputContainer = contentEl.createDiv();
         const nameInput = inputContainer.createEl("input", { 

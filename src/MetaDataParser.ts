@@ -1,5 +1,5 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
-import moment from 'moment';
+import { moment } from 'obsidian';
 
 export class MetaDataParser{
     //private recordType: string;
