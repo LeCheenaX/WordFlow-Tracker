@@ -4,7 +4,7 @@ export function wordsCounter() {
       //console.log("string:", input) //debug
       let count = 0;
       for (const char of input) {
-          const isWordChar = /^[\w-]$/.test(char);
+          const isWordChar = /^[\w'-]$/.test(char);
           const isCJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(char);
           if (isWordChar) {
               if (!inWord) {

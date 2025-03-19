@@ -16,6 +16,8 @@ export class DocTracker{
     
     private debouncedTracker: ReturnType<typeof debounce>;
     private editorListener: EventRef | null = null;
+    private addWordsCt: Function
+    private deleteWordsCt: Function
 
     constructor(
         public filePath: string,      
@@ -27,6 +29,8 @@ export class DocTracker{
 
     private async initialize() {
         this.lastModifiedTime = Number(this.plugin.app.vault.getFileByPath(this.filePath)?.stat.mtime);
+        this.addWordsCt = wordsCounter();
+        this.deleteWordsCt = wordsCounter();
         await this.activate();
 
 //        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.filePath}`);
@@ -62,7 +66,6 @@ export class DocTracker{
         const doneDiff: number = currentDone - this.lastDone;
         const undoneDiff: number = currentUndone - this.lastUndone; // warn: may be reset to 0 when undo and do sth. 
         const historyCleared: number = ((currentDone + undoneDiff) < this.lastDone)?(this.lastDone - 100 - undoneDiff):0; // cannot use <= lastDone	because of a debounce bug	
-        const wordsCt = wordsCounter();
 /*
         if(DEBUG){
             //@ts-expect-error
@@ -98,7 +101,16 @@ export class DocTracker{
                     //@ts-expect-error
                     const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA,toA); 
                     inserted = inserted.toString();
-                    const mWords = wordsCt(theOther) + wordsCt(inserted);
+                    
+                    //@ts-expect-error
+                    let addFix = (fromA!=0 && this.activeEditor.editor.cm.state.sliceDoc(fromA-1,fromA) == ' ')?1 :0;
+                    //@ts-expect-error
+                    let deleteFix = (fromB!=0 && this.activeEditor.editor.cm.state.sliceDoc(fromB-1,fromB) == ' ')?1 :0;
+
+                    const addedWords = this.addWordsCt(theOther) + addFix;
+                    const deletedWords = this.deleteWordsCt(inserted) + deleteFix;
+                    const mWords = addedWords + deletedWords;
+//console.log('Do added:', addedWords, '\nDo deleted:', deletedWords, 'total:', mWords)
 /*                    if (DEBUG){
                         console.log(`Do adding texts: "${theOther}" from ${fromA} to ${toA} in current document, \ndo deleting texts: "${inserted}" from ${fromB} to ${toB} in current document.`);
                         console.log("Modified Words: ", mWords);
@@ -118,7 +130,15 @@ export class DocTracker{
                 // @ts-expect-error
                 const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA,toA);
                 inserted = inserted.toString();
-                const mWords = wordsCt(inserted)+wordsCt(theOther);
+
+                //@ts-expect-error
+                let addFix = (fromB!=0 && this.activeEditor.editor.cm.state.sliceDoc(fromB-1,fromB) == ' ')?1 :0;
+                //@ts-expect-error
+                let deleteFix = (fromA!=0 && this.activeEditor.editor.cm.state.sliceDoc(fromA-1,fromA) == ' ')?1 :0;
+
+                const addedWords = this.addWordsCt(inserted) + addFix;
+                const deletedWords = this.deleteWordsCt(theOther) + deleteFix;
+                const mWords = addedWords + deletedWords;
 /*                if (DEBUG) {
                     console.log(`Undo adding texts: "${inserted}" from ${fromB} to ${toB} from previous document, \nundo deleting texts: "${theOther}" from ${fromA} to ${toA} from previous document.`);
                     console.log("Modified Words: ", mWords);	
