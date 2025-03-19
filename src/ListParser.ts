@@ -93,7 +93,7 @@ export class BulletListParser{
                 // Parse lastModifiedTime if present
                 if (groupData.lastModifiedTime !== undefined) {
                     try {
-                        ListData.lastModifiedTime = Date.parse(groupData.lastModifiedTime);
+                        ListData.lastModifiedTime = moment(groupData.lastModifiedTime, this.timeFormat).valueOf();
                     } catch (e) {
                         ListData.lastModifiedTime = null;
                     }

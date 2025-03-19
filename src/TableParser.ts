@@ -29,22 +29,23 @@ export class TableParser{
         const existingDataMap: Map<string, ExistingData> = new Map();
         const [tableStartIndex, tableEndIndex] = await this.getIndex(recordNote);
 
-        if ( tableStartIndex != -1){
-            // Process data rows (skip header and separator)
-            const dataRows = lines.slice(tableStartIndex + 2, tableEndIndex + 1);
-//console.log('existing datarows:',dataRows)F
-            // Parse each row into an ExistingData object
+        if (tableStartIndex !== -1) {
+            const headerVarMapping = this.createHeaderVarMapping();
+            
+            const headerRow = lines[tableStartIndex];        
+            const dataRows = lines.slice(tableStartIndex + 2, tableEndIndex + 1); // skip header row and split row
+            
             for (const row of dataRows) {
                 if (row.trim().startsWith('|') && row.trim().endsWith('|')) {
-                    const parsedData = ExistingData.fromTableRow(row);
+                    const parsedData = this.parseTableRow(row, headerRow, headerVarMapping);
                     if (parsedData) {
                         existingDataMap.set(parsedData.filePath, parsedData);
                     }
                 }
             }
-        } 
-            
-        return existingDataMap; 
+        }
+        
+        return existingDataMap;
     }
 
     public async getIndex(recordNote: TFile): Promise<[number, number]> {
@@ -109,7 +110,7 @@ export class TableParser{
                 }
             }
         }
-        console.log('tablestart:',tableStartIndex,'tableend:', tableEndIndex)
+//console.log('tablestart:',tableStartIndex,'tableend:', tableEndIndex)
         return [tableStartIndex, tableEndIndex];
     }
 
@@ -174,5 +175,83 @@ export class TableParser{
         ].join('\n').trimEnd();
     }
 
+    // used for extract varName from table syntax in plugin setting
+    private createHeaderVarMapping(): Record<string, string> {
+        const mapping: Record<string, string> = {};
+        
+        // fetch heading and rows from table syntax
+        const syntaxLines = this.syntax.split('\n').filter(l => l.trim());
+        if (syntaxLines.length !== 3) {
+            throw Error ('Table syntax requires strictly 3 lines!\nThe heading line, the split line, and one row for data inserting.')
+        }
+        
+        const headerTemplate = syntaxLines[0];
+        const rowTemplate = syntaxLines[2];
+        
+        // parsing header and row columns
+        const headerColumns = headerTemplate.split('|').map(part => part.trim()).filter(Boolean);
+        const rowColumns = rowTemplate.split('|').map(part => part.trim()).filter(Boolean);
+        
+        // parsing map
+        for (let i = 0; i < Math.min(headerColumns.length, rowColumns.length); i++) {
+            const headerText = headerColumns[i];
+            const matches = rowColumns[i].match(/\${(\w+)}/);
+            if (matches && matches[1]) {
+                mapping[headerText] = matches[1];
+            }
+        }
+        
+        return mapping;
+    }
+
+    private parseTableRow(row: string, headerRow: string, headerVarMapping: Record<string, string>): ExistingData | null {
+        const entry = new ExistingData();
+        
+        // fetch heading and data rows from table syntax
+        const headerColumns = headerRow.split('|').map(part => part.trim()).filter(Boolean);
+        const dataColumns = row.split('|').map(part => part.trim()).filter(Boolean);
+        
+        // match data
+        for (let i = 0; i < Math.min(headerColumns.length, dataColumns.length); i++) {
+            const headerText = headerColumns[i];
+            const varName = headerVarMapping[headerText];
+            if (!varName) continue;
+            
+            const value = dataColumns[i];
+            
+            switch (varName) {
+                case 'modifiedNote':
+                    entry.filePath = value.replace(/^\[\[+|\]\]+$/g, '');
+                    break;
+                    
+                case 'editedWords':
+                    entry.editedWords = parseInt(value) || 0;
+                    break;
+                    
+                case 'editedTimes':
+                    entry.editedTimes = parseInt(value) || 0;
+                    break;
+                    
+                case 'lastModifiedTime':
+                    try {
+                        if (value && value.trim()) {
+                            entry.lastModifiedTime = moment(value, this.timeFormat).valueOf();
+                        } else {
+                            entry.lastModifiedTime = null;
+                        }
+                    } catch (e) {
+                        entry.lastModifiedTime = null;
+                    }
+                    break;
+                    
+                case 'editedPercentage':
+                    entry.editedPercentage = value;
+                    break;
+            }
+        }
+        
+        if (!entry.filePath) throw Error ('${modifiedNote} is not recognized in the table syntax, which is necessary!')
+        return entry;
+    }
     
 };

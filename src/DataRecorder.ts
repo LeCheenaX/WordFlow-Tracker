@@ -256,11 +256,12 @@ console.log('recordNotePath:',recordNotePath)
             MergedTotalData.totalEdits = 0;
             MergedTotalData.totalWords = 0;
         }
+console.log('Total Before merging:',[MergedTotalData])
         for (const [filePath, newData] of this.newDataMap.entries()) {
             MergedTotalData.totalEdits += newData.editedTimes;
             MergedTotalData.totalWords += newData.editedWords;
         }
-
+console.log('Total After merging:',[MergedTotalData])
         return [MergedTotalData];
     }
 
@@ -354,7 +355,7 @@ export class ExistingData {
     }
     
     // Parse a table row into an ExistingData object
-    static fromTableRow(row: string): ExistingData | null {
+    /*static fromTableRow(row: string): ExistingData | null {
         const parts = row.split('|').map(part => part.trim()).filter(Boolean);
         if (parts.length < 1) return null;
         
@@ -383,13 +384,14 @@ export class ExistingData {
             }
             
             // Assume a formatted date/time string
-            if (moment(cell) instanceof moment || /\d{2}\/\d{2}\/\d{4}/.test(cell)) {
+            // change from moment to Obsidian packaged moment since 1.2.2, abandon 'moment(cell) instanceof moment', use 'moment.isMoment(cell)'
+            if (moment.isMoment(cell) || /\d{2}\/\d{2}\/\d{4}/.test(cell)) {
                 entry.lastModifiedTime = Number(moment(cell).format('x')); // to timestamp
             }
         }
         
         return entry;
-    }
+    }*/
 }
 
 // Class to represent data from new DocTracker objects
