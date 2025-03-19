@@ -191,11 +191,12 @@ export class DocTracker{
         this.docLength = this.activeEditor?.editor.cm.state.doc.length;
 
         // 创建独立防抖实例
-        this.debouncedTracker = debounce(this.trackChanges.bind(this), 1000, true); // Modified from official value 500 ms to 1000 ms, for execution delay. 
+        this.debouncedTracker = debounce(this.trackChanges.bind(this), 800, true); // Modified from official value 500 ms to 1000 ms, for execution delay. Modified from 1000 to 800 to test. 
         
         // 绑定编辑器事件
         this.editorListener = this.plugin.app.workspace.on('editor-change', (editor: Editor, view: MarkdownView) => {
             this.debouncedTracker();
+//console.log('DocTracker.activate: listener registered')
         });
         this.updateStatusBarTracker();
         this.isActive = true;
@@ -221,6 +222,7 @@ export class DocTracker{
         await sleep(500); // for multiple recorders to record before cleared.
         this.changedTimes = 0;
         this.changedWords = 0;
+        this.updateStatusBarTracker();
     }
 
     // Warning: Do not use! This will destroy even the editor of Obsidian! Let Obsidian decide when to destroy!

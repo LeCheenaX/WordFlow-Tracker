@@ -97,11 +97,19 @@ export class DataRecorder {
 console.log('Current Parser:',this.recordType)
         // Load existing data
         await this.loadExistingData(recordNote);
-console.log('existingDataMap:',this.existingDataMap)
-console.log('try to Load Tracker of closed note:',tracker)
+/*
+this.existingDataMap.forEach((ExistingData)=>{
+    console.log('existingData:', ExistingData.filePath, ' words:', ExistingData.editedWords)
+})
+*/
+//console.log('try to Load Tracker of closed note:',tracker)
         // Load tracker data
-        this.loadTrackerData(tracker);
-console.log('newDataMap:',this.newDataMap)
+        await this.loadTrackerData(tracker);
+/*
+this.newDataMap.forEach((NewData)=>{
+    console.log('newData:', NewData.filePath, ' words:', NewData.editedWords)
+})
+*/
         // Merge data
         let mergedData: MergedData[];
         if (this.recordType != 'metadata'){
@@ -161,7 +169,7 @@ console.log('recordNotePath:',recordNotePath)
                 if (!this.filterZero || tracker.changedTimes!=0){
                 this.newDataMap.set(filePath, new NewData(tracker));
                 }
-                await tracker.resetEdit();
+                tracker.resetEdit(); // deleted await for performance 
             }
         } else {
 //console.log('trackerClosed:',p_tracker)
@@ -169,7 +177,7 @@ console.log('recordNotePath:',recordNotePath)
             this.newDataMap.set(p_tracker.filePath, new NewData(p_tracker)); // only record given data
             }
 //console.log('newDataMap:', this.newDataMap);
-            await p_tracker.resetEdit();
+            p_tracker.resetEdit(); // deleted await for performance 
         }
     }
 
