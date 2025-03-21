@@ -28,9 +28,18 @@ We fetch the edit statistcs by access the history field of Obsidian editor, whic
 > The temporary edit stats collected by the plugin are destroyed after recording to your note, and the Obsidian will destory the history data after you close the application.  
 
 
-## Settings that worth mentioning
-![image](https://github.com/user-attachments/assets/c4e8a82c-83fd-4ce9-9234-ef891b498264)
-### Basic
+## Settings documentation
+![image](https://github.com/user-attachments/assets/7e9b9d84-ccba-4b59-b542-f551a37b5592)
+### Recorder
+- **Create**: Create a new recorder so that the edit stats in tracker will be additionally recorded. Common usages are as followed:
+	- Create a recorder for another periodic note: current recorder will record to daily note, and you create an additional one to record to monthly note. 
+ 	- Create a recorder for a different recording type: current recorder will record edits per note as table rows to your daily note, and you create another recorder to record total edits to the YAML of daily notes. 
+- **Rename**: Rename your recorders.
+
+		![image](https://github.com/user-attachments/assets/1dc7933a-a19f-4804-b636-58045b22e729)
+
+- **Delete**: Delete the current recorder and abandon its settings. 
+### Recorder Basics
 - **Periodic note folder:** Set the folder for daily notes or weekly note to place, which should correspond to the same folder of Obsidian daily note plugin and of templater plugin(if installed).
 	- **Enable dynamic folder:** Record the note to a dynamic folder rather than a static folder. If enabled, the folder must be in a [moment compatible format](https://momentjs.com/docs/#/displaying/format/).
 	
