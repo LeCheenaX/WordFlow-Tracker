@@ -712,7 +712,7 @@ class WordflowSettingTab extends PluginSettingTab {
 			.addDropdown(d => d
 				.addOption('table', 'table')
 				.addOption('bulletList', 'bullet list')
-				.addOption('metadata', 'metadata(Alpha)')
+				.addOption('metadata', 'metadata')
 				.setValue(settings.recordType) // need to show the modified value when next loading
 				.onChange(async (value) => {
 					settings.recordType = value;
@@ -913,7 +913,7 @@ class WordflowSettingTab extends PluginSettingTab {
 		if (!this.InsertPlaceComponent) return;
 		this.InsertPlaceComponent.selectEl.innerHTML = '';
 		if (settings.recordType == 'metadata'){
-			this.InsertPlaceComponent.addOption('yaml', 'yaml/frontmatter(Alpha)');
+			this.InsertPlaceComponent.addOption('yaml', 'yaml/frontmatter');
 			this.InsertPlaceComponent.setValue('yaml');
 			settings.insertPlace = 'yaml';
 		} else {
