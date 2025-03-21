@@ -36,7 +36,7 @@ We fetch the edit statistcs by access the history field of Obsidian editor, whic
  	- Create a recorder for a different recording type: current recorder will record edits per note as table rows to your daily note, and you create another recorder to record total edits to the YAML of daily notes. 
 - **Rename**: Rename your recorders.
 
-		![image](https://github.com/user-attachments/assets/1dc7933a-a19f-4804-b636-58045b22e729)
+	![image](https://github.com/user-attachments/assets/1dc7933a-a19f-4804-b636-58045b22e729)
 
 - **Delete**: Delete the current recorder and abandon its settings. 
 ### Recorder Basics
