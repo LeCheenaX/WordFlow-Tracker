@@ -29,10 +29,17 @@ We fetch the edit statistcs by access the history field of Obsidian editor, whic
 
 
 ## Settings that worth mentioning
-![image](https://github.com/user-attachments/assets/6a1544be-a579-4744-8391-bf0e1c8fa298)
+![image](https://github.com/user-attachments/assets/c4e8a82c-83fd-4ce9-9234-ef891b498264)
 ### Basic
-- **Periodic note folder：** Set the folder for daily notes or weekly note to place, which should correspond to the same folder of Obsidian daily note plugin and of templater plugin(if installed).
-- **Periodic note format：** Set the file name for newly created daily notes or weekly note, which should correspond to the same format setting of Obsidian daily note plugin and of templater plugin(if installed).
+- **Periodic note folder:** Set the folder for daily notes or weekly note to place, which should correspond to the same folder of Obsidian daily note plugin and of templater plugin(if installed).
+	- **Enable dynamic folder:** Record the note to a dynamic folder rather than a static folder. If enabled, the folder must be in a [moment compatible format](https://momentjs.com/docs/#/displaying/format/).
+	
+	 	| Dynamic folder format  | Corresponding folder in vault | Periodic note format | Note path in vault                |
+		| ---------------------- | ----------------------------- | -------------------- | --------------------------------- |
+		| [Daily Notes/]YYYY-MM | Daily Notes/2025-03           | YYYY-MM-DD           | Daily Notes/2025-03/2025-03-21.md  |
+		| [Monthly Notes/]YYYY  | Monthly Notes/2025            | MMM YYYY             | Monthly Notes/2025/Mar 2025.md     |
+
+- **Periodic note format:** Set the file name for newly created daily notes or weekly note, which should correspond to the same format setting of Obsidian daily note plugin and of templater plugin(if installed).
 ### Recording Settings
 - **Record content type:** Select a type of content to record on specified notes. Currently, table and bullet list are supported.
 	- Note: when using a table format, the modified note must be at the first column.  
