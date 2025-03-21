@@ -28,11 +28,18 @@ WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插
 > 该插件收集的临时数据在记录到指定的周期笔记中后即自动销毁，Obsidian本体也会在关闭应用后清理所有历史数据。
 
 ## 设置
-![image](https://github.com/user-attachments/assets/6a1544be-a579-4744-8391-bf0e1c8fa298)
+![image](https://github.com/user-attachments/assets/c4e8a82c-83fd-4ce9-9234-ef891b498264)
 ### 基础设置
 - 周期笔记文件夹 (Periodic note folder)：设置每日笔记、周记等周期笔记的存放文件夹路径。需与以下插件配置保持完全一致:
 	- Obsidian 原生「日记」插件
 	- Templater 模板插件（若已安装）
+- 开启动态周期笔记文件夹(Enable dynamic folder): 每日笔记、周记等周期笔记的存放文件夹将变为动态路径。 该路径需要使用 [moment 兼容格式](https://momentjs.com/docs/#/displaying/format/) 设置。 开启之后效果可见如下表格：
+
+    | 周期笔记文件夹（开启动态文件夹）  | 对应Obsidian的文件夹 | 周期笔记格式 | 对应Obsidian的文件               |
+	| ---------------------------------- | -------------------- | ------------- | --------------------------------- |
+	| [Daily Notes/]YYYY-MM | Daily Notes/2025-03           | YYYY-MM-DD           | Daily Notes/2025-03/2025-03-21.md  |
+	| [Monthly Notes/]YYYY  | Monthly Notes/2025            | MMM YYYY             | Monthly Notes/2025/Mar 2025.md     |
+  
 - 周期笔记格式 (Periodic note format)：设置新创建的周期笔记（如日/周记）的文件名格式。需与以下插件配置保持完全一致:
 	- Obsidian 原生「日记」插件
 	- Templater 模板插件（若已安装）
