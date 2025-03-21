@@ -33,7 +33,9 @@ We fetch the edit statistcs by access the history field of Obsidian editor, whic
 ### Recorder
 - **Create**: Create a new recorder so that the edit stats in tracker will be additionally recorded. Common usages are as followed:
 	- Create a recorder for another periodic note: current recorder will record to daily note, and you create an additional one to record to monthly note. 
- 	- Create a recorder for a different recording type: current recorder will record edits per note as table rows to your daily note, and you create another recorder to record total edits to the YAML of daily notes. 
+ 	- Create a recorder for a different recording type: current recorder will record edits per note as table rows to your daily note, and you create another recorder to record total edits to the YAML of daily notes.
+
+		![image](https://github.com/user-attachments/assets/56a03e3c-930c-4d0e-b901-a07e95099105)
 - **Rename**: Rename your recorders.
 
 	![image](https://github.com/user-attachments/assets/1dc7933a-a19f-4804-b636-58045b22e729)
