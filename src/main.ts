@@ -1,5 +1,5 @@
 // add EditorTransaction
-import { App, ButtonComponent, debounce, Editor, EventRef, MarkdownView, Modal, Notice, normalizePath, Plugin, PluginSettingTab, Setting, TextAreaComponent, TFile, DropdownComponent } from 'obsidian';
+import { App, ButtonComponent, debounce, Editor, EventRef, MarkdownView, Modal, Notice, normalizePath, Plugin, PluginSettingTab, Setting, TextAreaComponent, TextComponent, TFile, DropdownComponent } from 'obsidian';
 //import { EditorState, StateField, Extension, ChangeSet, Transaction } from "@codemirror/state";
 //import { historyField, history } from "@codemirror/commands";
 //import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from "@codemirror/view";
@@ -12,6 +12,7 @@ const DEBUG = true as const;
 
 export interface WordflowMetaSettings {
 	name: string;
+	enableDynamicFolder: boolean;
 	periodicNoteFolder: string;
 	periodicNoteFormat: string;
 	recordType: string;
@@ -40,6 +41,7 @@ export interface RecorderConfig extends WordflowMetaSettings {
 
 const DEFAULT_SETTINGS: WordflowSettings = {
 	name: 'Default Recorder',
+	enableDynamicFolder: false,
 	periodicNoteFolder: '',
 	periodicNoteFormat: 'YYYY-MM-DD',
 	recordType: 'table',
@@ -230,6 +232,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 						DocRecorder.record(tracker);
 					}
 					this.trackerMap.delete(filePath);
+					new Notice(`Edits from ${filePath} are recorded.`, 1000)
 //					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
 				}
 			});
@@ -249,6 +252,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 						DocRecorder.record(tracker);
 					}
 					this.trackerMap.delete(filePath);
+					new Notice(`Edits from ${filePath} are recorded.`, 1000)
 //					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
 				}
 			});
@@ -559,6 +563,7 @@ class WordflowSettingTab extends PluginSettingTab {
         const newRecorder: RecorderConfig = {
             id: newId,
             name: `Recorder ${this.plugin.settings.Recorders.length + 1}`,
+			enableDynamicFolder: DEFAULT_SETTINGS.enableDynamicFolder,
             periodicNoteFolder: DEFAULT_SETTINGS.periodicNoteFolder,
             periodicNoteFormat: DEFAULT_SETTINGS.periodicNoteFormat,
             recordType: DEFAULT_SETTINGS.recordType,
@@ -659,22 +664,36 @@ class WordflowSettingTab extends PluginSettingTab {
 		container.classList.add('wordflow-setting-tab'); // for styles.css
 
 		new Setting(container).setName('Periodic note to record').setHeading();
-		new Setting(container)
+		const periodicFolder = new Setting(container)
 			.setName('Periodic note folder')
-			.setDesc('Set the folder for daily notes or weekly note to place, which should correspond to the same folder of Obsidian daily note plugin and of templater plugin(if installed).')
-			.addText(text => text
-				.setPlaceholder('set daily note folder')
-				.setValue(settings.periodicNoteFolder)
+			.setDesc('Select whether to enable dynamic folder, and set the folder for daily notes or weekly note to place, which should correspond to the same folder of Obsidian daily note plugin and of templater plugin(if installed).')
+			.addToggle(t => t
+				.setTooltip('Enable dynamic folder in moment.js format')
+				.setValue(settings.enableDynamicFolder)
 				.onChange(async (value) => {
-					settings.periodicNoteFolder = normalizePath(value);
+					settings.enableDynamicFolder = value;
+					await this.plugin.saveSettings();			
+					recorderInstance.loadSettings();
+					// now update placeholder based on the setting. 
+					const placeholder = (value)? '[MonthlyLogs\/]MM-YYYY': 'Example: "Monthly logs"';
+					this.PeriodicFolderComponent?.setPlaceholder(placeholder);					
+				})
+			)
+			.addText(text => {
+				this.PeriodicFolderComponent = text;
+				text
+				.setValue(settings.periodicNoteFolder)
+				.setPlaceholder((settings.enableDynamicFolder)?'[MonthlyLogs\/]MM-YYYY': 'Example: "Monthly logs"')
+				.onChange(async (value) => {
+					settings.periodicNoteFolder = (value == '')? value: normalizePath(value);
 					await this.plugin.saveSettings();
 					recorderInstance.loadSettings();
 				})
-			);
+			});
 
 		new Setting(container)
 			.setName('Periodic note format')
-			.setDesc('Set the file name for newly created daily notes or weekly note, which should correspond to the same format setting of Obsidian daily note plugin and of templater plugin(if installed).')
+			.setDesc('Set the file name (in moment format) for newly created daily notes or weekly note, which should correspond to the same format setting of Obsidian daily note plugin and of templater plugin(if installed).')
 			.addText(text => text
 				.setPlaceholder('YYYY-MM-DD')
 				.setValue(settings.periodicNoteFormat)
@@ -877,6 +896,7 @@ class WordflowSettingTab extends PluginSettingTab {
 			);
 	}
 
+	private PeriodicFolderComponent?: TextComponent;
 	private SyntaxComponent?: TextAreaComponent;
 
 	private async updateSyntax(settings: any) {

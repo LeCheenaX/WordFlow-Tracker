@@ -9,6 +9,7 @@ import { error } from "console";
 export class DataRecorder {
     public existingDataMap: Map<string, ExistingData> = new Map();
     private newDataMap: Map<string, NewData> = new Map();
+    private enableDynamicFolder: boolean;
     private periodicNoteFolder: string;
     private periodicNoteFormat: string;
     public recordType: string;
@@ -37,6 +38,7 @@ export class DataRecorder {
 
     public loadSettings(){
         if (!this.config){
+        this.enableDynamicFolder = this.plugin.settings.enableDynamicFolder;
         this.periodicNoteFolder = this.plugin.settings.periodicNoteFolder;
         this.periodicNoteFormat = this.plugin.settings.periodicNoteFormat;
         this.recordType = this.plugin.settings.recordType;
@@ -51,6 +53,7 @@ export class DataRecorder {
         this.insertPlaceStart = this.plugin.settings.insertPlaceStart;
         this.insertPlaceEnd = this.plugin.settings.insertPlaceEnd;
         } else {
+            this.enableDynamicFolder = this.config.enableDynamicFolder;
             this.periodicNoteFolder = this.config.periodicNoteFolder;
             this.periodicNoteFormat = this.config.periodicNoteFormat;
             this.recordType = this.config.recordType;
@@ -94,7 +97,7 @@ export class DataRecorder {
             console.error("Failed to get or create record note");
             return;
         }
-console.log('Current Parser:',this.recordType)
+//console.log('Current Parser:',this.recordType)
         // Load existing data
         await this.loadExistingData(recordNote);
 /*
@@ -117,7 +120,7 @@ this.newDataMap.forEach((NewData)=>{
         } else {
             mergedData = this.mergeTotalData();
         }
-console.log('mergedData:',mergedData)
+//console.log('mergedData:',mergedData)
         // Generate and update content
         const newContent = this.Parser.generateContent(mergedData);
 //console.log('newContent:',newContent)
@@ -136,12 +139,23 @@ console.log('mergedData:',mergedData)
 
     private async getOrCreateRecordNote(): Promise<TFile | null> {
         const recordNoteName = moment().format(this.periodicNoteFormat);
-        let recordNotePath = (this.periodicNoteFolder.trim() == '')? this.periodicNoteFolder: this.periodicNoteFolder+'/';
+        const recordNoteFolder = (this.enableDynamicFolder)? moment().format(this.periodicNoteFolder): this.periodicNoteFolder;
+        let recordNotePath = ((recordNoteFolder.trim() == '')||(recordNoteFolder.trim() == '/'))? '': recordNoteFolder+'/';
         recordNotePath += recordNoteName + '.md';
         let recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
-console.log('recordNotePath:',recordNotePath)
+//console.log('recordNotePath:',recordNotePath)
         if (!recordNote) {
             try {
+                if (!this.plugin.app.vault.getFolderByPath(recordNoteFolder.trim())) {
+                    try{
+                        await this.plugin.app.vault.createFolder(recordNoteFolder.trim())
+                        new Notice(`Periodic folder ${recordNoteFolder.trim()} doesn't exist!\n Auto created. `, 3000)
+                    } catch (error) {
+                        new Error(`Failed to create record note folder: ${error}`)
+                        console.error("Failed to create record note folder:", error);
+                        return null;
+                    }
+                }
                 await this.plugin.app.vault.create(recordNotePath, '');
                 // Wait for file creation to complete
                 await new Promise(resolve => setTimeout(resolve, 2000));
@@ -264,12 +278,12 @@ console.log('recordNotePath:',recordNotePath)
             MergedTotalData.totalEdits = 0;
             MergedTotalData.totalWords = 0;
         }
-console.log('Total Before merging:',[MergedTotalData])
+//console.log('Total Before merging:',[MergedTotalData])
         for (const [filePath, newData] of this.newDataMap.entries()) {
             MergedTotalData.totalEdits += newData.editedTimes;
             MergedTotalData.totalWords += newData.editedWords;
         }
-console.log('Total After merging:',[MergedTotalData])
+//console.log('Total After merging:',[MergedTotalData])
         return [MergedTotalData];
     }
 

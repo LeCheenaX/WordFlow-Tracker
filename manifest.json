@@ -1,7 +1,7 @@
 {
 	"id": "wordflow-tracker",
 	"name": "Wordflow Tracker",
-	"version": "1.2.2",
+	"version": "1.2.3",
 	"minAppVersion": "1.7.0",
 	"description": "Track the changes and stats of your edited note files automatically. Record the modified notes and statistics to your daily note with various customizations!.",
 	"author": "LeCheenaX",
