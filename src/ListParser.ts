@@ -89,6 +89,23 @@ export class BulletListParser{
                 if (groupData.editedTimes !== undefined) {
                     ListData.editedTimes = parseInt(groupData.editedTimes) || 0;
                 }
+
+                // Parse 4 newly added words data
+                if (groupData.addedWords !== undefined) {
+                    ListData.addedWords = parseInt(groupData.addedWords) || 0;
+                }
+
+                if (groupData.deletedWords !== undefined) {
+                    ListData.deletedWords = parseInt(groupData.deletedWords) || 0;
+                }
+
+                if (groupData.changedWords !== undefined) {
+                    ListData.changedWords = parseInt(groupData.changedWords) || 0;
+                }
+
+                if (groupData.docWords !== undefined) {
+                    ListData.docWords = parseInt(groupData.docWords) || 0;
+                }
                 
                 // Parse lastModifiedTime if present
                 if (groupData.lastModifiedTime !== undefined) {
@@ -102,8 +119,9 @@ export class BulletListParser{
                 }
                     
                 // Calculate percentage
-                ListData.editedPercentage = ListData.editedWords > 0 ? 
-                    Math.floor((ListData.editedWords / 1) * 100) + '%' : '0%';
+                if (groupData.editedPercentage !== undefined) {
+                    ListData.editedPercentage = groupData.editedPercentage || '0%';
+                }
                 
                 existingDataMap.set(ListData.filePath, ListData);
  
@@ -191,6 +209,10 @@ export class BulletListParser{
                     : data.lastModifiedTime as string)
                 .replace(/\${editedWords}/g, data.editedWords.toString())
                 .replace(/\${editedTimes}/g, data.editedTimes.toString())
+                .replace(/\${addedWords}/g, data.addedWords.toString())
+                .replace(/\${deletedWords}/g, data.deletedWords.toString())
+                .replace(/\${changedWords}/g, data.changedWords.toString())
+                .replace(/\${docWords}/g, data.docWords.toString())
                 .replace(/\${editedPercentage}/g, data.editedPercentage);
             
             output += (line.endsWith('\n'))? line : line + '\n';
@@ -355,10 +377,10 @@ export class ListParser{
                 }
                     
                 // Calculate percentage
-                ListData.editedPercentage = ListData.editedWords > 0 ? 
+                /*ListData.editedPercentage = ListData.editedWords > 0 ? 
                     Math.floor((ListData.editedWords / 1) * 100) + '%' : '0%';
                 
-                return ListData;
+                return ListData;*/
                 // Skip to the end of this group to continue search
                 //i += this.patternLineNum - 1;
             }

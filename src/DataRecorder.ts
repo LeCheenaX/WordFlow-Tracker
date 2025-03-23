@@ -180,14 +180,15 @@ this.newDataMap.forEach((NewData)=>{
         this.newDataMap.clear();
         if (!p_tracker){
             for (const [filePath, tracker] of this.trackerMap.entries()) {
-                if (!this.filterZero || tracker.changedTimes!=0){
+                if (!this.filterZero || tracker.editedTimes!=0){
+                await tracker.countWords(); // generate accurate words for NewData by the time of recording
                 this.newDataMap.set(filePath, new NewData(tracker));
                 }
                 tracker.resetEdit(); // deleted await for performance 
             }
         } else {
 //console.log('trackerClosed:',p_tracker)
-            if (!this.filterZero || p_tracker.changedTimes!=0){
+            if (!this.filterZero || p_tracker.editedTimes!=0){
             this.newDataMap.set(p_tracker.filePath, new NewData(p_tracker)); // only record given data
             }
 //console.log('newDataMap:', this.newDataMap);
@@ -242,8 +243,8 @@ this.newDataMap.forEach((NewData)=>{
                     bVal = b.editedTimes;
                     break;
                 case 'editedPercentage':
-                    aVal = parseInt(a.editedPercentage);
-                    bVal = parseInt(b.editedPercentage);
+                    aVal = parseInt(a.editedPercentage.split('%')[0], 10);
+                    bVal = parseInt(b.editedPercentage.split('%')[0], 10);
                     break;
                 case 'modifiedNote':
                     aVal = a.filePath;
@@ -365,6 +366,10 @@ export class ExistingData {
     lastModifiedTime: number|null;
     editedWords: number;
     editedTimes: number;
+    addedWords: number;
+    deletedWords: number;
+    changedWords: number;
+    docWords: number;
     editedPercentage: string;
     totalWords: number;
     totalEdits: number;
@@ -373,47 +378,14 @@ export class ExistingData {
         this.lastModifiedTime = null;
         this.editedWords = 0;
         this.editedTimes = 0;
+        this.addedWords = 0;
+        this.deletedWords = 0;
+        this.changedWords = 0;
+        this.docWords = 0;
         this.editedPercentage = '0%';
+        this.totalWords = 0;
+        this.totalEdits = 0;
     }
-    
-    // Parse a table row into an ExistingData object
-    /*static fromTableRow(row: string): ExistingData | null {
-        const parts = row.split('|').map(part => part.trim()).filter(Boolean);
-        if (parts.length < 1) return null;
-        
-        const entry = new ExistingData(); 
-        entry.filePath = parts[0].replace(/^\[\[+|\]\]+$/g, ''); // require file path to be in the first column, and drop the '[[]]'.
-        
-        // Try to extract numeric values using regex - more robust than position-based extraction
-        for (let i = 1; i < parts.length; i++) {
-            const cell = parts[i];
-            
-            // Look for edited words (typically just a number)
-            if (/^\d+$/.test(cell)) {
-                if (entry.editedWords === 0) {
-                    entry.editedWords = parseInt(cell);
-                    continue;
-                } else if (entry.editedTimes === 0) {
-                    entry.editedTimes = parseInt(cell);
-                    continue;
-                }
-            }
-            
-            // Look for percentage format
-            if (cell.endsWith('%')) {
-                entry.editedPercentage = cell;
-                continue;
-            }
-            
-            // Assume a formatted date/time string
-            // change from moment to Obsidian packaged moment since 1.2.2, abandon 'moment(cell) instanceof moment', use 'moment.isMoment(cell)'
-            if (moment.isMoment(cell) || /\d{2}\/\d{2}\/\d{4}/.test(cell)) {
-                entry.lastModifiedTime = Number(moment(cell).format('x')); // to timestamp
-            }
-        }
-        
-        return entry;
-    }*/
 }
 
 // Class to represent data from new DocTracker objects
@@ -422,16 +394,24 @@ export class NewData {
     lastModifiedTime: number;
     editedWords: number;
     editedTimes: number;
+    addedWords: number;
+    deletedWords: number;
+    changedWords: number;
     editedPercentage: string;
-    docLength: number;
+    docWords: number;
+    originalWords: number;
     
     constructor(tracker: DocTracker) {
         this.filePath = tracker.filePath;
         this.lastModifiedTime = tracker.lastModifiedTime;
-        this.editedWords = tracker.changedWords;
-        this.editedTimes = tracker.changedTimes;
-        this.docLength = tracker.docLength;
-        this.editedPercentage = (100 * tracker.changedWords / tracker.docLength).toFixed(0) + '%';
+        this.editedWords = tracker.editedWords;
+        this.editedTimes = tracker.editedTimes;
+        this.addedWords = tracker.addedWords;
+        this.deletedWords = tracker.deletedWords;
+        this.changedWords = tracker.changedWords;
+        this.docWords = tracker.docWords;
+        this.originalWords = tracker.originalWords;
+        this.editedPercentage = (100 * tracker.editedWords / (tracker.docWords + tracker.editedWords)).toFixed(0) + '%';
     }
 }
 
@@ -441,8 +421,11 @@ export class MergedData {
     lastModifiedTime: number | string;
     editedWords: number;
     editedTimes: number;
+    addedWords: number;
+    deletedWords: number;
+    changedWords: number;
     editedPercentage: string;
-    docLength: number;
+    docWords: number;
     isNew: boolean;
     totalWords: number;
     totalEdits: number;
@@ -453,7 +436,10 @@ export class MergedData {
             this.lastModifiedTime = newData.lastModifiedTime;
             this.editedWords = newData.editedWords;
             this.editedTimes = newData.editedTimes;
-            this.docLength = newData.docLength;
+            this.addedWords = newData.addedWords;
+            this.deletedWords = newData.deletedWords;
+            this.changedWords = newData.changedWords;
+            this.docWords = newData.docWords;
             this.editedPercentage = newData.editedPercentage;
             this.isNew = true;
         } else if (existingData) {
@@ -461,7 +447,10 @@ export class MergedData {
             this.lastModifiedTime = existingData.lastModifiedTime? existingData.lastModifiedTime:'';
             this.editedWords = existingData.editedWords;
             this.editedTimes = existingData.editedTimes;
-            this.docLength = 1; // Default value
+            this.addedWords = existingData.addedWords;
+            this.deletedWords = existingData.deletedWords;
+            this.changedWords = existingData.changedWords;
+            this.docWords = existingData.docWords; 
             this.editedPercentage = existingData.editedPercentage;
             this.isNew = false;
         } else {
@@ -474,11 +463,52 @@ export class MergedData {
         // Add to accumulating fields
         this.editedWords += existingData.editedWords;
         this.editedTimes += existingData.editedTimes;
+        this.addedWords += existingData.addedWords;
+        this.deletedWords += existingData.deletedWords;
+        this.changedWords += existingData.changedWords;
         
-        // Recalculate percentage
-        this.editedPercentage = (100 * this.editedWords / this.docLength).toFixed(0) + '%';
-        
-        // Keep other fields from new data (timestamp, etc.)
+        if (parseInt(existingData.editedPercentage.split('%')[0], 10) == 0) { // invalid existing data, let newData override
+            return;
+        } else {
+        // now override newData with recalculated Data
+//console.log('mergedDocWords:', this.docWords + this.changedWords);
+//console.log('existingPercentage:', parseInt(existingData.editedPercentage.split('%')[0], 10));
+/* This way will be less accurate with the growing updates to the note. Because the editedPercentage will lose accuracy when recording, using existing editedPercentage to count originalDocWords is uncapable to fix itself:
+        const originalDocWords = Math.floor(
+            (100 - parseInt(existingData.editedPercentage.split('%')[0], 10)) 
+            * 0.01 
+            * this.docWords
+        );
+*/
+// could not count originalDocWords based only on current editedPercentage
+        const originalDocWords = this.docWords;
+console.log('originalDocWords:', originalDocWords)
+        this.editedPercentage = (100 * this.editedWords / (originalDocWords + this.editedWords)).toFixed(0) + '%';
+console.log('newPercentage:',this.editedPercentage)
+        }
+        // Keep other fields from new data (lastModifiedTime, docWords, etc.)
     }
 }
 
+class EditedPercentage{
+    originalWords: number;
+    deletedWords: number;
+    addedWords: number;
+    percentage: number;
+
+    constructor(editedPercentage: string){
+        // convert extracted editedPercentage string to class
+    }
+
+    public setOrigin(originalDocWords: number){
+        this.originalWords = originalDocWords;
+    }
+
+    public toString(): string{
+        this.percentage = 
+            (this.addedWords + this.deletedWords) 
+            /(this.originalWords + this.addedWords + this.deletedWords)
+            *100;
+        return `<span class="edited-percentage" data-percentage="${this.percentage}" data-originWords="${this.originalWords}" data-delWords="${this.deletedWords}" data-addWords="${this.addedWords}"></span>`
+    }
+}

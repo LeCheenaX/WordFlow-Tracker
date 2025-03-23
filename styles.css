@@ -84,3 +84,33 @@
     border-top: 1px solid var(--background-modifier-border);
     padding-top: 12px;
 }
+
+.edited-percentage::after {
+    content: attr(data-percentage) "%";
+}
+
+.stat-bar-container {
+    display: inline-flex;
+    width: 160px;
+    height: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  
+  .stat-bar {
+    height: 100%;
+  }
+  
+  .stat-bar.origin {
+    background-color: #FFD700;
+    border-radius: 6px 0 0 6px;
+  }
+  
+  .stat-bar.deleted {
+    background-color: #FF4D4D;
+  }
+  
+  .stat-bar.added {
+    background-color: #00CC66;
+    border-radius: 0 6px 6px 0;
+  }

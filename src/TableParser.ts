@@ -157,6 +157,14 @@ export class TableParser{
                             return data.editedWords.toString();
                         case 'editedTimes':
                             return data.editedTimes.toString();
+                        case 'addedWords':
+                            return data.addedWords.toString();
+                        case 'deletedWords':
+                            return data.deletedWords.toString();
+                        case 'changedWords':
+                            return data.changedWords.toString();
+                        case 'docWords':
+                            return data.docWords.toString();
                         case 'editedPercentage':
                             return data.editedPercentage;
                         default:
@@ -230,6 +238,22 @@ export class TableParser{
                     
                 case 'editedTimes':
                     entry.editedTimes = parseInt(value) || 0;
+                    break;
+
+                case 'addedWords':
+                    entry.addedWords = parseInt(value) || 0;
+                    break;
+
+                case 'deletedWords':
+                    entry.deletedWords = parseInt(value) || 0;
+                    break;
+
+                case 'changedWords':
+                    entry.changedWords = parseInt(value) || 0;
+                    break;
+
+                case 'docWords':
+                    entry.docWords = parseInt(value) || 0;
                     break;
                     
                 case 'lastModifiedTime':

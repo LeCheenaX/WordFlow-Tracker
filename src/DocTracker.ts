@@ -8,11 +8,16 @@ const DEBUG = true as const;
 export class DocTracker{
     public lastDone: number = 0;
     public lastUndone: number = 0;
-    public changedTimes: number = 0;
+    public editedTimes: number = 0;
+    public editedWords: number = 0;
+    public addedWords: number = 0;
+    public deletedWords: number = 0;
     public changedWords: number = 0;
     public isActive: boolean = false;
     public lastModifiedTime: number; // unix timestamp
     public docLength: number = 0;
+    public docWords: number = 0;
+    public originalWords: number = 0;
     
     private debouncedTracker: ReturnType<typeof debounce>;
     private editorListener: EventRef | null = null;
@@ -31,6 +36,9 @@ export class DocTracker{
         this.lastModifiedTime = Number(this.plugin.app.vault.getFileByPath(this.filePath)?.stat.mtime);
         this.addWordsCt = wordsCounter();
         this.deleteWordsCt = wordsCounter();
+        const totalWordsCt = wordsCounter();
+        //@ts-expect-error
+        this.originalWords = totalWordsCt(this.activeEditor?.editor.cm.state.sliceDoc(0));
         await this.activate();
 
 //        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.filePath}`);
@@ -82,7 +90,7 @@ export class DocTracker{
                 docLength: docLength,
                 doc: doc,
                 lastChangedTime: this.changedTimes,
-                lastChangedWords: this.changedWords,
+                lastChangedWords: this.editedWords,
             });
             console.log("DocTracker.trackChanges: CurrentHistory:", history);	
 
@@ -110,18 +118,20 @@ export class DocTracker{
                     const addedWords = this.addWordsCt(theOther) + addFix;
                     const deletedWords = this.deleteWordsCt(inserted) + deleteFix;
                     const mWords = addedWords + deletedWords;
-//console.log('Do added:', addedWords, '\nDo deleted:', deletedWords, 'total:', mWords)
-/*                    if (DEBUG){
+console.log('Do added:', addedWords, '\nDo deleted:', deletedWords, 'total:', mWords)
+                    if (DEBUG){
                         console.log(`Do adding texts: "${theOther}" from ${fromA} to ${toA} in current document, \ndo deleting texts: "${inserted}" from ${fromB} to ${toB} in current document.`);
-                        console.log("Modified Words: ", mWords);
+                        //console.log("Modified Words: ", mWords);
                     }
-*/
-                    this.changedWords += mWords;	
-                    
+
+                    this.editedWords += mWords;	
+                    this.addedWords += addedWords;
+                    this.deletedWords += deletedWords;
+                    this.changedWords += (addedWords - deletedWords);                    
                 });
             }
 
-            this.changedTimes += (doneDiff + historyCleared); // multiple changes should be counted only one time.
+            this.editedTimes += (doneDiff + historyCleared); // multiple changes should be counted only one time.
         }	
 
         // done | when fixed doneDiff is detected minus, and done events is added to undone.
@@ -131,42 +141,44 @@ export class DocTracker{
                 const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA,toA);
                 inserted = inserted.toString();
 
-                //@ts-expect-error
-                let addFix = (fromB!=0 && this.activeEditor.editor.cm.state.sliceDoc(fromB-1,fromB) == ' ')?1 :0;
-                //@ts-expect-error
-                let deleteFix = (fromA!=0 && this.activeEditor.editor.cm.state.sliceDoc(fromA-1,fromA) == ' ')?1 :0;
-
-                const addedWords = this.addWordsCt(inserted) + addFix;
-                const deletedWords = this.deleteWordsCt(theOther) + deleteFix;
+                const deletedWords = this.addWordsCt(inserted);
+                const addedWords = this.deleteWordsCt(theOther);
                 const mWords = addedWords + deletedWords;
 /*                if (DEBUG) {
                     console.log(`Undo adding texts: "${inserted}" from ${fromB} to ${toB} from previous document, \nundo deleting texts: "${theOther}" from ${fromA} to ${toA} from previous document.`);
                     console.log("Modified Words: ", mWords);	
                 }
 */                    
-                this.changedWords += mWords;	
+                this.editedWords += mWords;
+                this.addedWords += addedWords;
+                this.deletedWords += deletedWords;
+                this.changedWords += (addedWords - deletedWords);	
             });
 
-            this.changedTimes += undoneDiff; // multiple changes should be counted only one time.
+            this.editedTimes += undoneDiff; // multiple changes should be counted only one time.
         }
 
         
         
         this.lastDone = currentDone;
         this.lastUndone = currentUndone;
-        this.lastModifiedTime = Number(history.prevTime);
+        if (Number(history.prevTime) !== 0) this.lastModifiedTime = Number(history.prevTime);
         this.updateStatusBarTracker();
-/*        
-        console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
-            currentChangedTimes: this.changedTimes,
-            currentChangedWords: this.changedWords,
-            lastModifiedTime: this.lastModifiedTime,
+        
+console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
+    currentEditedTimes: this.editedTimes,
+    currentEditedWords: this.editedWords,
+    AddedWords: this.addedWords,
+    DeletedWords: this.deletedWords,
+    ChangedWords: this.changedWords,
+    lastRecordedWords: this.docWords,
+    lastModifiedTime: this.lastModifiedTime,
         });
-*/        
+        
     }
 
     private updateStatusBarTracker(){
-        this.plugin.statusBarContent = `${this.changedTimes}` + ' edits: ' + `${this.changedWords}` + ' words';
+        this.plugin.statusBarContent = `${this.editedTimes}` + ' edits: ' + `${this.editedWords}` + ' words';
         //if(DEBUG) this.plugin.statusBarContent += ` ${this.filePath}`;
         this.plugin.statusBarTrackerEl.setText(this.plugin.statusBarContent);
     }
@@ -191,7 +203,7 @@ export class DocTracker{
         this.docLength = this.activeEditor?.editor.cm.state.doc.length;
 
         // 创建独立防抖实例
-        this.debouncedTracker = debounce(this.trackChanges.bind(this), 800, true); // Modified from official value 500 ms to 1000 ms, for execution delay. Modified from 1000 to 800 to test. 
+        this.debouncedTracker = debounce(this.trackChanges.bind(this), 1000, true); // Modified from official value 500 ms to 1000 ms, for execution delay. Modified from 1000 to 800 to test. 
         
         // 绑定编辑器事件
         this.editorListener = this.plugin.app.workspace.on('editor-change', (editor: Editor, view: MarkdownView) => {
@@ -207,6 +219,12 @@ export class DocTracker{
 //        if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);    
     }; 
 
+    public async countWords(){ 
+        const totalWordsCt = wordsCounter();
+        //@ts-expect-error
+        this.docWords = totalWordsCt(this.activeEditor?.editor.cm.state.sliceDoc(0));
+    }
+
     public deactivate(){
         if (this.editorListener) {
             this.plugin.app.workspace.offref(this.editorListener);
@@ -220,7 +238,10 @@ export class DocTracker{
 
     public async resetEdit(){
         await sleep(500); // for multiple recorders to record before cleared.
-        this.changedTimes = 0;
+        this.editedTimes = 0;
+        this.editedWords = 0;
+        this.addedWords = 0;
+        this.deletedWords = 0;
         this.changedWords = 0;
         this.updateStatusBarTracker();
     }
