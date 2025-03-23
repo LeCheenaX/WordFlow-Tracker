@@ -118,12 +118,12 @@ export class DocTracker{
                     const addedWords = this.addWordsCt(theOther) + addFix;
                     const deletedWords = this.deleteWordsCt(inserted) + deleteFix;
                     const mWords = addedWords + deletedWords;
-console.log('Do added:', addedWords, '\nDo deleted:', deletedWords, 'total:', mWords)
-                    if (DEBUG){
+//console.log('Do added:', addedWords, '\nDo deleted:', deletedWords, 'total:', mWords)
+/*                    if (DEBUG){
                         console.log(`Do adding texts: "${theOther}" from ${fromA} to ${toA} in current document, \ndo deleting texts: "${inserted}" from ${fromB} to ${toB} in current document.`);
                         //console.log("Modified Words: ", mWords);
                     }
-
+*/
                     this.editedWords += mWords;	
                     this.addedWords += addedWords;
                     this.deletedWords += deletedWords;

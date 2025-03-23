@@ -2,7 +2,7 @@ import WordflowTrackerPlugin, { RecorderConfig } from "./main";
 import { DocTracker } from './DocTracker';
 import { moment, Notice, TFile } from 'obsidian';
 import { TableParser } from './TableParser';
-import { BulletListParser, ListParser } from './ListParser';
+import { BulletListParser } from './ListParser';
 import { MetaDataParser } from "./MetaDataParser";
 import { error } from "console";
 
@@ -243,8 +243,8 @@ this.newDataMap.forEach((NewData)=>{
                     bVal = b.editedTimes;
                     break;
                 case 'editedPercentage':
-                    aVal = parseInt(a.editedPercentage.split('%')[0], 10);
-                    bVal = parseInt(b.editedPercentage.split('%')[0], 10);
+                    aVal = a.editedPercentage.percentage;
+                    bVal = b.editedPercentage.percentage;
                     break;
                 case 'modifiedNote':
                     aVal = a.filePath;
@@ -370,7 +370,7 @@ export class ExistingData {
     deletedWords: number;
     changedWords: number;
     docWords: number;
-    editedPercentage: string;
+    editedPercentage: EditedPercentage
     totalWords: number;
     totalEdits: number;
     
@@ -382,7 +382,7 @@ export class ExistingData {
         this.deletedWords = 0;
         this.changedWords = 0;
         this.docWords = 0;
-        this.editedPercentage = '0%';
+        this.editedPercentage = new EditedPercentage();
         this.totalWords = 0;
         this.totalEdits = 0;
     }
@@ -397,9 +397,9 @@ export class NewData {
     addedWords: number;
     deletedWords: number;
     changedWords: number;
-    editedPercentage: string;
     docWords: number;
     originalWords: number;
+    editedPercentage: EditedPercentage
     
     constructor(tracker: DocTracker) {
         this.filePath = tracker.filePath;
@@ -411,7 +411,8 @@ export class NewData {
         this.changedWords = tracker.changedWords;
         this.docWords = tracker.docWords;
         this.originalWords = tracker.originalWords;
-        this.editedPercentage = (100 * tracker.editedWords / (tracker.docWords + tracker.editedWords)).toFixed(0) + '%';
+        this.editedPercentage = new EditedPercentage();
+        this.editedPercentage.fromTracker(tracker);
     }
 }
 
@@ -424,7 +425,7 @@ export class MergedData {
     addedWords: number;
     deletedWords: number;
     changedWords: number;
-    editedPercentage: string;
+    editedPercentage: EditedPercentage;
     docWords: number;
     isNew: boolean;
     totalWords: number;
@@ -467,26 +468,17 @@ export class MergedData {
         this.deletedWords += existingData.deletedWords;
         this.changedWords += existingData.changedWords;
         
-        if (parseInt(existingData.editedPercentage.split('%')[0], 10) == 0) { // invalid existing data, let newData override
-            return;
-        } else {
-        // now override newData with recalculated Data
-//console.log('mergedDocWords:', this.docWords + this.changedWords);
-//console.log('existingPercentage:', parseInt(existingData.editedPercentage.split('%')[0], 10));
-/* This way will be less accurate with the growing updates to the note. Because the editedPercentage will lose accuracy when recording, using existing editedPercentage to count originalDocWords is uncapable to fix itself:
-        const originalDocWords = Math.floor(
-            (100 - parseInt(existingData.editedPercentage.split('%')[0], 10)) 
-            * 0.01 
-            * this.docWords
-        );
-*/
-// could not count originalDocWords based only on current editedPercentage
-        const originalDocWords = this.docWords;
-console.log('originalDocWords:', originalDocWords)
-        this.editedPercentage = (100 * this.editedWords / (originalDocWords + this.editedWords)).toFixed(0) + '%';
-console.log('newPercentage:',this.editedPercentage)
-        }
-        // Keep other fields from new data (lastModifiedTime, docWords, etc.)
+        // Let existing data outweighs the new data
+        this.editedPercentage.setEdits(
+            existingData.editedPercentage.originalWords, 
+            this.deletedWords, 
+            this.addedWords
+        )
+
+//console.log('newDocWords:', this.docWords)
+//console.log('newPercentage:',this.editedPercentage.percentage, '%')
+        
+        // Leave blank to let new data outweighs the unspecified properties (lastModifiedTime, docWords, etc.)
     }
 }
 
@@ -496,19 +488,45 @@ class EditedPercentage{
     addedWords: number;
     percentage: number;
 
-    constructor(editedPercentage: string){
-        // convert extracted editedPercentage string to class
+    public fromNote(editedPercentage: string){
+        const elemRegex = /<span class="edited-percentage"[^>]*?><\/span>/gi;
+  
+        let elemMatch;
+        while ((elemMatch = elemRegex.exec(editedPercentage)) !== null) {
+            const elem = elemMatch[0];
+            
+            // extract Data, ignoring uppercase
+            this.percentage = parseInt(elem.match(/data-percentage="([^"]*)"/i)?.[1] || "0");
+            this.originalWords = parseInt(elem.match(/data-originWords="([^"]*)"/i)?.[1] || "0");
+            this.deletedWords = parseInt(elem.match(/data-delWords="([^"]*)"/i)?.[1] || "0");
+            this.addedWords = parseInt(elem.match(/data-addWords="([^"]*)"/i)?.[1] || "0");
+        }
     }
 
-    public setOrigin(originalDocWords: number){
-        this.originalWords = originalDocWords;
+    public fromTracker(tracker: DocTracker){
+        this.originalWords = tracker.originalWords;
+        this.deletedWords = tracker.deletedWords;
+        this.addedWords = tracker.addedWords;
+        this.calcPercentage();
     }
 
-    public toString(): string{
-        this.percentage = 
-            (this.addedWords + this.deletedWords) 
-            /(this.originalWords + this.addedWords + this.deletedWords)
-            *100;
+    // override current values with given values, and recalculate percentage. 
+    public setEdits(originalWords: number, deletedWords: number, addedWords: number){
+        this.originalWords = originalWords;
+        this.deletedWords = deletedWords;
+        this.addedWords = addedWords;
+        this.calcPercentage();
+    }
+
+    public toNote(): string{
         return `<span class="edited-percentage" data-percentage="${this.percentage}" data-originWords="${this.originalWords}" data-delWords="${this.deletedWords}" data-addWords="${this.addedWords}"></span>`
+    }
+
+    private calcPercentage(){
+        this.percentage = 
+        (this.addedWords + this.deletedWords) 
+        /(this.originalWords + this.addedWords + this.deletedWords)
+        *100;
+        this.percentage = Math.floor(this.percentage);
     }
 }

@@ -166,7 +166,7 @@ export class TableParser{
                         case 'docWords':
                             return data.docWords.toString();
                         case 'editedPercentage':
-                            return data.editedPercentage;
+                            return data.editedPercentage.toNote();
                         default:
                             return '';
                     }
@@ -174,6 +174,11 @@ export class TableParser{
             );
         });
         
+        // check if all data is empty
+        if (rows.every(row => row.trim() === '')){
+            return '';
+        }
+
         // Assemble the complete table
         return [
             '',
@@ -269,7 +274,7 @@ export class TableParser{
                     break;
                     
                 case 'editedPercentage':
-                    entry.editedPercentage = value;
+                    entry.editedPercentage.fromNote(value);
                     break;
             }
         }

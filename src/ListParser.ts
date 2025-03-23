@@ -118,9 +118,9 @@ export class BulletListParser{
                     ListData.lastModifiedTime = null;
                 }
                     
-                // Calculate percentage
+                // Parse percentage
                 if (groupData.editedPercentage !== undefined) {
-                    ListData.editedPercentage = groupData.editedPercentage || '0%';
+                    ListData.editedPercentage.fromNote(groupData.editedPercentage);
                 }
                 
                 existingDataMap.set(ListData.filePath, ListData);
@@ -213,7 +213,7 @@ export class BulletListParser{
                 .replace(/\${deletedWords}/g, data.deletedWords.toString())
                 .replace(/\${changedWords}/g, data.changedWords.toString())
                 .replace(/\${docWords}/g, data.docWords.toString())
-                .replace(/\${editedPercentage}/g, data.editedPercentage);
+                .replace(/\${editedPercentage}/g, data.editedPercentage.toNote());
             
             output += (line.endsWith('\n'))? line : line + '\n';
         }
@@ -281,6 +281,7 @@ export class BulletListParser{
 };
 
 // used for list data that belong to a single list group, not multiple list groups
+/*
 export class ListParser{
     //private recordType: string;
     private timeFormat: string;
@@ -377,10 +378,10 @@ export class ListParser{
                 }
                     
                 // Calculate percentage
-                /*ListData.editedPercentage = ListData.editedWords > 0 ? 
+                ListData.editedPercentage = ListData.editedWords > 0 ? 
                     Math.floor((ListData.editedWords / 1) * 100) + '%' : '0%';
                 
-                return ListData;*/
+                return ListData;
                 // Skip to the end of this group to continue search
                 //i += this.patternLineNum - 1;
             }
@@ -516,3 +517,4 @@ export class ListParser{
         }
     }
 };
+*/
