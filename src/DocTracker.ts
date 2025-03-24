@@ -35,11 +35,9 @@ export class DocTracker{
     private async initialize() {
         this.lastModifiedTime = Number(this.plugin.app.vault.getFileByPath(this.filePath)?.stat.mtime);
         this.addWordsCt = wordsCounter();
-        this.deleteWordsCt = wordsCounter();
-        const totalWordsCt = wordsCounter();
-        //@ts-expect-error
-        this.originalWords = totalWordsCt(this.activeEditor?.editor.cm.state.sliceDoc(0));
+        this.deleteWordsCt = wordsCounter();        
         await this.activate();
+        await this.countOrigin();
 
 //        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.filePath}`);
     }
@@ -65,7 +63,10 @@ export class DocTracker{
         } // protection
         */
         // @ts-expect-error
-        const history = this.activeEditor?.editor.cm.state.field(historyField, false); // done on 1.0.1 | abandon false positive errors prompting
+        const history = this.activeEditor?.editor.cm.state.field(historyField); // changed on 1.3.0, add delay to avoid error, rather than disable the error prompting
+        // done on 1.0.1 | abandon false positive errors prompting
+
+//console.log('historyField:', this.activeEditor?.editor.cm.state.field(historyField))
         
         const currentDone = history.done.length;
         const currentUndone = history.undone.length;
@@ -193,7 +194,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
 
         this.activeEditor = this.plugin.app.workspace.getActiveViewOfType(MarkdownView); 
 //        if (DEBUG) console.log("DocTracker.activate: editor:", this.activeEditor)
-        await sleep(10); // Warning: cm will be delayed for 3-5 ms to be bound to the updated editor.
+        await sleep(20); // Warning: cm will be delayed for 3-5 ms to be bound to the updated editor.
         // @ts-expect-error
         const history = this.activeEditor?.editor.cm.state.field(historyField); // reference will be destroyed after initialization
 
@@ -259,6 +260,13 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
         this.destroy = () => {
             throw new Error('DocTracker instance already destroyed');
         };
+    }
+
+    private async countOrigin(){       
+        const totalWordsCt = wordsCounter();
+        await sleep(100); // set delay for the activeEditor to load
+        //@ts-expect-error
+        this.originalWords = totalWordsCt(this.activeEditor?.editor.cm.state.sliceDoc(0));
     }
 }
 
