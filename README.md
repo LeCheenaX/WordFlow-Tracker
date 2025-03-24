@@ -11,10 +11,10 @@ WorkFlow Tracker is a lite plugin that track your edits on each note and automat
 ### Core Features
 - Tracking the number of edits, editied words per note. This will reflect on the status bar at the bottom of note.
   ![image](https://github.com/user-attachments/assets/88e1d16b-893f-46a4-aa66-210a372ef753)
-- Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes. The tracker will be set to 0 once the note is recorded.
+- Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes. 
 - Display changes in a bar style to show the portion of original contents v.s. modified contents. 
   ![image](https://github.com/user-attachments/assets/56c8336a-4761-4fed-99b7-3f6453de416a)
-- Record edited statistics such as total words you edited today, to the YAML(Frontmatter) of daily note. Other plugins such as heatmap could use this data to generate analysis.
+- Record edited statistics such as total words you edited today, to the YAML(Frontmatter) of daily note. Other plugins such as heatmap could use these metadata to generate analysis.
 
   ![image](https://github.com/user-attachments/assets/1e5bbe85-a943-4d10-b81c-ecef5e6b15bb)
 - Customization of which data to be recorded with ${dataName}, see in [Supported String Interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) below. 
@@ -41,7 +41,9 @@ Now the plugin will automatically track the edits you made and display them in t
 2. you close a tab of notes after editing them;
 3. you manually click the button "Record wordflows from edited notes" in the left ribbon of Obsidian;
 4. you manually run the command "Record wordflows from edited notes to periodic notes" in Obsidian;
-5. the automatic recording interval is timed out, which could be set in the setting of Wordflow Tracker plugin, to record all edited notes,. 
+5. the automatic recording interval is timed out, which could be set in the setting of Wordflow Tracker plugin, to record all edited notes.
+
+Note: the tracker will be set to 0 once the note is recorded.
 
 ### Advanced guide for customization
 #### Apply templates to newly created notes before recording
@@ -50,7 +52,7 @@ Make sure your template will be applied to notes under the same [periodic note f
 If your newly created notes will be renamed by other plugins, such as **Templates**(core plugin) or **Templater**(community plugin), make sure that the name that other plugin specified is the same as [periodic note format](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#recorder-basics)
 
 #### Customize which data to be recorded
-In wordflow recording syntax, you can add or delete the data in one of the following format:
+In wordflow recording syntax, you can add or delete the data in one of the following formats:
 
 - **Table:**
 
@@ -73,7 +75,7 @@ In wordflow recording syntax, you can add or delete the data in one of the follo
 
 	![image](https://github.com/user-attachments/assets/de26aee0-e051-42b6-8fc1-e18e41db2f60)
 
-    Note: ${modifiedNote} must exist in the bullet list syntax, or the recorder will have trouble merging the existing data of note with the new data
+    Note: ${modifiedNote} must exist in the table syntax, or the recorder will have trouble merging the existing data of note with the new data
 
 - **Bullet List:** 
 
@@ -149,7 +151,7 @@ Please also ensure that this folder is the same folder where templates from othe
 | ${addedWords}          | the number of words you added in a period per note.                                                                                                                                                 | table, bullet list     | 350                                  |                                                                                                                                                                                                           |
 | ${docWords}            | the number of words per document, by the end of last recording.                                                                                                                                     | table, bullet list     | 1000                                 | includes words in YAML(Fromtmatter), which is not included in Obsidian **word count** core plugin.                                                                                                        |
 | ${editedPercentage}    | (beta testing) the rate of edited words to the total words(edited + original), in a period of editing per note. Very useful when you want to track if the edits are little changes or huge efforts | table, bullet list     | 55%                                  | the content is html format, and will be styled to a string. (Using string directly is abandoned due to the growing loss of accuracy with the recorder updates this string. )                              |
-| ${statsBar}            | (beta testing) the portion of original words, deleted words and added words in html format.  Very useful when you want to track if the edits are little changes or huge efforts                    | table                  | ![image](https://github.com/user-attachments/assets/c0d929a7-5ea8-4172-9d85-5de5f46e02bd) | the content will be styled to a svg bar, whose color can be customized in styles.css. Example uses the portion of 450:200:150                                                                                                                     |
+| ${statBar}            | (beta testing) the portion of original words, deleted words and added words in html format.  Very useful when you want to track if the edits are little changes or huge efforts                    | table                  | ![image](https://github.com/user-attachments/assets/c0d929a7-5ea8-4172-9d85-5de5f46e02bd) | the content will be styled to a svg bar, whose color can be customized in styles.css. Example uses the portion of 450:200:150                                                                                                                     |
 | ${lastModifiedTime}    | the last modified time of your note that is recorded to periodic note, you can specify the format of this item in plugin settings                                                                   | table, bullet list     | 2025-03-23 16:00                     |                                                                                                                                                                                                           |
 | ${totalEdits}          | the total number of edits of all notes you edited in a period.                                                                                                                                      | metadata               | 200                                  | can be used for other plugins, such as generating a heatmap                                                                                                                                               |
 | ${totalWords}          | the total number of edited words of all notes you edited in a period.                                                                                                                               | metadata               | 2000                                 | can be used for other plugins, such as generating a heatmap                                                                                                                                               |
