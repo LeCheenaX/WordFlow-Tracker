@@ -667,18 +667,34 @@ class WordflowSettingTab extends PluginSettingTab {
 		const periodicFolder = new Setting(container)
 			.setName('Periodic note folder')
 			.setDesc('Select whether to enable dynamic folder, and set the folder for daily notes or weekly note to place, which should correspond to the same folder of Obsidian daily note plugin and of templater plugin(if installed).')
-			.addToggle(t => t
-				.setTooltip('Enable dynamic folder in moment.js format')
-				.setValue(settings.enableDynamicFolder)
-				.onChange(async (value) => {
-					settings.enableDynamicFolder = value;
-					await this.plugin.saveSettings();			
-					recorderInstance.loadSettings();
-					// now update placeholder based on the setting. 
-					const placeholder = (value)? '[MonthlyLogs\/]MM-YYYY': 'Example: "Monthly logs"';
-					this.PeriodicFolderComponent?.setPlaceholder(placeholder);					
-				})
-			)
+			.addToggle(t => {
+				const toggle = t;
+			    toggle
+					.setTooltip('Enable dynamic folder in moment.js format')
+					.setValue(settings.enableDynamicFolder)
+					.onChange(async (value) => {
+						const actualValue = settings.enableDynamicFolder;
+						// if no actual change, return
+						if (value === actualValue) return;
+						// set back to the actual value in data.json rather than the unconfirmed changed value
+						toggle.setValue(actualValue); 
+
+						new ConfirmationModal(
+							this.app, 
+							`Please make sure that: \n\t1. You will adjust the periodic note folder after toggling dynamic folder. Example formats are as followed: \n\t\tIf dynamic folder is enabled, the moment format must be used: \n\t\t\t[MonthlyLogs\/]MM-YYYY\n\t\tIf dynamic folder is disabled, a folder path must be used: \n\t\t\tLogs\/MonthlyLogs \n\t2. Do not forget to do the same changes to other recorders if you want them to record in the same folder!`,
+							async () => {
+								settings.enableDynamicFolder = value;
+								await this.plugin.saveSettings();			
+								recorderInstance.loadSettings();
+								// now update placeholder based on the setting. 
+								const placeholder = (value)? '[MonthlyLogs\/]MM-YYYY': 'Example: "Monthly logs"';
+								this.PeriodicFolderComponent?.setPlaceholder(placeholder);
+								toggle.setValue(value);	// change display value to the new value
+							}
+						).open();
+					})
+			})				
+			
 			.addText(text => {
 				this.PeriodicFolderComponent = text;
 				text
