@@ -181,7 +181,7 @@ this.newDataMap.forEach((NewData)=>{
         if (!p_tracker){
             for (const [filePath, tracker] of this.trackerMap.entries()) {
                 if (!this.filterZero || tracker.editedTimes!=0){
-                await tracker.countWords(); // generate accurate words for NewData by the time of recording
+                await tracker.countActiveWords(); // generate accurate words for NewData by the time of recording
                 this.newDataMap.set(filePath, new NewData(tracker));
                 }
                 tracker.resetEdit(); // deleted await for performance 
@@ -189,7 +189,9 @@ this.newDataMap.forEach((NewData)=>{
         } else {
 //console.log('trackerClosed:',p_tracker)
             if (!this.filterZero || p_tracker.editedTimes!=0){
-            this.newDataMap.set(p_tracker.filePath, new NewData(p_tracker)); // only record given data
+                // no active editor now
+                await p_tracker.countInactiveWords(); // generate accurate words for NewData by the time of recording
+                this.newDataMap.set(p_tracker.filePath, new NewData(p_tracker)); // only record given data
             }
 //console.log('newDataMap:', this.newDataMap);
             p_tracker.resetEdit(); // deleted await for performance 
@@ -371,6 +373,7 @@ export class ExistingData {
     changedWords: number;
     docWords: number;
     editedPercentage: EditedPercentage
+    statBar: StatBar;
     totalWords: number;
     totalEdits: number;
     
@@ -383,6 +386,7 @@ export class ExistingData {
         this.changedWords = 0;
         this.docWords = 0;
         this.editedPercentage = new EditedPercentage();
+        this.statBar = new StatBar();
         this.totalWords = 0;
         this.totalEdits = 0;
     }
@@ -400,6 +404,7 @@ export class NewData {
     docWords: number;
     originalWords: number;
     editedPercentage: EditedPercentage
+    statBar: StatBar;
     
     constructor(tracker: DocTracker) {
         this.filePath = tracker.filePath;
@@ -413,6 +418,8 @@ export class NewData {
         this.originalWords = tracker.originalWords;
         this.editedPercentage = new EditedPercentage();
         this.editedPercentage.fromTracker(tracker);
+        this.statBar = new StatBar();
+        this.statBar.fromTracker(tracker);
     }
 }
 
@@ -426,6 +433,7 @@ export class MergedData {
     deletedWords: number;
     changedWords: number;
     editedPercentage: EditedPercentage;
+    statBar: StatBar;
     docWords: number;
     isNew: boolean;
     totalWords: number;
@@ -442,6 +450,7 @@ export class MergedData {
             this.changedWords = newData.changedWords;
             this.docWords = newData.docWords;
             this.editedPercentage = newData.editedPercentage;
+            this.statBar = newData.statBar;
             this.isNew = true;
         } else if (existingData) {
             this.filePath = existingData.filePath;
@@ -453,6 +462,7 @@ export class MergedData {
             this.changedWords = existingData.changedWords;
             this.docWords = existingData.docWords; 
             this.editedPercentage = existingData.editedPercentage;
+            this.statBar = existingData.statBar;
             this.isNew = false;
         } else {
             this.filePath = '|M|E|T|A|D|A|T|A|';
@@ -475,6 +485,12 @@ export class MergedData {
             this.addedWords
         )
 
+        this.statBar.setEdits(
+            existingData.statBar.originalWords, 
+            this.deletedWords, 
+            this.addedWords
+        )
+
 //console.log('newDocWords:', this.docWords)
 //console.log('newPercentage:',this.editedPercentage.percentage, '%')
         
@@ -488,11 +504,11 @@ class EditedPercentage{
     addedWords: number;
     percentage: number;
 
-    public fromNote(editedPercentage: string){
+    public fromNote(editedPercentage: string): boolean{
         const elemRegex = /<span class="edited-percentage"[^>]*?><\/span>/gi;
   
         let elemMatch;
-        while ((elemMatch = elemRegex.exec(editedPercentage)) !== null) {
+        if ((elemMatch = elemRegex.exec(editedPercentage)) !== null) {
             const elem = elemMatch[0];
             
             // extract Data, ignoring uppercase
@@ -500,7 +516,11 @@ class EditedPercentage{
             this.originalWords = parseInt(elem.match(/data-originWords="([^"]*)"/i)?.[1] || "0");
             this.deletedWords = parseInt(elem.match(/data-delWords="([^"]*)"/i)?.[1] || "0");
             this.addedWords = parseInt(elem.match(/data-addWords="([^"]*)"/i)?.[1] || "0");
+
+            return true;
         }
+
+        return false;
     }
 
     public fromTracker(tracker: DocTracker){
@@ -524,9 +544,78 @@ class EditedPercentage{
 
     private calcPercentage(){
         this.percentage = 
-        (this.addedWords + this.deletedWords) 
-        /(this.originalWords + this.addedWords + this.deletedWords)
-        *100;
+            (this.addedWords + this.deletedWords) 
+            /(this.originalWords + this.addedWords + this.deletedWords)
+            *100;
         this.percentage = Math.floor(this.percentage);
+    }
+}
+
+class StatBar{
+    originalWords: number;
+    deletedWords: number;
+    addedWords: number;
+    originPortion: number;
+    delPortion: number;
+    addPortion: number;
+
+    public fromNote(statBar: string): boolean{
+        const elemRegex = /<span class="stat-bar-container"[^>]*?>/i;
+    
+        const elemMatch = elemRegex.exec(statBar);
+        if (elemMatch) {
+            const elem = elemMatch[0];
+            
+            this.originalWords = parseInt(elem.match(/data-origin-words="([^"]*)"/i)?.[1] || "0");
+            this.deletedWords = parseInt(elem.match(/data-deleted-words="([^"]*)"/i)?.[1] || "0");
+            this.addedWords = parseInt(elem.match(/data-added-words="([^"]*)"/i)?.[1] || "0");
+            
+            const originWidthMatch = statBar.match(/class="stat-bar origin"[^>]*?width:\s*(\d+)%/i);
+            const deletedWidthMatch = statBar.match(/class="stat-bar deleted"[^>]*?width:\s*(\d+)%/i);
+            const addedWidthMatch = statBar.match(/class="stat-bar added"[^>]*?width:\s*(\d+)%/i);
+            
+            this.originPortion = originWidthMatch ? parseInt(originWidthMatch[1]) : 0;
+            this.delPortion = deletedWidthMatch ? parseInt(deletedWidthMatch[1]) : 0;
+            this.addPortion = addedWidthMatch ? parseInt(addedWidthMatch[1]) : 0;
+            
+            return true;
+        }
+        
+        return false;
+    }
+
+    public fromTracker(tracker: DocTracker){
+        this.originalWords = tracker.originalWords;
+        this.deletedWords = tracker.deletedWords;
+        this.addedWords = tracker.addedWords;
+        this.calcPortions();
+    }
+
+    // override current values with given values, and recalculate portions. 
+    public setEdits(originalWords: number, deletedWords: number, addedWords: number){
+        this.originalWords = originalWords;
+        this.deletedWords = deletedWords;
+        this.addedWords = addedWords;
+        this.calcPortions();
+    }
+
+    public toNote(): string{
+        return `<span class="stat-bar-container" data-origin-words="${this.originalWords}" data-deleted-words="${this.deletedWords}" data-added-words="${this.addedWords}"><span class="stat-bar origin" style="width: ${this.originPortion}%"></span><span class="stat-bar deleted" style="width: ${this.delPortion}%"></span><span class="stat-bar added" style="width: ${this.addPortion}%"></span></span>`
+    }
+
+    private calcPortions(){
+        this.originPortion = 
+            (this.originalWords) 
+            /(this.originalWords + this.addedWords + this.deletedWords)
+            *100;
+        this.originPortion = Math.floor(this.originPortion);
+
+        this.delPortion = 
+            (this.deletedWords)
+            /(this.originalWords + this.addedWords + this.deletedWords)
+            *100;
+        this.delPortion = Math.floor(this.delPortion);
+
+        this.addPortion = 100 - this.delPortion - this.originPortion
     }
 }

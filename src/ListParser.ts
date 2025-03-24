@@ -122,6 +122,10 @@ export class BulletListParser{
                 if (groupData.editedPercentage !== undefined) {
                     ListData.editedPercentage.fromNote(groupData.editedPercentage);
                 }
+
+                if (groupData.statBar !== undefined){
+                    ListData.statBar.fromNote(groupData.statBar)
+                }
                 
                 existingDataMap.set(ListData.filePath, ListData);
  
@@ -213,7 +217,8 @@ export class BulletListParser{
                 .replace(/\${deletedWords}/g, data.deletedWords.toString())
                 .replace(/\${changedWords}/g, data.changedWords.toString())
                 .replace(/\${docWords}/g, data.docWords.toString())
-                .replace(/\${editedPercentage}/g, data.editedPercentage.toNote());
+                .replace(/\${editedPercentage}/g, data.editedPercentage.toNote())
+                .replace(/\${statBar}/g, data.statBar.toNote());
             
             output += (line.endsWith('\n'))? line : line + '\n';
         }

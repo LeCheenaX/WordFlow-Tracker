@@ -167,6 +167,8 @@ export class TableParser{
                             return data.docWords.toString();
                         case 'editedPercentage':
                             return data.editedPercentage.toNote();
+                        case 'statBar':
+                            return data.statBar.toNote();
                         default:
                             return '';
                     }
@@ -275,6 +277,10 @@ export class TableParser{
                     
                 case 'editedPercentage':
                     entry.editedPercentage.fromNote(value);
+                    break;
+
+                case 'statBar':
+                    entry.statBar.fromNote(value);
                     break;
             }
         }

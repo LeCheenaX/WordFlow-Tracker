@@ -164,7 +164,7 @@ export class DocTracker{
         this.lastUndone = currentUndone;
         if (Number(history.prevTime) !== 0) this.lastModifiedTime = Number(history.prevTime);
         this.updateStatusBarTracker();
-        
+/*
 console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
     currentEditedTimes: this.editedTimes,
     currentEditedWords: this.editedWords,
@@ -174,7 +174,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
     lastRecordedWords: this.docWords,
     lastModifiedTime: this.lastModifiedTime,
         });
-        
+*/
     }
 
     private updateStatusBarTracker(){
@@ -219,10 +219,14 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
 //        if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);    
     }; 
 
-    public async countWords(){ 
+    public async countActiveWords(){ 
         const totalWordsCt = wordsCounter();
         //@ts-expect-error
         this.docWords = totalWordsCt(this.activeEditor?.editor.cm.state.sliceDoc(0));
+    }
+
+    public async countInactiveWords(){ 
+        this.docWords = this.originalWords + this.changedWords;
     }
 
     public deactivate(){
