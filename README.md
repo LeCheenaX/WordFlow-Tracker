@@ -6,15 +6,17 @@
 ## Introduction
 WorkFlow Tracker is a lite plugin that track your edits on each note and automatically record these edits statistics to your periodic note, like your daily note. 
 
-![image](https://github.com/user-attachments/assets/64275f7a-81ed-4d5a-aebb-273a135659d6)
-
+![image](https://github.com/user-attachments/assets/bac4820f-a049-4f14-847b-3508ed029765)
 
 ### Core Features
 - Tracking the number of edits, editied words per note. This will reflect on the status bar at the bottom of note.
   ![image](https://github.com/user-attachments/assets/88e1d16b-893f-46a4-aa66-210a372ef753)
 - Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes. The tracker will be set to 0 once the note is recorded.
 - Display changes in a bar style to show the portion of original contents v.s. modified contents. 
-  ![image](https://github.com/user-attachments/assets/b4bc50e8-89d2-4d9f-bf99-2cfcd14e1569)
+  ![image](https://github.com/user-attachments/assets/56c8336a-4761-4fed-99b7-3f6453de416a)
+- Record edited statistics such as total words you edited today, to the YAML(Frontmatter) of daily note. Other plugins such as heatmap could use this data to generate analysis.
+
+  ![image](https://github.com/user-attachments/assets/1e5bbe85-a943-4d10-b81c-ecef5e6b15bb)
 - Customization of which data to be recorded with ${dataName}, see in [Supported String Interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) below. 
 - Customization of how the data to be recorded, like inserting a table or a list to the specified position of your note. 
 ### How does this plugin collect data?
@@ -27,6 +29,83 @@ We fetch the edit statistcs by access the history field of Obsidian editor, whic
 > 
 > The temporary edit stats collected by the plugin are destroyed after recording to your note, and the Obsidian will destory the history data after you close the application.  
 
+### Guide for beginners
+Step 1: Download and [install](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#installation) the plugin.
+
+Step 2: Enable the plugin in Obsidian > Settings > Community plugins.
+
+Step 3: In Wordflow Tracker settings, specify your [periodic note folder](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#recorder-basics) for placing your periodic notes, in which the edit stats will be saved.
+
+Now the plugin will automatically track the edits you made and display them in the status bar. The edits stats will also be recorded to your periodic note, when any one of the following is met:
+1. you switch from editing mode to reading mode in Obsidian;
+2. you close a tab of notes after editing them;
+3. you manually click the button "Record wordflows from edited notes" in the left ribbon of Obsidian;
+4. you manually run the command "Record wordflows from edited notes to periodic notes" in Obsidian;
+5. the automatic recording interval is timed out, which could be set in the setting of Wordflow Tracker plugin, to record all edited notes,. 
+
+### Advanced guide for customization
+#### Apply templates to newly created notes before recording
+Make sure your template will be applied to notes under the same [periodic note folder](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#recorder-basics). 
+
+If your newly created notes will be renamed by other plugins, such as **Templates**(core plugin) or **Templater**(community plugin), make sure that the name that other plugin specified is the same as [periodic note format](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#recorder-basics)
+
+#### Customize which data to be recorded
+In wordflow recording syntax, you can add or delete the data in one of the following format:
+
+- **Table:**
+
+    Open any note in Obsidian, and add a blank table with:
+  	```
+   
+   | |
+   |-|
+   | |
+  	```
+    Then, specify the name in heading for ${modifiedNote}, such as "Note Name" and add "${modifiedNote}" to the row.
+  
+    ![image](https://github.com/user-attachments/assets/de0e8909-727e-44d2-9cec-c647d51af48c)
+
+    Now click the 'add column after' button, and specify the new heading names and any [string interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) you would like.
+
+    ![image](https://github.com/user-attachments/assets/0027b8f9-49f9-4f25-a8b4-38d369c6a115)
+
+    Lastly, select and copy the whole table, and paste it into Wordflow Tracker settings.
+
+	![image](https://github.com/user-attachments/assets/de26aee0-e051-42b6-8fc1-e18e41db2f60)
+
+    Note: ${modifiedNote} must exist in the bullet list syntax, or the recorder will have trouble merging the existing data of note with the new data
+
+- **Bullet List:** 
+
+    Add a linebreak, press the tab key for proper spacing, and specify any name you expect for this data. 
+	
+    Lastly, add a [string interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) like "${docWords}"
+
+    ![image](https://github.com/user-attachments/assets/288f6fa4-1d0a-4187-aa9d-4b6b7e90e7bc)
+
+    Note: ${modifiedNote} must exist in the bullet list syntax, or the recorder will have trouble merging the existing data of note with the new data
+	
+- **Metadata:**
+
+    Just like adding a metadata in "source mode", you can add a property name ends with ':', and a [string interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) after it, like "${totalWords}"
+
+#### Record edit stats to both note content and yaml(frontmatter)
+In plugin settings, create a recorder by clicking the add button:
+
+![image](https://github.com/user-attachments/assets/a1eff9ee-6d56-4ebe-9d07-aaa3ca004d6e)
+
+Then, adjust the perodic note folder and note format to the same as the other recorder, to record on the same note. 
+
+Lastly, adjust the record content type to a different one. 
+
+Note that you should **avoid having the same record content type of 2 recorders that target on the same note**. For example, avoid having one recorder which inserts table to the bottom of today's daily note, while having the other recorder which inserts table to a custom position of today's daily note. 
+
+#### Record edit stats to a dynamic folder
+You can record edit statistics to not only a static folder, such as "Daily Notes/2025-03-23.md", but also on a dynamic folder like: "Daily Notes/2025-03/2025-03-23.md".
+
+For details regarding how to implement this, see [Enable dynamic folder](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#recording-settings)
+
+Please also ensure that this folder is the same folder where templates from other plugin will be applied. 
 
 ## Settings documentation
 ![image](https://github.com/user-attachments/assets/7e9b9d84-ccba-4b59-b542-f551a37b5592)
