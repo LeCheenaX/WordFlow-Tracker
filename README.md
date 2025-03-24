@@ -13,7 +13,7 @@ WorkFlow Tracker is a lite plugin that track your edits on each note and automat
 - Tracking the number of edits, editied words per note. This will reflect on the status bar at the bottom of note.
   ![image](https://github.com/user-attachments/assets/88e1d16b-893f-46a4-aa66-210a372ef753)
 - Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes. The tracker will be set to 0 once the note is recorded.
-- (planned) Display changes in a svg style to show the original contents v.s. modified contents. 
+- Display changes in a bar style to show the portion of original contents v.s. modified contents. 
   ![image](https://github.com/user-attachments/assets/b4bc50e8-89d2-4d9f-bf99-2cfcd14e1569)
 - Customization of which data to be recorded with ${dataName}, see in [Supported String Interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) below. 
 - Customization of how the data to be recorded, like inserting a table or a list to the specified position of your note. 
