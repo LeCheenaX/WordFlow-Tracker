@@ -103,7 +103,7 @@ WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插
 
 #### 将编辑统计数据记录到动态文件夹
 你可以将编辑统计数据记录到不仅是一个静态文件夹，例如“Daily Notes/2025-03-23.md”，还可以记录到一个动态文件夹，例如：“Daily Notes/2025-03/2025-03-23.md”。
-具体实现方法详见[开启动态文件夹](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/README_ZH_CN.md#%E6%94%AF%E6%8C%81%E7%9A%84%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%8F%92%E5%80%BC)。
+具体实现方法详见[开启动态文件夹](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/README_ZH_CN.md#%E5%9F%BA%E7%A1%80%E8%AE%BE%E7%BD%AE)。
 
 ## 设置
 ![image](https://github.com/user-attachments/assets/7e9b9d84-ccba-4b59-b542-f551a37b5592)
