@@ -105,7 +105,7 @@ Note that you should **avoid having the same record content type of 2 recorders 
 #### Record edit stats to a dynamic folder
 You can record edit statistics to not only a static folder, such as "Daily Notes/2025-03-23.md", but also on a dynamic folder like: "Daily Notes/2025-03/2025-03-23.md".
 
-For details regarding how to implement this, see [Enable dynamic folder](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#recording-settings)
+For details regarding how to implement this, see [Enable dynamic folder](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#recorder-basics)
 
 Please also ensure that this folder is the same folder where templates from other plugin will be applied. 
 
