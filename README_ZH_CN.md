@@ -31,7 +31,7 @@ WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插
 > 该插件收集的临时数据在记录到指定的周期笔记中后即自动销毁，Obsidian本体也会在关闭应用后清理所有历史数据。
 
 ### 上手指南
-步骤1：下载并[安装](https://github.com/LeCheenaX/WordFlow-Tracker/edit/main/README_ZH_CN.md#%E5%AE%89%E8%A3%85)该插件。
+步骤1：下载并[安装](https://github.com/LeCheenaX/WordFlow-Tracker/main/README_ZH_CN.md#%E5%AE%89%E8%A3%85)该插件。
 
 步骤2：在 Obsidian > 设置 > 社区插件中启用该插件。
 
