@@ -6,7 +6,7 @@
 ## 介绍
 WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插件，并自动将这些编辑数据记录到你的周期性笔记中，例如日记、周记。
 
-![image](https://github.com/user-attachments/assets/bac4820f-a049-4f14-847b-3508ed029765)
+![wordflow2](https://github.com/user-attachments/assets/eb5190c5-44cd-4e3d-923e-c6147341b24d)
 
 ## 核心功能
 - 跟踪每个笔记的编辑次数和编辑字数。这将在笔记底部的状态栏中显示。
