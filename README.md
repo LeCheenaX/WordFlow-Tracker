@@ -6,7 +6,7 @@
 ## Introduction
 WorkFlow Tracker is a lite plugin that track your edits on each note and automatically record these edits statistics to your periodic note, like your daily note. 
 
-![wordflow2](https://github.com/user-attachments/assets/eb5190c5-44cd-4e3d-923e-c6147341b24d)
+![wordflow3](https://github.com/user-attachments/assets/e323477d-d38e-4a6c-8d98-83bda5818a07)
 
 ### Core Features
 - Tracking the number of edits, editied words per note. This will reflect on the status bar at the bottom of note.
