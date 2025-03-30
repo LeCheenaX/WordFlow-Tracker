@@ -106,7 +106,6 @@ WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插
 具体实现方法详见[开启动态文件夹](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/README_ZH_CN.md#%E5%9F%BA%E7%A1%80%E8%AE%BE%E7%BD%AE)。
 
 ## 设置
-![image](https://github.com/user-attachments/assets/7e9b9d84-ccba-4b59-b542-f551a37b5592)
 ### 记录器设置
 - **创建新记录器**: 创建新记录器来额外记录需要的功能，常用情况如下：
 	- 为不同的周期笔记创建: 假设当前记录器会记录编辑数据到日记中，你可以添加一个新记录器使编辑数据还能记录到每周笔记，或者每月笔记中。
@@ -115,9 +114,6 @@ WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插
     	![image](https://github.com/user-attachments/assets/56a03e3c-930c-4d0e-b901-a07e95099105)
 
 - **重命名**: 重命名记录器以便区分。
-
-	![image](https://github.com/user-attachments/assets/1dc7933a-a19f-4804-b636-58045b22e729)
-
 - **删除**: 删除现在的记录器。
 ### 基础设置
 - **周期笔记文件夹 (Periodic note folder)**：设置每日笔记、周记等周期笔记的存放文件夹路径。需与以下插件配置保持完全一致:
