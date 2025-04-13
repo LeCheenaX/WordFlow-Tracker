@@ -158,6 +158,11 @@ Please also ensure that this folder is the same folder where templates from othe
 See [Development Roadmap](https://github.com/LeCheenaX/WordFlow-Tracker/wiki/Development-RoadMap) for known issues and planned features! 
 
 ## Installation
+### Install in Obsidian
+Open obsidian settings > community plugins > browse，in the pop up windows, search for Wordflow Tracker, and click the install button. 
+
+After installed, click the enable button to start the experience.
+
 ### Manually installing the plugin
 
 Copy over `main.js`, `manifest.json`, `styles.css` to your vault `VaultFolder/.obsidian/plugins/wordflow-tracker/`.
