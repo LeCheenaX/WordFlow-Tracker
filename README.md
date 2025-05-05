@@ -157,6 +157,8 @@ Please also ensure that this folder is the same folder where templates from othe
 ## Development Roadmap
 See [Development Roadmap](https://github.com/LeCheenaX/WordFlow-Tracker/wiki/Development-RoadMap) for known issues and planned features! 
 
+What to know how this project is built? Or wanna collaborate on this plugin? See details at https://deepwiki.com/LeCheenaX/WordFlow-Tracker
+
 ## Installation
 ### Install in Obsidian
 Open obsidian settings > community plugins > browse，in the pop up windows, search for Wordflow Tracker, and click the install button. 
