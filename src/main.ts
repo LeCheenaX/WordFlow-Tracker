@@ -197,7 +197,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				for (const DocRecorder of this.DocRecorders) {
                     DocRecorder.record();
                 }
-				new Notice(`Try recording wordflows to periodic note!`, 3000);
+				new Notice(`Auto try recording wordflows to periodic note!`, 3000);
 			}, Number(this.settings.autoRecordInterval) * 1000));
 		}
 	}
@@ -228,12 +228,20 @@ export default class WordflowTrackerPlugin extends Plugin {
 				}
 				else{
 					tracker.deactivate();
+					let count = 0;
 					for (const DocRecorder of this.DocRecorders) {
+						if(DocRecorder.filterZero && 
+						   tracker.editedTimes == 0 && 
+						   tracker.editedWords == 0)
+						   		continue;
 						DocRecorder.record(tracker);
+						++count;
 					}
 					this.trackerMap.delete(filePath);
-					new Notice(`Edits from ${filePath} are recorded.`, 1000)
+					if (count){
+						new Notice(`Edits from ${filePath} are recorded.`, 1000)
 //					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
+					}
 				}
 			});
 
@@ -248,14 +256,24 @@ export default class WordflowTrackerPlugin extends Plugin {
 				if(potentialEditors.has(filePath)) tracker.deactivate();
 				else{
 					tracker.deactivate();
+					let count = 0;
 					for (const DocRecorder of this.DocRecorders) {
+						if(DocRecorder.filterZero && 
+						   tracker.editedTimes == 0 && 
+						   tracker.editedWords == 0)
+						   		continue;
 						DocRecorder.record(tracker);
+						++count;
 					}
 					this.trackerMap.delete(filePath);
-					new Notice(`Edits from ${filePath} are recorded.`, 1000)
+					if (count){
+						new Notice(`Edits from ${filePath} are recorded.`, 1000)
 //					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
+					}
 				}
 			});
+			this.statusBarTrackerEl.setText(''); // clear status bar
+//if (DEBUG) console.log(`activeDocHandler: status bar cleared`);
 		}
 	};
 
@@ -995,7 +1013,7 @@ class WordflowSettingTab extends PluginSettingTab {
 		  this.display();
 		} catch (error) {
 		  console.error("Could not reset settings:", error);
-		  new Notice('❌ Could not reset settings! Check console!', 5000);
+		  new Notice('❌ Could not reset settings! Check console!');
 		}
 	  }
 }

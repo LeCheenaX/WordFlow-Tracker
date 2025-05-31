@@ -4,7 +4,6 @@ import { moment, Notice, TFile } from 'obsidian';
 import { TableParser } from './TableParser';
 import { BulletListParser } from './ListParser';
 import { MetaDataParser } from "./MetaDataParser";
-import { error } from "console";
 
 export class DataRecorder {
     public existingDataMap: Map<string, ExistingData> = new Map();
@@ -84,17 +83,30 @@ export class DataRecorder {
             this.Parser = new MetaDataParser(this, this.plugin);
             break;
         default: 
-            throw new Error('Record type is not defined in this recorder!')
+            new Notice('⚠️ Record type is not defined in this recorder!');
+            throw new Error('⚠️ Record type is not defined in this recorder!');
         }
 
         this.Parser.loadSettings()
     }
 
     public async record(tracker?:DocTracker): Promise<void> {
+        //console.log('try to Load Tracker of closed note:',tracker)
+        // Load tracker data
+        await this.loadTrackerData(tracker);
+//this.backUpData();
+/*
+this.newDataMap.forEach((NewData)=>{
+    console.log('newData:', NewData.filePath, ' words:', NewData.editedWords)
+})
+*/
+        if (this.newDataMap.size == 0) return;
         // Get the target note file
         const recordNote = await this.getOrCreateRecordNote();
         if (!recordNote) {
-            console.error("Failed to get or create record note");
+            new Notice ("⚠️ Failed to get or create record note!\nData backed up to console!");
+            console.error("⚠️ Failed to get or create record note");
+            await this.backUpData();
             return;
         }
 //console.log('Current Parser:',this.recordType)
@@ -103,14 +115,6 @@ export class DataRecorder {
 /*
 this.existingDataMap.forEach((ExistingData)=>{
     console.log('existingData:', ExistingData.filePath, ' words:', ExistingData.editedWords)
-})
-*/
-//console.log('try to Load Tracker of closed note:',tracker)
-        // Load tracker data
-        await this.loadTrackerData(tracker);
-/*
-this.newDataMap.forEach((NewData)=>{
-    console.log('newData:', NewData.filePath, ' words:', NewData.editedWords)
 })
 */
         // Merge data
@@ -140,19 +144,21 @@ this.newDataMap.forEach((NewData)=>{
     private async getOrCreateRecordNote(): Promise<TFile | null> {
         const recordNoteName = moment().format(this.periodicNoteFormat);
         const recordNoteFolder = (this.enableDynamicFolder)? moment().format(this.periodicNoteFolder): this.periodicNoteFolder;
-        let recordNotePath = ((recordNoteFolder.trim() == '')||(recordNoteFolder.trim() == '/'))? '': recordNoteFolder+'/';
+        const isRootFolder: boolean = (recordNoteFolder.trim() == '')||(recordNoteFolder.trim() == '/');
+        let recordNotePath = (isRootFolder)? '': recordNoteFolder+'/';
         recordNotePath += recordNoteName + '.md';
         let recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
 //console.log('recordNotePath:',recordNotePath)
         if (!recordNote) {
             try {
-                if (!this.plugin.app.vault.getFolderByPath(recordNoteFolder.trim())) {
+                if (!isRootFolder && !this.plugin.app.vault.getFolderByPath(recordNoteFolder.trim())) {
                     try{
                         await this.plugin.app.vault.createFolder(recordNoteFolder.trim())
                         new Notice(`Periodic folder ${recordNoteFolder.trim()} doesn't exist!\n Auto created. `, 3000)
                     } catch (error) {
-                        new Error(`Failed to create record note folder: ${error}`)
-                        console.error("Failed to create record note folder:", error);
+                        new Notice(`⚠️ Failed to create record note folder: ${error}\nData backed up to console!`);
+                        console.error("⚠️ Failed to create record note folder:", error);
+                        await this.backUpData();
                         return null;
                     }
                 }
@@ -162,15 +168,15 @@ this.newDataMap.forEach((NewData)=>{
                 recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
                 new Notice(`Periodic note ${recordNotePath} doesn't exist!\n Auto created under ${this.periodicNoteFolder}. `, 3000)
             } catch (error) {
-                new Error(`Failed to create record note: ${error}`)
-                console.error("Failed to create record note:", error);
+                new Notice(`⚠️ Failed to create record note: ${error}\nData backed up to console!`)
+                console.error("⚠️ Failed to create record note:", error);
+                await this.backUpData();
                 return null;
             }
         }
         
         return recordNote;
     }
-
 
     private async loadExistingData(recordNote: TFile): Promise<void> {  
         this.existingDataMap = await this.Parser.extractData(recordNote);
@@ -290,6 +296,23 @@ this.newDataMap.forEach((NewData)=>{
         return [MergedTotalData];
     }
 
+    private async backUpData(): Promise<void>
+    {
+        const recorderName: string = (this.config)? this.config.name: this.plugin.settings.name;
+        if (!this.newDataMap.size)
+            console.log(`${recorderName}.backUpData: No data need to back up.`);
+        else {
+            console.groupCollapsed(`${recorderName}.backUpData: `);
+            console.log('The following data is not recorded due to errors in the console. You can manually update these data to periodic notes.')
+            this.newDataMap.forEach((NewData, key) => {
+                console.log(
+                    `File: ${NewData.filePath}`,
+                    NewData 
+                );
+            });
+            console.groupEnd(); 
+        }
+    }
 
     private async updateNoteToBottom(recordNote: TFile, newContent: string): Promise<void> {
         const noteContent = await this.plugin.app.vault.read(recordNote);
@@ -315,7 +338,9 @@ this.newDataMap.forEach((NewData)=>{
         const noteContent = await this.plugin.app.vault.read(recordNote);
         
         if ((this.insertPlaceStart == '') || (this.insertPlaceEnd == '')){
-            throw Error (`Could not replace content without setting start place and end place!`);
+            await this.backUpData();
+            new Notice(`⚠️ Could not replace content without setting start place and end place!\nData backed up to console!`);
+            throw new Error (`⚠️ Could not replace content without setting start place and end place!`);
         }
 
         const regex = new RegExp(`${this.insertPlaceStart}[\\s\\S]*?(?=${this.insertPlaceEnd})`);
@@ -330,8 +355,9 @@ this.newDataMap.forEach((NewData)=>{
                 return data.replace(regex, `$1\n${newContent}\n$3`);
               });
         } else {
-            new Error("⚠️ ERROR updating note: " + recordNote.path + "! Check console error.");
+            new Notice("⚠️ ERROR updating note: " + recordNote.path + "! Please check console error.\n" + "Data backed up to console!");
             console.error(`⚠️ ERROR: The given pattern "${this.insertPlaceStart} ... ${this.insertPlaceEnd}" is not found in ${recordNote.path}!`);
+            await this.backUpData();
         }
     }
 

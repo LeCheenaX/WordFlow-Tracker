@@ -1,4 +1,4 @@
-import { debounce, Editor, EventRef, MarkdownView, Plugin, TFile, Stat, View, ViewState } from "obsidian";
+import { debounce, Editor, EventRef, MarkdownView, Plugin, TFile, Stat, View, ViewState, Notice } from "obsidian";
 import WordflowTrackerPlugin from "./main";
 import { wordsCounter } from "./stats";
 import { historyField } from "@codemirror/commands";
@@ -19,7 +19,7 @@ export class DocTracker{
     public docWords: number = 0;
     public originalWords: number = 0;
     
-    private debouncedTracker: ReturnType<typeof debounce>;
+    private debouncedTracker: ReturnType<typeof debounce> | null;
     private editorListener: EventRef | null = null;
     private addWordsCt: Function
     private deleteWordsCt: Function
@@ -38,6 +38,8 @@ export class DocTracker{
         this.deleteWordsCt = wordsCounter();        
         await this.activate();
         await this.countOrigin();
+        await sleep(1000); // when open new notes, update with delay
+        this.updateStatusBarTracker();
 
 //        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.filePath}`);
     }
@@ -182,6 +184,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
         this.plugin.statusBarContent = `${this.editedTimes}` + ' edits: ' + `${this.editedWords}` + ' words';
         //if(DEBUG) this.plugin.statusBarContent += ` ${this.filePath}`;
         this.plugin.statusBarTrackerEl.setText(this.plugin.statusBarContent);
+//if (DEBUG) console.log(`UpdateStatusBar: ${this.plugin.statusBarContent}`);
     }
 
 
@@ -208,7 +211,8 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
         
         // 绑定编辑器事件
         this.editorListener = this.plugin.app.workspace.on('editor-change', (editor: Editor, view: MarkdownView) => {
-            this.debouncedTracker();
+            if (this.debouncedTracker != null) 
+                this.debouncedTracker();
 //console.log('DocTracker.activate: listener registered')
         });
         this.updateStatusBarTracker();
@@ -216,7 +220,12 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
     }
 
     public release(){       
-        this.debouncedTracker.run();  
+        if (this.debouncedTracker)
+            this.debouncedTracker.run(); 
+        else {
+            new Notice ("Tracker is cleared before releasing!");
+            console.error("Tracker is cleared before releasing!");
+        } 
 //        if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);    
     }; 
 
@@ -233,12 +242,14 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
     public deactivate(){
         if (this.editorListener) {
             this.plugin.app.workspace.offref(this.editorListener);
+            this.editorListener = null;
         }
         if (this.isActive) {
             this.release();
             this.isActive = false; // ensure that this will only run once
 //            if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"); // debug
         }       
+        this.debouncedTracker = null; // dereference the debouncer
     }
 
     public async resetEdit(){
@@ -252,6 +263,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
     }
 
     // Warning: Do not use! This will destroy even the editor of Obsidian! Let Obsidian decide when to destroy!
+/*
     public destroy(){
         this.deactivate();        
         this.activeEditor = null;
@@ -261,6 +273,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
             throw new Error('DocTracker instance already destroyed');
         };
     }
+*/
 
     private async countOrigin(){       
         const totalWordsCt = wordsCounter();
