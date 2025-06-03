@@ -92,8 +92,9 @@ export class DocTracker{
                 undoneDiff: undoneDiff,
                 docLength: docLength,
                 doc: doc,
-                lastChangedTime: this.changedTimes,
-                lastChangedWords: this.editedWords,
+                lastModifiedTime: this.lastModifiedTime,
+                lastEditedWords: this.editedWords,
+                lastEditedTimes: this.editedTimes
             });
             console.log("DocTracker.trackChanges: CurrentHistory:", history);	
 
@@ -112,22 +113,42 @@ export class DocTracker{
                     //@ts-expect-error
                     const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA,toA); 
                     inserted = inserted.toString();
+                    // @ts-expect-error
+                    const prevChA = (fromA == 0)? ' ': this.activeEditor.editor.cm.state.sliceDoc(fromA-1,fromA);
                     
-                    //@ts-expect-error
-                    let addFix = (fromA!=0 && this.activeEditor.editor.cm.state.sliceDoc(fromA-1,fromA) == ' ')?1 :0;
-                    //@ts-expect-error
-                    let deleteFix = (fromB!=0 && this.activeEditor.editor.cm.state.sliceDoc(fromB-1,fromB) == ' ')?1 :0;
-
-                    const addedWords = this.addWordsCt(theOther) + addFix;
-                    const deletedWords = this.deleteWordsCt(inserted) + deleteFix;
-                    const mWords = addedWords + deletedWords;
-//console.log('Do added:', addedWords, '\nDo deleted:', deletedWords, 'total:', mWords)
-/*                    if (DEBUG){
-                        console.log(`Do adding texts: "${theOther}" from ${fromA} to ${toA} in current document, \ndo deleting texts: "${inserted}" from ${fromB} to ${toB} in current document.`);
-                        //console.log("Modified Words: ", mWords);
+                    // only the added texts in history done field need to fix toA, as Obsidian will separate some bahaviors for inputting, causing the subseqChA not accurate. 
+                    let fixedToA = toA;
+                    let nextIndex: number = currentDone-i+1;
+                    while (nextIndex <= currentDone-1)
+                    {
+                        history.done[nextIndex].changes.iterChanges((nFromA:Number, nToA:Number, nFromB:Number, nToB:Number, nInserted: string | Text )=>{
+                            if (fixedToA= nFromA){
+                                fixedToA = nToA;
+                            }
+                        })
+                        
+                        nextIndex++;
                     }
+
+                    // @ts-expect-error
+                    const subseqChA = (fixedToA == this.activeEditor.editor.cm.state.doc.length)? ' ': this.activeEditor.editor.cm.state.sliceDoc(fixedToA,fixedToA+1);
+/*// @ts-expect-error
+if (fixedToA != toA) console.log("Fixed toA from ", (toA == this.activeEditor.editor.cm.state.doc.length-1)? ' ': this.activeEditor.editor.cm.state.sliceDoc(toA,toA+1), " to ", subseqChA);
 */
-                    this.editedWords += mWords;	
+                    // @ts-expect-error
+                    const prevChB = (fromB == 0)? ' ': this.activeEditor.editor.cm.state.sliceDoc(fromB-1,fromB);
+                    // @ts-expect-error
+                    const subseqChB = (toB == this.activeEditor.editor.cm.state.doc.length-1)? ' ': this.activeEditor.editor.cm.state.sliceDoc(toB,toB+1);
+
+                    const addedWords = this.addWordsCt(theOther, prevChA, subseqChA);
+                    const deletedWords = this.deleteWordsCt(inserted, prevChB, subseqChB);
+//console.log('Do added:', addedWords, '\nDo deleted:', deletedWords, 'total:', (addedWords + deletedWords))
+/*if (DEBUG){
+    console.log(`Do adding texts: "${theOther}" from ${fromA} to ${toA} in current document, \ndo deleting texts: "${inserted}" from ${fromB} to ${toB} in current document.`);
+    console.log("prevChA: ", prevChA, "subseqChA: ", subseqChA);
+}
+*/
+                    this.editedWords += (addedWords + deletedWords);
                     this.addedWords += addedWords;
                     this.deletedWords += deletedWords;
                     this.changedWords += (addedWords - deletedWords);                    
@@ -143,16 +164,23 @@ export class DocTracker{
                 // @ts-expect-error
                 const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA,toA);
                 inserted = inserted.toString();
+                // @ts-expect-error
+                const prevChA = (fromA == 0)? ' ': this.activeEditor.editor.cm.state.sliceDoc(fromA-1,fromA);
+                // @ts-expect-error
+                const subseqChA = (toA == this.activeEditor.editor.cm.state.doc.length-1)? ' ': this.activeEditor.editor.cm.state.sliceDoc(toA,toA+1);
+                // @ts-expect-error
+                const prevChB = (fromB == 0)? ' ': this.activeEditor.editor.cm.state.sliceDoc(fromB-1,fromB);
+                // @ts-expect-error
+                const subseqChB = (toB == this.activeEditor.editor.cm.state.doc.length-1)? ' ': this.activeEditor.editor.cm.state.sliceDoc(toB,toB+1);
 
-                const deletedWords = this.addWordsCt(inserted);
-                const addedWords = this.deleteWordsCt(theOther);
-                const mWords = addedWords + deletedWords;
+                const deletedWords = this.addWordsCt(inserted, prevChB, subseqChB);
+                const addedWords = this.deleteWordsCt(theOther, prevChA, subseqChA);
 /*                if (DEBUG) {
                     console.log(`Undo adding texts: "${inserted}" from ${fromB} to ${toB} from previous document, \nundo deleting texts: "${theOther}" from ${fromA} to ${toA} from previous document.`);
-                    console.log("Modified Words: ", mWords);	
+                    console.log("Modified Words: ", (addedWords + deletedWords));	
                 }
 */                    
-                this.editedWords += mWords;
+                this.editedWords += (addedWords + deletedWords);
                 this.addedWords += addedWords;
                 this.deletedWords += deletedWords;
                 this.changedWords += (addedWords - deletedWords);	
@@ -190,7 +218,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
 
     public async activate(){
         if(!this.plugin.app.workspace.getActiveViewOfType(MarkdownView)) {
-            if(DEBUG) console.log("DocTracker.activate: No active editor!");
+            //if(DEBUG) console.log("DocTracker.activate: No active editor!");
             return;
         }
         if(this.isActive) return; // ensure currently not active
