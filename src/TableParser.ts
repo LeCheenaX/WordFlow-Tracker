@@ -186,10 +186,10 @@ export class TableParser{
         // Assemble the complete table
         return [
             '',
-            header,
-            separator,
-            ...rows
-        ].join('\n').trimEnd();
+            header.trimEnd(),
+            separator.trimEnd(),
+            ...rows.map(row => row.trimEnd())
+        ].join('\n');
     }
 
     // used for extract varName from table syntax in plugin setting
@@ -208,6 +208,13 @@ export class TableParser{
         // parsing header and row columns
         const headerColumns = headerTemplate.split('|').map(part => part.trim()).filter(Boolean);
         const rowColumns = rowTemplate.split('|').map(part => part.trim()).filter(Boolean);
+
+        if (rowColumns.length > 1 && rowColumns[0].includes('[[') && !rowColumns[0].includes(']]')) {
+            // combine 2 columns with alias [[filePath\|alias]]
+            if (!rowColumns[0].endsWith('\\')) new Notice('Warning: the table syntax may lack "\\" in the alias.')
+            rowColumns[0] = rowColumns[0] + '\|' + rowColumns[1];
+            rowColumns.splice(1, 1);
+        }
         
         // parsing map
         for (let i = 0; i < Math.min(headerColumns.length, rowColumns.length); i++) {
@@ -225,7 +232,13 @@ export class TableParser{
         // fetch heading and data rows from table syntax
         const headerColumns = headerRow.split('|').map(part => part.trim()).filter(Boolean);
         const dataColumns = row.split('|').map(part => part.trim()).filter(Boolean);
-        
+
+        if (dataColumns.length > 1 && dataColumns[0].includes('[[') && !dataColumns[0].includes(']]')) {
+            // combine 2 columns with alias [[filePath\|alias]]
+            dataColumns[0] = dataColumns[0] + '\|' + dataColumns[1];
+            dataColumns.splice(1, 1);
+        }
+
         // match data
         for (let i = 0; i < Math.min(headerColumns.length, dataColumns.length); i++) {
             const headerText = headerColumns[i];
@@ -233,14 +246,16 @@ export class TableParser{
             if (!varTemplate) continue;
             
             const value = dataColumns[i];
+//console.log('Column:', i, 'Header:', headerText, 'Template:', varTemplate, 'Value:', value); // 添加调试信息
             
             if (varTemplate === '[[${modifiedNote}\\|${noteTitle}]]') { // Handle [[path\|title]] format
                 const match = value.match(/^\[\[([^\]]+)\\\|([^\]]+)\]\]$/);
                 if (match) {
                     entry.filePath = match[1].replace(/\\+$/, '');
                     entry.fileName = match[2];
-console.log(entry.filePath)
-console.log(entry.fileName)
+                } else {
+                    new Notice ('Var template with note alias is not matched!', 0)
+                    throw new Error ('Var template with note alias is not matched!\nConsider checking if table syntax contains "\\|" in the first coloumn, or if table in periodic note is mixed with notes with alias and notes without alias')
                 }
             } else {
                 const matches = varTemplate.match(/\${(\w+)}/); // single variable matching

@@ -59,8 +59,23 @@ export class BulletListParser{
                     break;
                 }
                 
-                // Extract value if pattern has a variable name
-                if (pattern.varName) {
+                // Handle compound pattern [[path|title]]
+            if (pattern.isCompound && pattern.varNames) {
+                const startPos = pattern.start.length;
+                const endPos = pattern.end === '\n' ? 
+                                currentLine.length : 
+                                currentLine.length - pattern.end.replace('\n', '').length;
+                
+                const content = currentLine.substring(startPos, endPos);
+                const parts = content.split('|');
+                
+                if (parts.length === 2) {
+                    groupData[pattern.varNames[0]] = parts[0]; // modifiedNote
+                    groupData[pattern.varNames[1]] = parts[1]; // noteTitle
+                }
+            } 
+            // Extract value if pattern has a single variable name
+            else if (pattern.varName) {
                     const startPos = pattern.start.length;
                     const endPos = pattern.end === '\n' ? 
                                     currentLine.length : 
@@ -239,6 +254,18 @@ export class BulletListParser{
         // Extract patterns from each line of syntax
         for (let i = 0; i < this.patternLineNum; i++) {
             const line = syntaxLines[i];
+            // Check for compound format [[${var1}|${var2}]]
+            const compoundMatch = line.match(/^(.*?)\[\[\$\{(\w+)\}\|\$\{(\w+)\}\]\](.*)$/);
+            if (compoundMatch) {
+                this.bulletListPatterns.push({
+                    start: compoundMatch[1] + '[[',
+                    end: ']]' + compoundMatch[4],
+                    varNames: [compoundMatch[2], compoundMatch[3]], 
+                    isCompound: true
+                });
+                continue;
+            }
+            // handle single var pattern
             const varStart = line.indexOf('${');
             
             if (varStart === -1) {
@@ -269,6 +296,16 @@ export class BulletListParser{
         // Extract patterns from each line of syntax
         for (let i = 0; i < this.patternLineNum; i++) {
             const line = syntaxLines[i];
+            // Check for compound format [[${var1}|${var2}]]
+            const compoundMatch = line.match(/^(.*?)\[\[\$\{(\w+)\}\|\$\{(\w+)\}\]\](.*)$/);
+            if (compoundMatch) {
+                this.patterns.push({
+                    start: compoundMatch[1] + '[[',
+                    end: ']]' + compoundMatch[4]
+                });
+                continue;
+            }
+            // handle single var pattern
             const varStart = line.indexOf('${');
             
             if (varStart === -1) {
