@@ -416,6 +416,7 @@ export class ExistingData {
         this.docWords = 0;
         this.editedPercentage = new EditedPercentage();
         this.statBar = new StatBar();
+        this.comment = '';
         this.totalWords = 0;
         this.totalEdits = 0;
     }
@@ -500,7 +501,7 @@ export class MergedData {
             this.docWords = existingData.docWords; 
             this.editedPercentage = existingData.editedPercentage;
             this.statBar = existingData.statBar;
-            this.comment = existingData.comment;
+            this.comment = existingData.comment?? ''; 
             this.isNew = false;
         } else {
             this.filePath = '|M|E|T|A|D|A|T|A|';
@@ -529,8 +530,8 @@ export class MergedData {
             this.addedWords
         )
 
-        this.comment = existingData.comment;
-        
+        this.comment = existingData.comment?? '';
+
 //console.log('newDocWords:', this.docWords)
 //console.log('newPercentage:',this.editedPercentage.percentage, '%')
         

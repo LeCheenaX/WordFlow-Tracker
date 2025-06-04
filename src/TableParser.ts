@@ -307,8 +307,10 @@ export class TableParser{
                     break;
                 case 'comment':
                     entry.comment = value;
+                    break;
                 default:
                     new Notice ('❌A name of ${} is not recognized, please examine the syntax in settings!', 0);
+                    console.error("❌This pattern is not recognized:", varName);
                 }
             }
         }

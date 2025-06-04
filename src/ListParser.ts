@@ -146,7 +146,7 @@ export class BulletListParser{
                     ListData.statBar.fromNote(groupData.statBar)
                 }
 
-                if (groupData.comment !== '') ListData.comment = groupData.comment;
+                if ('comment' in groupData) ListData.comment = groupData.comment || '';
                 
                 existingDataMap.set(ListData.filePath, ListData);
  
