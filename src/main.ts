@@ -101,6 +101,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		this.statusBarTrackerEl = this.addStatusBarItem();
+		this.statusBarTrackerEl.classList.add('wordflow-status-bar');
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
