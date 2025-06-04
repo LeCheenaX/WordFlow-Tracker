@@ -1,5 +1,5 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
-import { moment, TFile } from 'obsidian';
+import { moment, Notice, TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
 
 export class TableParser{
@@ -149,6 +149,8 @@ export class TableParser{
                     switch (varName) {
                         case 'modifiedNote':
                             return data.filePath;
+                        case 'noteTitle':
+                            return data.fileName;
                         case 'lastModifiedTime':
                             return typeof data.lastModifiedTime === 'number'
                                 ? moment(data.lastModifiedTime).format(this.timeFormat)
@@ -210,10 +212,8 @@ export class TableParser{
         // parsing map
         for (let i = 0; i < Math.min(headerColumns.length, rowColumns.length); i++) {
             const headerText = headerColumns[i];
-            const matches = rowColumns[i].match(/\${(\w+)}/);
-            if (matches && matches[1]) {
-                mapping[headerText] = matches[1];
-            }
+            const cellTemplate = rowColumns[i];
+            mapping[headerText] = cellTemplate; // Store the entire template instead of just the variable name
         }
         
         return mapping;
@@ -229,16 +229,32 @@ export class TableParser{
         // match data
         for (let i = 0; i < Math.min(headerColumns.length, dataColumns.length); i++) {
             const headerText = headerColumns[i];
-            const varName = headerVarMapping[headerText];
-            if (!varName) continue;
+            const varTemplate = headerVarMapping[headerText];
+            if (!varTemplate) continue;
             
             const value = dataColumns[i];
             
-            switch (varName) {
+            if (varTemplate === '[[${modifiedNote}\\|${noteTitle}]]') { // Handle [[path\|title]] format
+                const match = value.match(/^\[\[([^\]]+)\\\|([^\]]+)\]\]$/);
+                if (match) {
+                    entry.filePath = match[1].replace(/\\+$/, '');
+                    entry.fileName = match[2];
+console.log(entry.filePath)
+console.log(entry.fileName)
+                }
+            } else {
+                const matches = varTemplate.match(/\${(\w+)}/); // single variable matching
+                const varName = (matches && matches[1])? matches[1]: 'undefined';
+
+                switch (varName) {
                 case 'modifiedNote':
                     entry.filePath = value.replace(/^\[\[+|\]\]+$/g, '');
                     break;
-                    
+
+                case 'noteTitle':
+                    entry.fileName = value.toString();
+                    break;
+
                 case 'editedWords':
                     entry.editedWords = parseInt(value) || 0;
                     break;
@@ -282,10 +298,16 @@ export class TableParser{
                 case 'statBar':
                     entry.statBar.fromNote(value);
                     break;
+                default:
+                    new Notice ('Error: A name of ${} is not recognized, please examine the syntax in settings!');
+                }
             }
         }
         
-        if (!entry.filePath) throw Error ('${modifiedNote} is not recognized in the table syntax, which is necessary!')
+        if (!entry.filePath) {
+            new Notice ('Error: ${modifiedNote} is not recognized in the table syntax, which is necessary!');
+            throw new Error ('${modifiedNote} is not recognized in the table syntax, which is necessary!');
+        }
         return entry;
     }
     

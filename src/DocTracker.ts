@@ -18,6 +18,7 @@ export class DocTracker{
     public docLength: number = 0;
     public docWords: number = 0;
     public originalWords: number = 0;
+    public fileName: string = 'unknown';
     
     private debouncedTracker: ReturnType<typeof debounce> | null;
     private editorListener: EventRef | null = null;
@@ -34,6 +35,7 @@ export class DocTracker{
 
     private async initialize() {
         this.lastModifiedTime = Number(this.plugin.app.vault.getFileByPath(this.filePath)?.stat.mtime);
+        this.fileName = this.plugin.app.vault.getFileByPath(this.filePath)?.basename ?? 'unknown';
         this.addWordsCt = wordsCounter();
         this.deleteWordsCt = wordsCounter();        
         await this.activate();

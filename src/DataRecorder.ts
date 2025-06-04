@@ -391,6 +391,7 @@ this.existingDataMap.forEach((ExistingData)=>{
 // Class to represent data from existing records
 export class ExistingData {
     filePath: string;
+    fileName: string;
     lastModifiedTime: number|null;
     editedWords: number;
     editedTimes: number;
@@ -404,6 +405,7 @@ export class ExistingData {
     totalEdits: number;
     
     constructor() {
+        this.fileName = 'unknown';
         this.lastModifiedTime = null;
         this.editedWords = 0;
         this.editedTimes = 0;
@@ -421,6 +423,7 @@ export class ExistingData {
 // Class to represent data from new DocTracker objects
 export class NewData {
     filePath: string;
+    fileName: string;
     lastModifiedTime: number;
     editedWords: number;
     editedTimes: number;
@@ -434,6 +437,7 @@ export class NewData {
     
     constructor(tracker: DocTracker) {
         this.filePath = tracker.filePath;
+        this.fileName = tracker.fileName;
         this.lastModifiedTime = tracker.lastModifiedTime;
         this.editedWords = tracker.editedWords;
         this.editedTimes = tracker.editedTimes;
@@ -452,6 +456,7 @@ export class NewData {
 // Result of merging existing and new data
 export class MergedData {
     filePath: string;
+    fileName: string;
     lastModifiedTime: number | string;
     editedWords: number;
     editedTimes: number;
@@ -468,6 +473,7 @@ export class MergedData {
     constructor(newData?: NewData, existingData?: ExistingData) {
         if (newData) {
             this.filePath = newData.filePath;
+            this.fileName = newData.fileName;
             this.lastModifiedTime = newData.lastModifiedTime;
             this.editedWords = newData.editedWords;
             this.editedTimes = newData.editedTimes;
@@ -480,6 +486,7 @@ export class MergedData {
             this.isNew = true;
         } else if (existingData) {
             this.filePath = existingData.filePath;
+            this.fileName = existingData.fileName;
             this.lastModifiedTime = existingData.lastModifiedTime? existingData.lastModifiedTime:'';
             this.editedWords = existingData.editedWords;
             this.editedTimes = existingData.editedTimes;

@@ -80,6 +80,10 @@ export class BulletListParser{
                     ListData.filePath = groupData.modifiedNote;
                 }
 
+                if (groupData.noteTitle) {
+                    ListData.fileName = groupData.noteTitle;
+                }
+
                 // Parse editedWords
                 if (groupData.editedWords !== undefined) {
                     ListData.editedWords = parseInt(groupData.editedWords) || 0;
@@ -208,6 +212,7 @@ export class BulletListParser{
         for (const data of mergedData) {
             let line = this.syntax
                 .replace(/\${modifiedNote}/g, data.filePath)
+                .replace(/\${noteTitle}/g, data.fileName)
                 .replace(/\${lastModifiedTime}/g, typeof data.lastModifiedTime === 'number' 
                     ? moment(data.lastModifiedTime).format(this.timeFormat) 
                     : data.lastModifiedTime as string)
