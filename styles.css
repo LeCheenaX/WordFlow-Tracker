@@ -1,5 +1,5 @@
 /* allow custom status bar on mobile */
-.is-mobile .app-container .status-bar> .wordflow-status-bar {
+.is-mobile .app-container .status-bar> .plugin-wordflow-tracker {
     display: flex;
     position: relative;
     justify-content: center;
