@@ -401,6 +401,7 @@ export class ExistingData {
     docWords: number;
     editedPercentage: EditedPercentage
     statBar: StatBar;
+    comment: string;
     totalWords: number;
     totalEdits: number;
     
@@ -434,6 +435,7 @@ export class NewData {
     originalWords: number;
     editedPercentage: EditedPercentage
     statBar: StatBar;
+    comment: string;
     
     constructor(tracker: DocTracker) {
         this.filePath = tracker.filePath;
@@ -465,6 +467,7 @@ export class MergedData {
     changedWords: number;
     editedPercentage: EditedPercentage;
     statBar: StatBar;
+    comment: string;
     docWords: number;
     isNew: boolean;
     totalWords: number;
@@ -483,6 +486,7 @@ export class MergedData {
             this.docWords = newData.docWords;
             this.editedPercentage = newData.editedPercentage;
             this.statBar = newData.statBar;
+            this.comment = '';
             this.isNew = true;
         } else if (existingData) {
             this.filePath = existingData.filePath;
@@ -496,6 +500,7 @@ export class MergedData {
             this.docWords = existingData.docWords; 
             this.editedPercentage = existingData.editedPercentage;
             this.statBar = existingData.statBar;
+            this.comment = existingData.comment;
             this.isNew = false;
         } else {
             this.filePath = '|M|E|T|A|D|A|T|A|';
@@ -524,6 +529,8 @@ export class MergedData {
             this.addedWords
         )
 
+        this.comment = existingData.comment;
+        
 //console.log('newDocWords:', this.docWords)
 //console.log('newPercentage:',this.editedPercentage.percentage, '%')
         

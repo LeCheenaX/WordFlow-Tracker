@@ -171,6 +171,8 @@ export class TableParser{
                             return data.editedPercentage.toNote();
                         case 'statBar':
                             return data.statBar.toNote();
+                        case 'comment':
+                            return data.comment;
                         default:
                             return '';
                     }
@@ -265,35 +267,27 @@ export class TableParser{
                 case 'modifiedNote':
                     entry.filePath = value.replace(/^\[\[+|\]\]+$/g, '');
                     break;
-
                 case 'noteTitle':
                     entry.fileName = value.toString();
                     break;
-
                 case 'editedWords':
                     entry.editedWords = parseInt(value) || 0;
-                    break;
-                    
+                    break;                    
                 case 'editedTimes':
                     entry.editedTimes = parseInt(value) || 0;
                     break;
-
                 case 'addedWords':
                     entry.addedWords = parseInt(value) || 0;
                     break;
-
                 case 'deletedWords':
                     entry.deletedWords = parseInt(value) || 0;
                     break;
-
                 case 'changedWords':
                     entry.changedWords = parseInt(value) || 0;
                     break;
-
                 case 'docWords':
                     entry.docWords = parseInt(value) || 0;
-                    break;
-                    
+                    break;                    
                 case 'lastModifiedTime':
                     try {
                         if (value && value.trim()) {
@@ -304,15 +298,15 @@ export class TableParser{
                     } catch (e) {
                         entry.lastModifiedTime = null;
                     }
-                    break;
-                    
+                    break;                    
                 case 'editedPercentage':
                     entry.editedPercentage.fromNote(value);
                     break;
-
                 case 'statBar':
                     entry.statBar.fromNote(value);
                     break;
+                case 'comment':
+                    entry.comment = value;
                 default:
                     new Notice ('❌A name of ${} is not recognized, please examine the syntax in settings!', 0);
                 }
