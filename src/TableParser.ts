@@ -211,7 +211,7 @@ export class TableParser{
 
         if (rowColumns.length > 1 && rowColumns[0].includes('[[') && !rowColumns[0].includes(']]')) {
             // combine 2 columns with alias [[filePath\|alias]]
-            if (!rowColumns[0].endsWith('\\')) new Notice('Warning: the table syntax may lack "\\" in the alias.')
+            if (!rowColumns[0].endsWith('\\')) new Notice('⚠️ The table syntax may lack "\\" in the alias.', 0)
             rowColumns[0] = rowColumns[0] + '\|' + rowColumns[1];
             rowColumns.splice(1, 1);
         }
@@ -254,8 +254,8 @@ export class TableParser{
                     entry.filePath = match[1].replace(/\\+$/, '');
                     entry.fileName = match[2];
                 } else {
-                    new Notice ('Var template with note alias is not matched!', 0)
-                    throw new Error ('Var template with note alias is not matched!\nConsider checking if table syntax contains "\\|" in the first coloumn, or if table in periodic note is mixed with notes with alias and notes without alias')
+                    new Notice ('❌Var template with note alias is not matched!', 0)
+                    throw new Error ('❌Var template with note alias is not matched!\nConsider checking if table syntax contains "\\|" in the first coloumn, or if table in periodic note is mixed with notes with alias and notes without alias')
                 }
             } else {
                 const matches = varTemplate.match(/\${(\w+)}/); // single variable matching
@@ -314,13 +314,13 @@ export class TableParser{
                     entry.statBar.fromNote(value);
                     break;
                 default:
-                    new Notice ('Error: A name of ${} is not recognized, please examine the syntax in settings!');
+                    new Notice ('❌A name of ${} is not recognized, please examine the syntax in settings!', 0);
                 }
             }
         }
         
         if (!entry.filePath) {
-            new Notice ('Error: ${modifiedNote} is not recognized in the table syntax, which is necessary!');
+            new Notice ('❌${modifiedNote} is not recognized in the table syntax, which is necessary!', 0);
             throw new Error ('${modifiedNote} is not recognized in the table syntax, which is necessary!');
         }
         return entry;

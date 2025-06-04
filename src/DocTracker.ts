@@ -253,7 +253,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
         if (this.debouncedTracker)
             this.debouncedTracker.run(); 
         else {
-            new Notice ("Tracker is cleared before releasing!");
+            new Notice ("Caution: Tracker is cleared before releasing!", 0);
             console.error("Tracker is cleared before releasing!");
         } 
 //        if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);    

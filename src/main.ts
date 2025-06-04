@@ -1013,7 +1013,7 @@ class WordflowSettingTab extends PluginSettingTab {
 		  this.display();
 		} catch (error) {
 		  console.error("Could not reset settings:", error);
-		  new Notice('❌ Could not reset settings! Check console!');
+		  new Notice('❌ Could not reset settings! Check console!', 0);
 		}
 	  }
 }
