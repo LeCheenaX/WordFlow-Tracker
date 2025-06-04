@@ -368,7 +368,7 @@ this.existingDataMap.forEach((ExistingData)=>{
         if (existingContent){
 //console.log('existingContent:',existingContent)
             await this.plugin.app.vault.process(recordNote, (data) => {
-                return data.replace(existingContent, newContent.trim());
+                return data.replace(existingContent, newContent.trimStart()); // do not trim end to allow empty comment
             });
         } else if(YAMLStartIndex != -1){ // no existing data in yaml
             await this.plugin.app.vault.process(recordNote, (data) => {

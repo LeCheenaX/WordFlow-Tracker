@@ -146,7 +146,7 @@ export class BulletListParser{
                     ListData.statBar.fromNote(groupData.statBar)
                 }
 
-                if ('comment' in groupData) ListData.comment = groupData.comment || '';
+                if (groupData.comment !== '') ListData.comment = groupData.comment;
                 
                 existingDataMap.set(ListData.filePath, ListData);
  
@@ -246,7 +246,7 @@ export class BulletListParser{
             output += (line.endsWith('\n'))? line : line + '\n';
         }
         
-        return output.trim();
+        return output.trimStart(); // donot trim end to allow empty comment
     }
 
     private setBulletListPatterns(){
