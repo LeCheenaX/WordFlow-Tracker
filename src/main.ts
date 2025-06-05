@@ -389,6 +389,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 	onunload() {
 		this.trackerMap.forEach((tracker, filePath)=>{
 			tracker.deactivate();
+			tracker.destroyTimers();
 		})
     	this.trackerMap.clear();
 	}

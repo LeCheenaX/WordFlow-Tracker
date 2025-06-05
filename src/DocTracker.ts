@@ -1,6 +1,7 @@
-import { debounce, Editor, EventRef, MarkdownView, Plugin, TFile, Stat, View, ViewState, Notice } from "obsidian";
-import WordflowTrackerPlugin from "./main";
 import { wordsCounter } from "./stats";
+import EditTimer from "./EditTimer";
+import WordflowTrackerPlugin from "./main";
+import { debounce, Editor, EventRef, MarkdownView, Notice } from "obsidian";
 import { historyField } from "@codemirror/commands";
 
 const DEBUG = true as const;
@@ -19,11 +20,13 @@ export class DocTracker{
     public docWords: number = 0;
     public originalWords: number = 0;
     public fileName: string = 'unknown';
+    public editTime: number = 0;
     
     private debouncedTracker: ReturnType<typeof debounce> | null;
     private editorListener: EventRef | null = null;
     private addWordsCt: Function
     private deleteWordsCt: Function
+    private editTimer: EditTimer | null = null;
 
     constructor(
         public filePath: string,      
@@ -210,8 +213,8 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
 */
     }
 
-    private updateStatusBarTracker(){
-        this.plugin.statusBarContent = `${this.editedTimes}` + ' edits: ' + `${this.editedWords}` + ' words';
+    public updateStatusBarTracker(){
+        this.plugin.statusBarContent = `⌨ ${this.editTime%60000} min · ${this.editedTimes} edits · ${this.editedWords} words`;
         //if(DEBUG) this.plugin.statusBarContent += ` ${this.filePath}`;
         this.plugin.statusBarTrackerEl.setText(this.plugin.statusBarContent);
 //if (DEBUG) console.log(`UpdateStatusBar: ${this.plugin.statusBarContent}`);
@@ -290,6 +293,11 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
         this.deletedWords = 0;
         this.changedWords = 0;
         this.updateStatusBarTracker();
+    }
+
+    public destroyTimers(){
+        if (this.editTimer) this.editTimer.destroy();
+        this.editTimer = null;
     }
 
     // Warning: Do not use! This will destroy even the editor of Obsidian! Let Obsidian decide when to destroy!
