@@ -1,6 +1,6 @@
 import { DocTracker } from "./DocTracker";
 import WordflowTrackerPlugin from "./main";
-import {moment} from "obsidian";
+import { debounce, EventRef, moment } from "obsidian";
 
 export default class EditTimer {
     private intervalId: number | null = null;
@@ -10,16 +10,24 @@ export default class EditTimer {
     private timeToNextUpdate: number = 0; // miliseconds until next update
     private readonly updateInterval: number = 60000; // 60 seconds
 
+    private readonly idleInterval: number = 180000; // 180 seconds
+    private debouncedPauser: ReturnType<typeof debounce> | null = null;
+    private clickListener: EventRef | null = null; // how to dereference the resource as Obsidian doesnot support native click event, we could only register dom event
+
     constructor(
         private plugin: WordflowTrackerPlugin,
-        private tracker: DocTracker
-    ) {}
+        private tracker: DocTracker,
+    ) {
+        this.debouncedPauser = debounce(this.pause.bind(this), this.idleInterval, true)
+    }
 
     public start(): void {
         if (this.isRunning()) return;
 //console.log("Timer started!")
         this.startTime = Date.now();
         this.accumulatedTime = this.tracker.editTime;
+
+        if (this.debouncedPauser != null) this.debouncedPauser();
 
         // count remaining time until next min
         if (this.timeToNextUpdate === 0) {
@@ -35,6 +43,7 @@ export default class EditTimer {
 
     public pause(): void {
         if (!this.isRunning()) return;
+        this.debouncedPauser?.cancel();
 
         // count miliseconds left until next update
         if (this.timeoutId !== null) {
@@ -66,10 +75,18 @@ export default class EditTimer {
         // warning: never set startTime to 0, or getElapsedTime may return a unix timestamp rather than miliseconds
         this.accumulatedTime = 0;
         this.timeToNextUpdate = 0;
-        
+        this.debouncedPauser?.cancel();
+
         this.updateToTracker(); 
         this.clearTimers();
         this.start();
+    }
+
+    // call for safety when plugin unload
+    public destroy(): void {
+        this.debouncedPauser?.cancel();
+        this.debouncedPauser = null;
+        this.clearTimers();
     }
 
     private scheduleNextUpdate(): void {
@@ -104,7 +121,7 @@ export default class EditTimer {
         this.tracker.updateStatusBarTracker();
     }
 
-    private clearTimers(): void {
+    private clearTimers(): void { // not exposed, or the debouncer may not be dereferenced
         if (this.timeoutId !== null) {
             window.clearTimeout(this.timeoutId);
             this.timeoutId = null;
@@ -113,11 +130,6 @@ export default class EditTimer {
             window.clearInterval(this.intervalId);
             this.intervalId = null;
         }
-    }
-
-    // call for safety when plugin unload
-    public destroy(): void {
-        this.clearTimers();
     }
 }
 

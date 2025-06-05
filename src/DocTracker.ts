@@ -250,6 +250,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
             if (this.debouncedTracker != null) 
                 this.debouncedTracker();
 //console.log('DocTracker.activate: listener registered')
+            this.editTimer?.start();
         });
         this.updateStatusBarTracker();
         this.isActive = true;
