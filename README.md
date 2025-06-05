@@ -57,12 +57,11 @@ In wordflow recording syntax, you can add or delete the data in one of the follo
 - **Table:**
 
     Open any note in Obsidian, and add a blank table with:
-  	```
-   
-   | |
-   |-|
-   | |
-  	```
+  
+	| |
+	|-|
+	| |
+
     Then, specify the name in heading for ${modifiedNote}, such as "Note Name" and add "${modifiedNote}" to the row.
   
     ![image](https://github.com/user-attachments/assets/de0e8909-727e-44d2-9cec-c647d51af48c)
