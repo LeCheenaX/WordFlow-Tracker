@@ -1,4 +1,5 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
+import { formatTime, restoreTimeString } from "./EditTimer";
 import { moment, Plugin, TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
 
@@ -147,6 +148,8 @@ export class BulletListParser{
                 }
 
                 if (groupData.comment !== '') ListData.comment = groupData.comment;
+
+                if (groupData.editTime !== undefined) ListData.editTime = restoreTimeString(groupData.editTime);
                 
                 existingDataMap.set(ListData.filePath, ListData);
  
@@ -241,12 +244,13 @@ export class BulletListParser{
                 .replace(/\${docWords}/g, data.docWords.toString())
                 .replace(/\${editedPercentage}/g, data.editedPercentage.toNote())
                 .replace(/\${statBar}/g, data.statBar.toNote())
-                .replace(/\${comment}/g, data.comment);
+                .replace(/\${comment}/g, data.comment)
+                .replace(/\${editTime}/g, formatTime(data.editTime));
             
             output += (line.endsWith('\n'))? line : line + '\n';
         }
         
-        return output.trimStart(); // donot trim end to allow empty comment
+        return output.trimStart().replace(/[\r\n]+$/, ''); // donot trim end to allow empty comment, use replace(/[\r\n]+$/, '') instead to trim \n and \r
     }
 
     private setBulletListPatterns(){

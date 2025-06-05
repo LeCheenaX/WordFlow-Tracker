@@ -232,11 +232,12 @@ export default class WordflowTrackerPlugin extends Plugin {
 					for (const DocRecorder of this.DocRecorders) {
 						if(DocRecorder.filterZero && 
 						   tracker.editedTimes == 0 && 
-						   tracker.editedWords == 0)
+						   tracker.editTime < 60000)
 						   		continue;
 						DocRecorder.record(tracker);
 						++count;
 					}
+					tracker.destroyTimers();
 					this.trackerMap.delete(filePath);
 					if (count){
 						new Notice(`Edits from ${filePath} are recorded.`, 1000)
@@ -260,11 +261,12 @@ export default class WordflowTrackerPlugin extends Plugin {
 					for (const DocRecorder of this.DocRecorders) {
 						if(DocRecorder.filterZero && 
 						   tracker.editedTimes == 0 && 
-						   tracker.editedWords == 0)
+						   tracker.editTime < 60000)
 						   		continue;
 						DocRecorder.record(tracker);
 						++count;
 					}
+					tracker.destroyTimers();
 					this.trackerMap.delete(filePath);
 					if (count){
 						new Notice(`Edits from ${filePath} are recorded.`, 1000)
@@ -866,6 +868,7 @@ class WordflowSettingTab extends PluginSettingTab {
 				.addOption('editedTimes', 'editedTimes')
 				.addOption('editedPercentage', 'editedPercentage')
 				.addOption('modifiedNote', 'modifiedNote')
+				.addOption('editTime', 'editTime')
 				.setValue(settings.sortBy)
 				.onChange(async (value) => {
 					settings.sortBy = value;
@@ -907,7 +910,7 @@ class WordflowSettingTab extends PluginSettingTab {
 		new Setting(container).setName('Recording miscellaneous').setHeading();
 		new Setting(container)
 			.setName('Filter out non-modified notes')
-			.setDesc('Whether the opened notes that are not modified should be excluded while recording. If not excluded, you will get any opened file under editing mode recorded. ')
+			.setDesc('Whether the opened notes that are not modified or focused should be excluded while recording. If not excluded, you will get any opened file under editing mode recorded. ')
 			.addToggle(t => t
 				.setValue(settings.filterZero)
 				.onChange(async (value) => {

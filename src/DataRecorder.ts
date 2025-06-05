@@ -186,7 +186,7 @@ this.existingDataMap.forEach((ExistingData)=>{
         this.newDataMap.clear();
         if (!p_tracker){
             for (const [filePath, tracker] of this.trackerMap.entries()) {
-                if (!this.filterZero || tracker.editedTimes!=0){
+                if (!(this.filterZero && tracker.editedTimes==0 && tracker.editTime < 60000)){
                 await tracker.countActiveWords(); // generate accurate words for NewData by the time of recording
                 this.newDataMap.set(filePath, new NewData(tracker));
                 }
@@ -194,7 +194,7 @@ this.existingDataMap.forEach((ExistingData)=>{
             }
         } else {
 //console.log('trackerClosed:',p_tracker)
-            if (!this.filterZero || p_tracker.editedTimes!=0){
+            if (!(this.filterZero && p_tracker.editedTimes==0 && p_tracker.editTime < 60000)){
                 // no active editor now
                 await p_tracker.countInactiveWords(); // generate accurate words for NewData by the time of recording
                 this.newDataMap.set(p_tracker.filePath, new NewData(p_tracker)); // only record given data
@@ -258,6 +258,10 @@ this.existingDataMap.forEach((ExistingData)=>{
                     aVal = a.filePath;
                     bVal = b.filePath;
                     break;
+                case 'editTime':
+                    aVal = a.editTime;
+                    bVal = b.editTime;
+                    break;
                 default:
                     aVal = a.filePath;
                     bVal = b.filePath;
@@ -283,14 +287,17 @@ this.existingDataMap.forEach((ExistingData)=>{
         if (ExistingData){
         MergedTotalData.totalEdits = ExistingData.totalEdits;
         MergedTotalData.totalWords = ExistingData.totalWords;
+        MergedTotalData.totalEditTime = ExistingData.totalEditTime;
         } else {
             MergedTotalData.totalEdits = 0;
             MergedTotalData.totalWords = 0;
+            MergedTotalData.totalEditTime = 0;
         }
 //console.log('Total Before merging:',[MergedTotalData])
         for (const [filePath, newData] of this.newDataMap.entries()) {
             MergedTotalData.totalEdits += newData.editedTimes;
             MergedTotalData.totalWords += newData.editedWords;
+            MergedTotalData.totalEditTime += newData.editTime;
         }
 //console.log('Total After merging:',[MergedTotalData])
         return [MergedTotalData];
@@ -402,8 +409,10 @@ export class ExistingData {
     editedPercentage: EditedPercentage
     statBar: StatBar;
     comment: string;
+    editTime: number;
     totalWords: number;
     totalEdits: number;
+    totalEditTime: number;
     
     constructor() {
         this.fileName = 'unknown';
@@ -417,8 +426,10 @@ export class ExistingData {
         this.editedPercentage = new EditedPercentage();
         this.statBar = new StatBar();
         this.comment = '';
+        this.editTime = 0;
         this.totalWords = 0;
         this.totalEdits = 0;
+        this.totalEditTime = 0;
     }
 }
 
@@ -437,6 +448,7 @@ export class NewData {
     editedPercentage: EditedPercentage
     statBar: StatBar;
     comment: string;
+    editTime: number;
     
     constructor(tracker: DocTracker) {
         this.filePath = tracker.filePath;
@@ -453,6 +465,7 @@ export class NewData {
         this.editedPercentage.fromTracker(tracker);
         this.statBar = new StatBar();
         this.statBar.fromTracker(tracker);
+        this.editTime = tracker.editTime;
     }
 }
 
@@ -470,9 +483,11 @@ export class MergedData {
     statBar: StatBar;
     comment: string;
     docWords: number;
+    editTime: number;
     isNew: boolean;
     totalWords: number;
     totalEdits: number;
+    totalEditTime: number;
     
     constructor(newData?: NewData, existingData?: ExistingData) {
         if (newData) {
@@ -488,6 +503,7 @@ export class MergedData {
             this.editedPercentage = newData.editedPercentage;
             this.statBar = newData.statBar;
             this.comment = '';
+            this.editTime = newData.editTime;
             this.isNew = true;
         } else if (existingData) {
             this.filePath = existingData.filePath;
@@ -502,6 +518,7 @@ export class MergedData {
             this.editedPercentage = existingData.editedPercentage;
             this.statBar = existingData.statBar;
             this.comment = existingData.comment?? ''; 
+            this.editTime = existingData.editTime;
             this.isNew = false;
         } else {
             this.filePath = '|M|E|T|A|D|A|T|A|';
@@ -516,6 +533,7 @@ export class MergedData {
         this.addedWords += existingData.addedWords;
         this.deletedWords += existingData.deletedWords;
         this.changedWords += existingData.changedWords;
+        this.editTime += existingData.editTime;
         
         // Let existing data outweighs the new data
         this.editedPercentage.setEdits(

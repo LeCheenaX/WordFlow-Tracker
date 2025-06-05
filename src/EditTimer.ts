@@ -1,5 +1,6 @@
 import { DocTracker } from "./DocTracker";
 import WordflowTrackerPlugin from "./main";
+import {moment} from "obsidian";
 
 export default class EditTimer {
     private intervalId: number | null = null;
@@ -16,11 +17,9 @@ export default class EditTimer {
 
     public start(): void {
         if (this.isRunning()) return;
-
+//console.log("Timer started!")
         this.startTime = Date.now();
         this.accumulatedTime = this.tracker.editTime;
-
-        this.clearTimers();
 
         // count remaining time until next min
         if (this.timeToNextUpdate === 0) {
@@ -43,15 +42,19 @@ export default class EditTimer {
             this.timeToNextUpdate = Math.max(0, this.timeToNextUpdate - elapsedSinceStart);
         }
 
-        this.updateToTracker();
+        this.updateTrackerProp();
         this.clearTimers();
     }
 
     public getElapsedTime(): number {
         if (!this.isRunning()) {
             return this.accumulatedTime;
+        } 
+        if (this.startTime <=0) {
+            console.warn('EditTimer: Try get focused time before starting the timer, returned focused time may be inaccurate.');
+            return this.accumulatedTime;
         }
-        
+//console.log("Current time is: ", this.accumulatedTime + (Date.now() - this.startTime))
         return this.accumulatedTime + (Date.now() - this.startTime);
     }
 
@@ -59,23 +62,26 @@ export default class EditTimer {
         return this.timeoutId !== null || this.intervalId !== null;
     }
 
-    public reset(): void {
-        this.startTime = 0;
+    public reset(): void { // reset timers and restart
+        // warning: never set startTime to 0, or getElapsedTime may return a unix timestamp rather than miliseconds
         this.accumulatedTime = 0;
         this.timeToNextUpdate = 0;
         
-        this.updateToTracker();
+        this.updateToTracker(); 
         this.clearTimers();
+        this.start();
     }
 
     private scheduleNextUpdate(): void {
         this.timeoutId = window.setTimeout(() => {
-            this.timeoutId = null;
+            
             this.updateToTracker();
             this.timeToNextUpdate = 0;
             
             // regular update per 60s since the first update
             this.startRegularUpdates();
+
+            this.timeoutId = null; // must put to end for isRunning function to return correct value
         }, this.timeToNextUpdate);
     }
 
@@ -89,8 +95,12 @@ export default class EditTimer {
         );
     }
 
-    private updateToTracker(): void {   
+    private updateTrackerProp(): void { // update only prop
         this.tracker.editTime = this.getElapsedTime();
+    }
+
+    private updateToTracker(): void { // update prop and status bar
+        this.updateTrackerProp();
         this.tracker.updateStatusBarTracker();
     }
 
@@ -109,4 +119,22 @@ export default class EditTimer {
     public destroy(): void {
         this.clearTimers();
     }
+}
+
+export function formatTime(ms: number): string {
+    const duration = moment.duration(ms);
+    const hours = Math.floor(duration.asHours());
+    const minutes = duration.minutes();
+    return (hours>0)? `${hours} h ${minutes} min`: `${minutes} min`;
+}
+
+export function restoreTimeString(timeStr: string): number {
+    let hours = 0, minutes = 0;
+    const hoursMatch = timeStr.match(/(\d+)\s*h/);
+    if (hoursMatch) hours = parseInt(hoursMatch[1], 10);
+
+    const minutesMatch = timeStr.match(/(\d+)\s*min/);
+    if (minutesMatch) minutes = parseInt(minutesMatch[1], 10);
+
+    return (hours*3600000 + minutes*60000);
 }

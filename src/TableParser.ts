@@ -1,4 +1,5 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
+import { formatTime, restoreTimeString } from "./EditTimer";
 import { moment, Notice, TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
 
@@ -173,6 +174,8 @@ export class TableParser{
                             return data.statBar.toNote();
                         case 'comment':
                             return data.comment;
+                        case 'editTime':
+                            return formatTime(data.editTime);
                         default:
                             return '';
                     }
@@ -307,6 +310,9 @@ export class TableParser{
                     break;
                 case 'comment':
                     entry.comment = value;
+                    break;
+                case 'editTime':
+                    entry.editTime = restoreTimeString(value);
                     break;
                 default:
                     new Notice ('❌A name of ${} is not recognized, please examine the syntax in settings!', 0);

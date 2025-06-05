@@ -1,5 +1,5 @@
 import { wordsCounter } from "./stats";
-import EditTimer from "./EditTimer";
+import EditTimer,  { formatTime } from "./EditTimer";
 import WordflowTrackerPlugin from "./main";
 import { debounce, Editor, EventRef, MarkdownView, Notice } from "obsidian";
 import { historyField } from "@codemirror/commands";
@@ -40,7 +40,8 @@ export class DocTracker{
         this.lastModifiedTime = Number(this.plugin.app.vault.getFileByPath(this.filePath)?.stat.mtime);
         this.fileName = this.plugin.app.vault.getFileByPath(this.filePath)?.basename ?? 'unknown';
         this.addWordsCt = wordsCounter();
-        this.deleteWordsCt = wordsCounter();        
+        this.deleteWordsCt = wordsCounter();  
+        this.editTimer = new EditTimer(this.plugin, this);      
         await this.activate();
         await this.countOrigin();
         await sleep(1000); // when open new notes, update with delay
@@ -214,7 +215,8 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
     }
 
     public updateStatusBarTracker(){
-        this.plugin.statusBarContent = `⌨ ${this.editTime%60000} min · ${this.editedTimes} edits · ${this.editedWords} words`;
+        this.plugin.statusBarContent = `⌨ ${formatTime(this.editTime)} · ${this.editedTimes} edits · ${this.editedWords} words`;
+
         //if(DEBUG) this.plugin.statusBarContent += ` ${this.filePath}`;
         this.plugin.statusBarTrackerEl.setText(this.plugin.statusBarContent);
 //if (DEBUG) console.log(`UpdateStatusBar: ${this.plugin.statusBarContent}`);
@@ -228,6 +230,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
         }
         if(this.isActive) return; // ensure currently not active
 
+        this.editTimer?.start();
         this.activeEditor = this.plugin.app.workspace.getActiveViewOfType(MarkdownView); 
 //        if (DEBUG) console.log("DocTracker.activate: editor:", this.activeEditor)
         await sleep(20); // Warning: cm will be delayed for 3-5 ms to be bound to the updated editor.
@@ -260,6 +263,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
             console.error("Tracker is cleared before releasing!");
         } 
 //        if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);    
+        this.editTimer?.pause();
     }; 
 
     public async countActiveWords(){ 
@@ -292,6 +296,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
         this.addedWords = 0;
         this.deletedWords = 0;
         this.changedWords = 0;
+        this.editTimer?.reset();
         this.updateStatusBarTracker();
     }
 
