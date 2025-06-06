@@ -14,7 +14,7 @@
 }
 
 .wordflow-tab {
-    font-size: 1.25em;
+    font-size: large;
     padding: 6px 12px; /* 减小内边距 */
     cursor: pointer;
     border-radius: 4px;

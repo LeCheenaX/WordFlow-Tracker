@@ -3,6 +3,7 @@ import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaCo
 import { DataRecorder } from './DataRecorder';
 import { normalizePath } from 'obsidian';
 
+// Obsidian supports only string and boolean for settings. numbers are not supported. 
 export interface WordflowRecorderConfigs {
     name: string;
     enableDynamicFolder: boolean;
@@ -27,6 +28,9 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
 
     // Recorders tab for multiple recorders
     Recorders: RecorderConfig[];
+
+    // Timers setting tab
+    idleInterval: string;
 }
 
 export interface RecorderConfig extends WordflowRecorderConfigs {
@@ -47,7 +51,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 	periodicNoteFormat: 'YYYY-MM-DD',
 	recordType: 'table',
 	insertPlace: 'bottom',
-	tableSyntax: `| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| [[\${modifiedNote}]] | \${editedWords} | \${lastModifiedTime} |`,
+	tableSyntax: `| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| [[\${modifiedNote}\\|\${noteTitle}]] | \${editedWords} | \${lastModifiedTime} |`,
 	bulletListSyntax: `- \${modifiedNote}\n    - Edits: \${editedTimes}\n    - Edited Words: \${editedWords}`,
 	metadataSyntax: `Total edits: \${totalEdits}\nTotal words: \${totalWords}`,
 	timeFormat: 'YYYY-MM-DD HH:mm',
@@ -55,6 +59,9 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 	isDescend: true,
 	insertPlaceStart: '',
 	insertPlaceEnd: '',
+
+    // Timers setting tab
+    idleInterval: '3',
 }
 
 
@@ -69,11 +76,12 @@ export abstract class WordflowSubSettingsTab {
 // ========================================
 export class GeneralTab extends WordflowSubSettingsTab {
     display() {
+        this.container.empty();
         const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
         
         new Setting(tabContent)
-            .setName('Filter out non-modified notes')
-            .setDesc('Whether the opened notes that are not modified or focused should be excluded while recording. If not excluded, you will get any opened file under editing mode recorded. ')
+            .setName('Filter out non-modified or unfocused or notes')
+            .setDesc('Whether the opened notes that are not modified or focused for at least 1 minute should be excluded while recording. If not excluded, you will get any opened file under editing mode recorded. ')
             .addToggle(t => t
                 .setValue(this.plugin.settings.filterZero)
                 .onChange(async (value) => {
@@ -608,7 +616,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 export class TimersTab extends WordflowSubSettingsTab {
     display() {
         const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
-        
+/*
         new Setting(tabContent)
             .setName('Editing session threshold')
             .setDesc('Minimal editing time (in seconds) to count as a valid editing session')
@@ -618,15 +626,16 @@ export class TimersTab extends WordflowSubSettingsTab {
                 .onChange(async (value) => {
                     // 这里可以添加具体的实现逻辑
                 }));
-
+*/
         new Setting(tabContent)
-            .setName('Idle time reset')
-            .setDesc('Reset timer after inactive seconds')
+            .setName('Idle interval')
+            .setDesc('Interval in minutes when the timer in status bar will pause when idled for a period of time.\n Any document clicking, outline clicking or editing behavior will refresh the timer from idling. ')
             .addText(text => text
-                .setPlaceholder('120')
-                .setValue('120')
+                .setPlaceholder('Set idle time in minute')
+                .setValue(this.plugin.settings.idleInterval)
                 .onChange(async (value) => {
-                    // 这里可以添加具体的实现逻辑
+                    this.plugin.settings.idleInterval = value;
+                    await this.plugin.saveSettings();
                 }));
     }
 }

@@ -378,7 +378,7 @@ export class WordflowSettingTab extends PluginSettingTab {
 			'General': new GeneralTab(this.app, this.plugin, this.contentContainer),
 			'Recorders': new RecordersTab(this.app, this.plugin, this.contentContainer),
 			'Timers': new TimersTab(this.app, this.plugin, this.contentContainer),
-			'Status Bar': new StatusBarTab(this.app, this.plugin, this.contentContainer)
+			//'Status Bar': new StatusBarTab(this.app, this.plugin, this.contentContainer)
 		};
 
 		// tab buttons

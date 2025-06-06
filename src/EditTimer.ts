@@ -13,7 +13,7 @@ export default class EditTimer {
 
     private startDebounceInterval: number = 1000 as const; 
     private readonly updateInterval: number = 60000; // 60 seconds
-    private readonly idleInterval: number = 180000; // 180 seconds
+    private readonly idleInterval: number = parseInt(this.plugin.settings.idleInterval)*60000; // convert to miliseconds
     private debouncedPauser: ReturnType<typeof debounce> | null = null;
 
     constructor(
