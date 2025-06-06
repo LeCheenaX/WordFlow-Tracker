@@ -1,9 +1,10 @@
-import WordflowTrackerPlugin, { RecorderConfig } from "./main";
+import WordflowTrackerPlugin from "./main";
+import { RecorderConfig } from "./settings"
 import { DocTracker } from './DocTracker';
-import { moment, Notice, TFile } from 'obsidian';
 import { TableParser } from './TableParser';
 import { BulletListParser } from './ListParser';
 import { MetaDataParser } from "./MetaDataParser";
+import { moment, Notice, TFile } from 'obsidian';
 
 export class DataRecorder {
     public existingDataMap: Map<string, ExistingData> = new Map();
@@ -44,7 +45,6 @@ export class DataRecorder {
         this.timeFormat = this.plugin.settings.timeFormat;
         this.sortBy = this.plugin.settings.sortBy;
         this.isDescend = this.plugin.settings.isDescend;
-        this.filterZero = this.plugin.settings.filterZero;
         this.tableSyntax = this.plugin.settings.tableSyntax;
         this.listSyntax = this.plugin.settings.bulletListSyntax;
         this.metadataSyntax = this.plugin.settings.metadataSyntax;
@@ -59,7 +59,6 @@ export class DataRecorder {
             this.timeFormat = this.config.timeFormat;
             this.sortBy = this.config.sortBy;
             this.isDescend = this.config.isDescend;
-            this.filterZero = this.config.filterZero;
             this.tableSyntax = this.config.tableSyntax;
             this.listSyntax = this.config.bulletListSyntax;
             this.metadataSyntax = this.config.metadataSyntax;

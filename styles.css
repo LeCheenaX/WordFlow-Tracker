@@ -1,12 +1,65 @@
-/* allow custom status bar on mobile */
-.is-mobile .app-container .status-bar> .plugin-wordflow-tracker {
+/* ======================= */
+/*  Wordflow Setting Tabs  */
+/* ======================= */
+
+.wordflow-tab-bar.tab-labels-container {
     display: flex;
-    position: relative;
-    justify-content: center;
-    padding: 0;
-    /*background-color: black;
-    color: #b28ecc;*/
+    flex-direction: row;
+    align-items: center;
+    border-bottom: 1px solid var(--background-modifier-border);
+    padding: 0;  /* 减少上下内边距 */
+    margin-bottom: 1.2rem;  /* 减少下边距 */
+    flex-wrap: wrap;
+    gap: 3px;  /* 使用动态间隙将标签和分隔符隔开 */
 }
+
+.wordflow-tab {
+    font-size: 1.25em;
+    padding: 6px 12px; /* 减小内边距 */
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s ease; /* 更平滑过渡 */
+    color: var(--text-muted);
+    position: relative; /* 为下划线做准备 */
+}
+
+.wordflow-tab.active {
+    color: var(--text-accent);
+    font-weight: 600;
+    /* 移除背景颜色 */
+}
+
+.wordflow-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;  /* 缩短下划线与文字距离 */
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--interactive-accent);
+    transition: bottom 0.15s ease; /* 添加下划线位置动画 */
+}
+
+.wordflow-setting-tab-separator {
+    padding: 0 2px; /* 减少分隔符间距 */
+    color: var(--text-faint);
+    user-select: none;
+    opacity: 0.6; /* 使分隔符更轻盈 */
+}
+
+.wordflow-tab-content {
+    min-height: 500px; 
+}
+
+.wordflow-tab-content-scroll {
+    overflow-y: auto;
+    max-height: 60vh;
+    padding: 0 4px; /* 减少内边距 */
+}
+
+/* ======================= */
+/*  Recorders Setting Tab  */
+/* ======================= */
 
 .recorder-selection-container,
 .recorder-actions-container {
@@ -28,29 +81,68 @@
     /*color: rgb(67, 132, 216);*/
 }
 
-.confirm-modal .modal {
+.wordflow-recorder-custom-position-container .setting-item {
+    border-top: none;
+    padding-top: 0;
+}
+
+.wordflow-recorder-custom-position-container .setting-item:first-child {
+    border-top: 1px solid var(--background-modifier-border);
+    padding-top: 12px;
+}
+
+
+.wordflow-recorder-sortby-container .setting-item:first-child {
+    border-top: 1px solid var(--background-modifier-border);
+    padding-top: 12px;
+}
+
+.wordflow-recorder-mtime-format-container .setting-item:first-child {
+    border-top: 1px solid var(--background-modifier-border);
+    padding-top: 12px;
+}
+
+/* ======================== */
+/*  Status Bar Setting Tab  */
+/* ======================== */
+
+/* allow custom status bar on mobile */
+.is-mobile .app-container .status-bar> .plugin-wordflow-tracker {
+    display: flex;
+    position: relative;
+    justify-content: center;
+    padding: 0;
+    /*background-color: black;
+    color: #b28ecc;*/
+}
+
+/* ==================== */
+/*  Confirmation Modal  */
+/* ==================== */
+
+.wordflow-confirm-modal .modal {
     width: auto;
     max-width: 80vw;
     min-width: 300px;
     margin: 0 auto;
 }
 
-.confirm-modal .modal-content {
+.wordflow-confirm-modal .modal-content {
     display: flex;
     flex-direction: column;
 }
 
-.confirm-modal .confirm-message {
+.wordflow-confirm-modal .confirm-message {
     white-space: pre-wrap;
     overflow-wrap: break-word;
 }
 
-.confirm-modal .confirm-cancel-buttons button {
+.wordflow-confirm-modal .confirm-cancel-buttons button {
     flex: 1;
     max-width: 48%;
 }
 
-.confirm-modal .confirm-cancel-buttons {
+.wordflow-confirm-modal .confirm-cancel-buttons {
     display: flex;
     justify-content: space-between;
     margin-top: auto;
@@ -59,6 +151,30 @@
     gap: 16px;
     flex-direction: row-reverse;
 }
+
+/* ================== */
+/*  Text Input Modal  */
+/* ================== */
+
+.wordflow-text-input-container {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.wordflow-text-input-container input {
+    width: 100%;
+}
+
+.wordflow-text-input-button-container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 1rem;
+}
+
+/* ============================= */
+/*  Customized setting displays  */
+/* ============================= */
 
 .wordflow-setting-tab .wordflow-multiline-setting {
     display: block;
@@ -74,26 +190,9 @@
     min-height: 80px;
 }
 
-.wordflow-custom-container .setting-item {
-    border-top: none;
-    padding-top: 0;
-}
-
-.wordflow-custom-container .setting-item:first-child {
-    border-top: 1px solid var(--background-modifier-border);
-    padding-top: 12px;
-}
-
-
-.wordflow-sortby-container .setting-item:first-child {
-    border-top: 1px solid var(--background-modifier-border);
-    padding-top: 12px;
-}
-
-.wordflow-mtime-format-container .setting-item:first-child {
-    border-top: 1px solid var(--background-modifier-border);
-    padding-top: 12px;
-}
+/* =========================================== */
+/*  Html Elements displaying in periodic notes */
+/* =========================================== */
 
 .edited-percentage::after {
     content: attr(data-percentage) "%";
@@ -105,22 +204,22 @@
     height: 12px;
     border-radius: 6px;
     overflow: hidden;
-  }
+}
   
-  .stat-bar {
+.stat-bar {
     height: 100%;
-  }
+}
   
-  .stat-bar.origin {
+.stat-bar.origin {
     background-color: #FFD700;
     border-radius: 6px 0 0 6px;
-  }
+}
   
-  .stat-bar.deleted {
+.stat-bar.deleted {
     background-color: #FF4D4D;
-  }
+}
   
-  .stat-bar.added {
+.stat-bar.added {
     background-color: #00CC66;
     border-radius: 0 6px 6px 0;
-  }
+}
