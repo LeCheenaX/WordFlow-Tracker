@@ -9,12 +9,12 @@ WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插
 ![wordflow3](https://github.com/user-attachments/assets/e323477d-d38e-4a6c-8d98-83bda5818a07)
 
 ## 核心功能
-- 跟踪每个笔记的编辑次数和编辑字数。这将在笔记底部的状态栏中显示。
+- 跟踪每个笔记的专注时间、编辑次数和编辑字数。这将在笔记底部的状态栏中显示。
 
-  ![image](https://github.com/user-attachments/assets/88e1d16b-893f-46a4-aa66-210a372ef753)
+  ![image](https://github.com/user-attachments/assets/51ce15a6-a935-46c2-9676-5525bd6b092f)
 - 在笔记关闭时自动记录修改的数据。或者，使用命令或按钮记录所有笔记。记录后，跟踪器将重置为0。
 - 以比例条样式显示更改，展示原始内容(黄色)与修改内容(红色、绿色)的比例。
-  ![image](https://github.com/user-attachments/assets/56c8336a-4761-4fed-99b7-3f6453de416a)
+  ![image](https://github.com/user-attachments/assets/6c977b5f-0aba-4481-847b-f0fda6c5cd98)
 - 将编辑统计数据（例如你今天编辑的总字数）记录到日记的 YAML（Frontmatter）中。其他插件（如热图）可以使用这些元数据生成分析。
 
   ![image](https://github.com/user-attachments/assets/1e5bbe85-a943-4d10-b81c-ecef5e6b15bb)
