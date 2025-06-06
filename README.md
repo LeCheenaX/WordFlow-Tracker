@@ -9,11 +9,11 @@ WorkFlow Tracker is a lite plugin that track your edits on each note and automat
 ![wordflow3](https://github.com/user-attachments/assets/e323477d-d38e-4a6c-8d98-83bda5818a07)
 
 ### Core Features
-- Tracking the number of edits, editied words per note. This will reflect on the status bar at the bottom of note.
-  ![image](https://github.com/user-attachments/assets/88e1d16b-893f-46a4-aa66-210a372ef753)
+- Tracking the focused time, number of edits, editied words per note. This will reflect on the status bar at the bottom of note.
+  ![image](https://github.com/user-attachments/assets/51ce15a6-a935-46c2-9676-5525bd6b092f)
 - Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes. 
 - Display changes in a bar style to show the portion of original contents v.s. modified contents. 
-  ![image](https://github.com/user-attachments/assets/56c8336a-4761-4fed-99b7-3f6453de416a)
+  ![image](https://github.com/user-attachments/assets/6c977b5f-0aba-4481-847b-f0fda6c5cd98)
 - Record edited statistics such as total words you edited today, to the YAML(Frontmatter) of daily note. Other plugins such as heatmap could use these metadata to generate analysis.
 
   ![image](https://github.com/user-attachments/assets/1e5bbe85-a943-4d10-b81c-ecef5e6b15bb)
