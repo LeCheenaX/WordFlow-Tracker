@@ -180,16 +180,19 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
-		/*
+		
 		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
+//console.log('click', evt);
 			//test to switch between editor
-			if(this.app.workspace.activeEditor)
+			if(this.app.workspace.activeEditor?.file)
 			{
-				console.log(this.app.workspace.activeEditor.file?.basename)
+//console.log(this.app.workspace.activeEditor.file?.path)
+				const docTracker = this.trackerMap.get(this.app.workspace.activeEditor.file?.path)
+				if (docTracker && docTracker.isActive && docTracker.editTimer?.debouncedStarter) 
+					docTracker.editTimer?.debouncedStarter();
 			}
 		});
-		*/
+		
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		if (this.settings.autoRecordInterval && Number(this.settings.autoRecordInterval) != 0){

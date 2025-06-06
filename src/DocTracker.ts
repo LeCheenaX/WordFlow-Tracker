@@ -22,11 +22,11 @@ export class DocTracker{
     public fileName: string = 'unknown';
     public editTime: number = 0;
     
+    public editTimer: EditTimer | null = null;
     private debouncedTracker: ReturnType<typeof debounce> | null;
     private editorListener: EventRef | null = null;
     private addWordsCt: Function
     private deleteWordsCt: Function
-    private editTimer: EditTimer | null = null;
 
     constructor(
         public filePath: string,      
@@ -250,7 +250,8 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
             if (this.debouncedTracker != null) 
                 this.debouncedTracker();
 //console.log('DocTracker.activate: listener registered')
-            this.editTimer?.start();
+            if (this.editTimer?.debouncedStarter != null) 
+                this.editTimer?.debouncedStarter();
         });
         this.updateStatusBarTracker();
         this.isActive = true;

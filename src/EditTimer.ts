@@ -1,27 +1,37 @@
 import { DocTracker } from "./DocTracker";
 import WordflowTrackerPlugin from "./main";
-import { debounce, EventRef, moment } from "obsidian";
+import { debounce, moment } from "obsidian";
 
 export default class EditTimer {
+    public debouncedStarter: ReturnType<typeof debounce> | null = null;
+
     private intervalId: number | null = null;
     private timeoutId: number | null = null;
     private startTime: number = 0;
     private accumulatedTime: number = 0;
     private timeToNextUpdate: number = 0; // miliseconds until next update
-    private readonly updateInterval: number = 60000; // 60 seconds
 
+    private startDebounceInterval: number = 1000 as const; 
+    private readonly updateInterval: number = 60000; // 60 seconds
     private readonly idleInterval: number = 180000; // 180 seconds
     private debouncedPauser: ReturnType<typeof debounce> | null = null;
-    private clickListener: EventRef | null = null; // how to dereference the resource as Obsidian doesnot support native click event, we could only register dom event
 
     constructor(
         private plugin: WordflowTrackerPlugin,
         private tracker: DocTracker,
     ) {
-        this.debouncedPauser = debounce(this.pause.bind(this), this.idleInterval, true)
+        this.debouncedStarter = debounce(() => {
+            if (this.debouncedPauser != null) this.debouncedPauser(); // refresh pauser
+            this.start();
+        }, this.startDebounceInterval, false); // for activating timer when paused automatically by debouncedPauser, separated from activating by docTracker
+        this.debouncedPauser = debounce(() => {
+            this.tracker.updateStatusBarTracker();
+            this.pause();
+        }, this.idleInterval, true); // update status bar before pausing, inaccuracy is less than 10ms
     }
 
     public start(): void {
+//console.log("Try starting unrunning timer for ", this.tracker.filePath, "! ");
         if (this.isRunning()) return;
 //console.log("Timer started!")
         this.startTime = Date.now();
@@ -44,6 +54,7 @@ export default class EditTimer {
     public pause(): void {
         if (!this.isRunning()) return;
         this.debouncedPauser?.cancel();
+        this.debouncedStarter?.cancel();
 
         // count miliseconds left until next update
         if (this.timeoutId !== null) {
@@ -79,13 +90,15 @@ export default class EditTimer {
 
         this.updateToTracker(); 
         this.clearTimers();
-        this.start();
+        this.debouncedStarter?.run();
     }
 
     // call for safety when plugin unload
     public destroy(): void {
         this.debouncedPauser?.cancel();
         this.debouncedPauser = null;
+        this.debouncedStarter?.cancel();
+        this.debouncedStarter = null;
         this.clearTimers();
     }
 
@@ -137,6 +150,7 @@ export function formatTime(ms: number): string {
     const duration = moment.duration(ms);
     const hours = Math.floor(duration.asHours());
     const minutes = duration.minutes();
+//return `${duration.asSeconds()} s`; // for debug only
     return (hours>0)? `${hours} h ${minutes} min`: `${minutes} min`;
 }
 
