@@ -170,7 +170,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			this.activateTracker(activeEditor); // activate without delay
 
 			await sleep(100); // set delay for getting the correct opened files for deactivating and deleting Map
-			const potentialEditors = new Set(this.getAllOpenedFiles());
+			const potentialEditors = this.getAllOpenedFilesWithMode();
 //			console.log(potentialEditors) // debug
 			this.trackerMap.forEach(async (tracker, filePath) => {
 				if(potentialEditors.has(filePath)) {
@@ -214,9 +214,9 @@ export default class WordflowTrackerPlugin extends Plugin {
 					}
 					tracker.destroyTimers();
 					this.trackerMap.delete(filePath);
+					//console.log("Closed file:", filePath, " triggers recording.")
 					if (count){
 						new Notice(`Edits from ${filePath} are recorded.`, 1000)
-//					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
 					}
 				}
 			});
@@ -226,11 +226,11 @@ export default class WordflowTrackerPlugin extends Plugin {
 		else{
 			// deregister all inactive files
 			await sleep(100); // set delay for getting the correct opened files for deactivating and deleting Map
-			const potentialEditors = new Set(this.getAllOpenedFiles());
-//			console.log(potentialEditors) // debug
+			const potentialEditors = this.getAllOpenedFilesWithMode();
+			//console.log(potentialEditors) // debug
 			this.trackerMap.forEach(async (tracker, filePath)=>{
-				if(potentialEditors.has(filePath)) tracker.deactivate();
-				else{
+				if(potentialEditors.get(filePath) == 'source') tracker.deactivate();
+				else{ // now preview mode or doesnot exist(closed)
 					tracker.deactivate();
 					let count = 0;
 					for (const DocRecorder of this.DocRecorders) {
@@ -266,11 +266,14 @@ export default class WordflowTrackerPlugin extends Plugin {
 							break;
 						}
 					}
-					tracker.destroyTimers();
-					this.trackerMap.delete(filePath);
+					//console.log ('Try recording', filePath);
+					if (!potentialEditors.has(filePath)) {
+						tracker.destroyTimers();
+						this.trackerMap.delete(filePath);
+						//console.log("Closed file:", filePath, " triggers recording.")
+					}
 					if (count){
 						new Notice(`Edits from ${filePath} are recorded.`, 1000)
-//					if (DEBUG) console.log("Closed file:", filePath, " is recorded.")
 					}
 				}
 			});
@@ -292,6 +295,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		if (!this.trackerMap.has(activeFilePath)){
 		// track active File
+//if (DEBUG) console.log("Main.activateTracker: trackerMap",this.trackerMap);
+//if (DEBUG) console.log('Main.activateTracker: file not found in trackerMap');
 		const newTracker = new DocTracker(activeFilePath, activeEditor, this);
 		this.trackerMap.set(activeFilePath, newTracker);
 		} 
@@ -317,44 +322,61 @@ export default class WordflowTrackerPlugin extends Plugin {
 */
 
 	// get markdown files (with path) that are in edit mode from all leaves
-	private getAllOpenedFiles = (): string[] => {
-		const files: string[] = [];
-		const addTFile = (file: string) => {
-			if (!files.contains(file)) files.push(file);
+	private getAllOpenedFilesWithMode(): Map<string, 'source' | 'preview' | unknown> {
+		const fileMap = new Map<string, 'source' | 'preview' | unknown>();
+		
+		const addFileWithMode = (filePath: string, mode: 'source' | 'preview' | unknown) => {
+			if (fileMap.get(filePath) == 'source') return; // does not allow source overwrite preview mode
+			fileMap.set(filePath, mode);
+		};
+		
+		const processLeafHistory = (historyItems: any) => {
+			if (!historyItems?.length) return;
+			
+			for (const item of historyItems) {
+				try {
+					if (!item?.state?.state?.mode) continue;
+					if (item.state.state.mode !== 'source' && item.state.state.mode !== 'preview') continue;
+					
+					addFileWithMode(
+						item.state.state.file,
+						item.state.state.mode
+					); 
+				} catch (e) {
+					console.warn("Error processing history item", e);
+				}
+			}
+		};
+		
+		try {
+			//if (DEBUG) console.log("MD Leaves:", MDLeaves);
+			const MDLeaves = this.app.workspace.getLeavesOfType('markdown');
+			if (MDLeaves.length === 0) return fileMap;
+			
+			for (const leaf of MDLeaves) {
+				//console.log(leaf);
+				//if (leaf.view?.getMode() == 'source'){ // Warning: file must have been opened to have function 'getMode()', this influences only start up loading files in saved workspace 
+				// Use getState() instead of getMode() and getFile()
+				if (leaf.view?.getState()?.mode) {
+					addFileWithMode(
+						(leaf.view.getState() as any)?.file,
+						leaf.view.getState().mode
+					); // get file path of TFile, or get file path directly, and then add to array | which to get depends on if the files have been opened or not.
+				}
+				
+				// 处理历史记录（避免滥用 @ts-expect-error）
+				if ('history' in leaf) {
+					const history = (leaf as any).history;
+					processLeafHistory(history?.backHistory);
+					processLeafHistory(history?.forwardHistory);
+				}
+			}
+		} catch (e) {
+			console.error("Error in getAllOpenedFilesWithMode", e);
 		}
 		
-		const MDLeaves = this.app.workspace.getLeavesOfType('markdown');
-		//if (DEBUG) console.log("MD Leaves:", MDLeaves);
-		if (MDLeaves.length < 1) return files;
-		MDLeaves.forEach(leaf => {
-			//console.log(leaf);
-			//if (leaf.view?.getMode() == 'source'){ // Warning: file must have been opened to have function 'getMode()', this influences only start up loading files in saved workspace 
-			// Use getState() instead of getMode() and getFile()
-			if (leaf.view?.getState().mode == 'source'){ // includes preview mode and source mode
-				// @ts-expect-error
-				addTFile(leaf.view.getState().file); // get file path of TFile, or get file path directly, and then add to array | which to get depends on if the files have been opened or not. 
-			}; 
-			// @ts-expect-error
-			if (leaf.history.backHistory.length > 0){
-				// @ts-expect-error
-				leaf.history.backHistory.forEach( item => {
-					if (item.state.state.mode == 'source'){				
-						addTFile(item.state.state.file); 
-					}
-				})
-			}
-			// @ts-expect-error
-			if (leaf.history.forwardHistory.length > 0){
-				// @ts-expect-error
-				leaf.history.forwardHistory.forEach( item => {
-					if (item.state.state.mode == 'source'){			
-						addTFile(item.state.state.file);
-					}
-				})
-			}	
-		})
-		return files;
-	};
+		return fileMap;
+	}
 
 	//private debouncedDeactivator = debounce()
 

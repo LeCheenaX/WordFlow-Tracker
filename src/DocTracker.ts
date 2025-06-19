@@ -217,7 +217,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
     public updateStatusBarTracker(){
         this.plugin.statusBarContent = `⌨ ${formatTime(this.editTime)} · ${this.editedTimes} edits · ${this.editedWords} words`;
 
-        //if(DEBUG) this.plugin.statusBarContent += ` ${this.filePath}`;
+//if(DEBUG) this.plugin.statusBarContent += ` ${this.filePath}`;
         this.plugin.statusBarTrackerEl.setText(this.plugin.statusBarContent);
 //if (DEBUG) console.log(`UpdateStatusBar: ${this.plugin.statusBarContent}`);
     }
@@ -292,6 +292,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
     }
 
     public async resetEdit(){
+//console.log('DocTracker.resetEdit: called')
         await sleep(500); // for multiple recorders to record before cleared.
         this.editedTimes = 0;
         this.editedWords = 0;
