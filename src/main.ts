@@ -180,12 +180,37 @@ export default class WordflowTrackerPlugin extends Plugin {
 					tracker.deactivate();
 					let count = 0;
 					for (const DocRecorder of this.DocRecorders) {
-						if(DocRecorder.filterZero && 
-						   tracker.editedTimes == 0 && 
-						   tracker.editTime < 60000)
-						   		continue;
-						DocRecorder.record(tracker);
-						++count;
+						switch(this.settings.notesToRecord)
+						{
+						case 'require focus time only':
+							if (tracker.editTime >= 60000) {
+								DocRecorder.record(tracker);
+								++count;
+							}
+							break;
+						case 'require both edits and focus time':
+							if (tracker.editedTimes > 0 && tracker.editTime >= 60000) {
+								DocRecorder.record(tracker);
+								++count;
+							}
+							break;
+						case 'require either edits or focus time':
+							if (tracker.editedTimes > 0 || tracker.editTime >= 60000) {
+								DocRecorder.record(tracker);
+								++count;
+							}
+							break;
+						case 'require none':
+							DocRecorder.record(tracker);
+							++count;
+							break;
+						default: // default is require edits only
+							if (tracker.editedTimes > 0) {
+								DocRecorder.record(tracker);
+								++count;
+							}
+							break;
+						}
 					}
 					tracker.destroyTimers();
 					this.trackerMap.delete(filePath);
@@ -209,12 +234,37 @@ export default class WordflowTrackerPlugin extends Plugin {
 					tracker.deactivate();
 					let count = 0;
 					for (const DocRecorder of this.DocRecorders) {
-						if(DocRecorder.filterZero && 
-						   tracker.editedTimes == 0 && 
-						   tracker.editTime < 60000)
-						   		continue;
-						DocRecorder.record(tracker);
-						++count;
+						switch(this.settings.notesToRecord)
+						{
+						case 'require focus time only':
+							if (tracker.editTime >= 60000) {
+								DocRecorder.record(tracker);
+								++count;
+							}
+							break;
+						case 'require both edits and focus time':
+							if (tracker.editedTimes > 0 && tracker.editTime >= 60000) {
+								DocRecorder.record(tracker);
+								++count;
+							}
+							break;
+						case 'require either edits or focus time':
+							if (tracker.editedTimes > 0 || tracker.editTime >= 60000) {
+								DocRecorder.record(tracker);
+								++count;
+							}
+							break;
+						case 'require none':
+							DocRecorder.record(tracker);
+							++count;
+							break;
+						default: // default is require edits only
+							if (tracker.editedTimes > 0) {
+								DocRecorder.record(tracker);
+								++count;
+							}
+							break;
+						}
 					}
 					tracker.destroyTimers();
 					this.trackerMap.delete(filePath);

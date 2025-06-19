@@ -16,7 +16,6 @@ export class DataRecorder {
     public timeFormat: string;
     public sortBy: string;
     public isDescend: boolean;
-    public filterZero: boolean;
     public tableSyntax: string;
     public listSyntax: string;
     public metadataSyntax: string;
@@ -185,19 +184,15 @@ this.existingDataMap.forEach((ExistingData)=>{
         this.newDataMap.clear();
         if (!p_tracker){
             for (const [filePath, tracker] of this.trackerMap.entries()) {
-                if (!(this.filterZero && tracker.editedTimes==0 && tracker.editTime < 60000)){
                 await tracker.countActiveWords(); // generate accurate words for NewData by the time of recording
                 this.newDataMap.set(filePath, new NewData(tracker));
-                }
                 tracker.resetEdit(); // deleted await for performance 
             }
         } else {
 //console.log('trackerClosed:',p_tracker)
-            if (!(this.filterZero && p_tracker.editedTimes==0 && p_tracker.editTime < 60000)){
-                // no active editor now
-                await p_tracker.countInactiveWords(); // generate accurate words for NewData by the time of recording
-                this.newDataMap.set(p_tracker.filePath, new NewData(p_tracker)); // only record given data
-            }
+            // no active editor now
+            await p_tracker.countInactiveWords(); // generate accurate words for NewData by the time of recording
+            this.newDataMap.set(p_tracker.filePath, new NewData(p_tracker)); // only record given data
 //console.log('newDataMap:', this.newDataMap);
             p_tracker.resetEdit(); // deleted await for performance 
         }

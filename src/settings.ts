@@ -23,7 +23,7 @@ export interface WordflowRecorderConfigs {
 
 export interface WordflowSettings extends WordflowRecorderConfigs{
     // General settings tab
-    filterZero: boolean;
+    notesToRecord: string;
     autoRecordInterval: string;
 
     // Recorders tab for multiple recorders
@@ -40,7 +40,7 @@ export interface RecorderConfig extends WordflowRecorderConfigs {
 
 export const DEFAULT_SETTINGS: WordflowSettings = {
 	// General settings tab
-	filterZero: true,
+	notesToRecord: 'require edits only',
 	autoRecordInterval: '0', // disable
 
 	// Recorders tab for multiple recorders
@@ -80,13 +80,18 @@ export class GeneralTab extends WordflowSubSettingsTab {
         const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
         
         new Setting(tabContent)
-            .setName('Filter out non-modified or unfocused or notes')
-            .setDesc('Whether the opened notes that are not modified or focused for at least 1 minute should be excluded while recording. If not excluded, you will get any opened file under editing mode recorded. ')
-            .addToggle(t => t
-                .setValue(this.plugin.settings.filterZero)
+            .setName('Notes to record in edit mode')
+            .setDesc('Select a requirement for notes to be recorded in live preview and source mode. Require edits means you should at least type anything or delete anything, even just a space. Require focus time means you should leave the note under edit mode over 1 minute. If require none above, the recorder will track all files you opened under edit mode. ')
+            .addDropdown(d => d
+                .addOption('require edits only', 'require edits only')
+                .addOption('require focus time only', 'require focus time only')
+                .addOption('require both edits and focus time', 'require both edits and focus time')
+                .addOption('require either edits or focus time', 'require either edits or focus time')
+                .addOption('require none', 'require none (track all opened files)')
+                .setValue(this.plugin.settings.notesToRecord)
                 .onChange(async (value) => {
-                    this.plugin.settings.filterZero = value;
-                    await this.plugin.saveSettings();			
+                    this.plugin.settings.notesToRecord = value;
+                    await this.plugin.saveSettings();
                 })
             );
         
