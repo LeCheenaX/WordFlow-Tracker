@@ -182,25 +182,25 @@ export default class WordflowTrackerPlugin extends Plugin {
 					for (const DocRecorder of this.DocRecorders) {
 						switch(this.settings.notesToRecord)
 						{
-						case 'require focus time only':
+						case 't':
 							if (tracker.editTime >= 60000) {
 								DocRecorder.record(tracker);
 								++count;
 							}
 							break;
-						case 'require both edits and focus time':
+						case 'ent':
 							if (tracker.editedTimes > 0 && tracker.editTime >= 60000) {
 								DocRecorder.record(tracker);
 								++count;
 							}
 							break;
-						case 'require either edits or focus time':
+						case 'eot':
 							if (tracker.editedTimes > 0 || tracker.editTime >= 60000) {
 								DocRecorder.record(tracker);
 								++count;
 							}
 							break;
-						case 'require none':
+						case 'n':
 							DocRecorder.record(tracker);
 							++count;
 							break;
@@ -236,25 +236,25 @@ export default class WordflowTrackerPlugin extends Plugin {
 					for (const DocRecorder of this.DocRecorders) {
 						switch(this.settings.notesToRecord)
 						{
-						case 'require focus time only':
+						case 't':
 							if (tracker.editTime >= 60000) {
 								DocRecorder.record(tracker);
 								++count;
 							}
 							break;
-						case 'require both edits and focus time':
+						case 'ent':
 							if (tracker.editedTimes > 0 && tracker.editTime >= 60000) {
 								DocRecorder.record(tracker);
 								++count;
 							}
 							break;
-						case 'require either edits or focus time':
+						case 'eot':
 							if (tracker.editedTimes > 0 || tracker.editTime >= 60000) {
 								DocRecorder.record(tracker);
 								++count;
 							}
 							break;
-						case 'require none':
+						case 'n':
 							DocRecorder.record(tracker);
 							++count;
 							break;

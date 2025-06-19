@@ -40,7 +40,7 @@ export interface RecorderConfig extends WordflowRecorderConfigs {
 
 export const DEFAULT_SETTINGS: WordflowSettings = {
 	// General settings tab
-	notesToRecord: 'require edits only',
+	notesToRecord: 'e', // requrie edits only
 	autoRecordInterval: '0', // disable
 
 	// Recorders tab for multiple recorders
@@ -83,11 +83,11 @@ export class GeneralTab extends WordflowSubSettingsTab {
             .setName('Notes to record in edit mode')
             .setDesc('Select a requirement for notes to be recorded in live preview and source mode. Require edits means you should at least type anything or delete anything, even just a space. Require focus time means you should leave the note under edit mode over 1 minute. If require none above, the recorder will track all files you opened under edit mode. ')
             .addDropdown(d => d
-                .addOption('require edits only', 'require edits only')
-                .addOption('require focus time only', 'require focus time only')
-                .addOption('require both edits and focus time', 'require both edits and focus time')
-                .addOption('require either edits or focus time', 'require either edits or focus time')
-                .addOption('require none', 'require none (track all opened files)')
+                .addOption('e', 'require edits only')
+                .addOption('t', 'require focus time only')
+                .addOption('ent', 'require both edits and focus time')
+                .addOption('eot', 'require either edits or focus time')
+                .addOption('n', 'require none (track all opened files)')
                 .setValue(this.plugin.settings.notesToRecord)
                 .onChange(async (value) => {
                     this.plugin.settings.notesToRecord = value;
