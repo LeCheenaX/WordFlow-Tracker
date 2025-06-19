@@ -87,7 +87,7 @@ export class GeneralTab extends WordflowSubSettingsTab {
                 .addOption('t', 'require focus time only')
                 .addOption('ent', 'require both edits and focus time')
                 .addOption('eot', 'require either edits or focus time')
-                .addOption('n', 'require none (track all opened files) (flawed)')
+                .addOption('n', 'require none (flawed)')
                 .setValue(this.plugin.settings.notesToRecord)
                 .onChange(async (value) => {
                     this.plugin.settings.notesToRecord = value;
