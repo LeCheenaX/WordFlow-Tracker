@@ -178,7 +178,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 //			if (DEBUG) new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
 			// done | need to improve when plugin starts, the cursor must at active document
 			const activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
-//			if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
+			if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
 
 			this.activateTracker(activeEditor); // activate without delay
 
@@ -216,13 +216,16 @@ export default class WordflowTrackerPlugin extends Plugin {
 					this.trackerMap.delete(filePath);
 					//console.log("Closed file:", filePath, " is recorded.")
 				}
-				else if (this.isModeSwitch && potentialEditors.get(filePath) == 'preview'){ // now preview mode
-					//console.log ('Try recording', filePath, ' current mode: ', potentialEditors.get(filePath));			
+				//else if (this.isModeSwitch && potentialEditors.get(filePath) == 'preview'){// now preview mode}
+				else if (this.isModeSwitch && filePath == this.lastActiveFile.path){ 
+					//console.log ('Try recording', filePath, ' current mode: ', potentialEditors.get(filePath));
 					await this.recordTracker(tracker);
 				}
-				/*else if (this.isModeSwitch && potentialEditors.get(filePath) == 'source'){ 
-					console.log ('This note is under edit mode after switching mode: ', filePath);			
-				} else console.log('Layout changed but no mode switched');*/
+				else if (this.isModeSwitch && this.settings.noteToRecord == 'all' && potentialEditors.get(filePath) == 'source'){ 
+					//console.log ('This note is under edit mode after switching mode: ', filePath);	
+					await this.recordTracker(tracker);		
+				} 
+				// else console.log('Layout changed but no mode switched');*/
 			});
 			this.isModeSwitch = false;
 			this.statusBarTrackerEl.setText(''); // clear status bar
@@ -232,7 +235,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 	private async recordTracker(tracker: DocTracker): Promise<void> {
 		let count = 0;
 		for (const DocRecorder of this.DocRecorders) {
-			switch(this.settings.notesToRecord)
+			switch(this.settings.noteThreshold)
 			{
 			case 't':
 				if (tracker.editTime >= 60000) {

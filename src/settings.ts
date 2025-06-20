@@ -23,7 +23,8 @@ export interface WordflowRecorderConfigs {
 
 export interface WordflowSettings extends WordflowRecorderConfigs{
     // General settings tab
-    notesToRecord: string;
+    noteThreshold: string;
+    noteToRecord: string;
     autoRecordInterval: string;
 
     // Recorders tab for multiple recorders
@@ -40,7 +41,8 @@ export interface RecorderConfig extends WordflowRecorderConfigs {
 
 export const DEFAULT_SETTINGS: WordflowSettings = {
 	// General settings tab
-	notesToRecord: 'e', // requrie edits only
+	noteThreshold: 'e', // requrie edits only
+    noteToRecord: 'all', // requrie edits only
 	autoRecordInterval: '0', // disable
 
 	// Recorders tab for multiple recorders
@@ -80,7 +82,7 @@ export class GeneralTab extends WordflowSubSettingsTab {
         const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
         
         new Setting(tabContent)
-            .setName('Notes to record in edit mode')
+            .setName('Threshold for notes to record in edit mode')
             .setDesc('Select a requirement for notes to be recorded in live preview and source mode. Require edits means you should at least type anything or delete anything, even just a space. Require focus time means you should leave the note under edit mode over 1 minute. If require none above, the recorder will track all files you opened under edit mode. ')
             .addDropdown(d => d
                 .addOption('e', 'require edits only')
@@ -88,16 +90,29 @@ export class GeneralTab extends WordflowSubSettingsTab {
                 .addOption('ent', 'require both edits and focus time')
                 .addOption('eot', 'require either edits or focus time')
                 .addOption('n', 'require none')
-                .setValue(this.plugin.settings.notesToRecord)
+                .setValue(this.plugin.settings.noteThreshold)
                 .onChange(async (value) => {
-                    this.plugin.settings.notesToRecord = value;
+                    this.plugin.settings.noteThreshold = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(tabContent)
+            .setName('Notes to record while quiting editing mode')
+            .setDesc('Select the behavior when switching a note from editing mode to reading mode. Editing mode includes live preview and source mode. If recording current note only, other notes may not be automactically recorded if you don\'t manually record. ')
+            .addDropdown(d => d
+                .addOption('all', 'current and other notes in edit mode')
+                .addOption('crt', 'current note only')
+                .setValue(this.plugin.settings.noteToRecord)
+                .onChange(async (value) => {
+                    this.plugin.settings.noteToRecord = value;
                     await this.plugin.saveSettings();
                 })
             );
         
         new Setting(tabContent)
             .setName('Automatic recording interval')
-            .setDesc('Set the interval in seconds, influencing when the plugin should save all tracked records and implement them on periodic notes. Set to 0 to disable. ')
+            .setDesc('Set the interval in seconds, influencing when the plugin would record all tracked notes and to periodic notes. Set to 0 to disable. ')
             .addText(text => text
                 .setPlaceholder('Set to 0 to disable')
                 .setValue(this.plugin.settings.autoRecordInterval)
