@@ -107,16 +107,13 @@
 /* ======================== */
 
 /* allow custom status bar on mobile (useless, custom icons are allowed) */
-/*
-.is-mobile .app-container .status-bar> .plugin-wordflow-tracker {
+.wordflow-status-bar-container :is(.is-mobile .app-container .status-bar){
     display: flex;
     position: relative;
-    justify-content: center;
-    padding: 0;
-    background-color: black;
-    color: #b28ecc;
+    justify-content: flex-end;
+    margin-left: auto; /* control left background */
+    width:auto; /* control left background */
 }
-*/
 
 /* ==================== */
 /*  Confirmation Modal  */

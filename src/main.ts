@@ -1,6 +1,6 @@
 import { DocTracker } from './DocTracker';
 import { DataRecorder } from './DataRecorder';
-import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab } from './settings';
+import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, updateStatusBarStyle, removeStatusBarStyle } from './settings';
 import { App, MarkdownView, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
 //import { EditorState, StateField, Extension, ChangeSet, Transaction } from "@codemirror/state";
 //import { historyField, history } from "@codemirror/commands";
@@ -412,6 +412,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 	  }
 
 	onunload() {
+		removeStatusBarStyle();
 		this.trackerMap.forEach((tracker, filePath)=>{
 			this.recordTracker(tracker);
 			tracker.deactivate();
@@ -422,6 +423,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		updateStatusBarStyle(this.settings);
 	}
 
 	async saveSettings() {
@@ -452,7 +454,7 @@ export class WordflowSettingTab extends PluginSettingTab {
 			'General': new GeneralTab(this.app, this.plugin, this.contentContainer),
 			'Recorders': new RecordersTab(this.app, this.plugin, this.contentContainer),
 			'Timers': new TimersTab(this.app, this.plugin, this.contentContainer),
-			//'Status Bar': new StatusBarTab(this.app, this.plugin, this.contentContainer)
+			'Status Bar': new StatusBarTab(this.app, this.plugin, this.contentContainer)
 		};
 
 		// tab buttons

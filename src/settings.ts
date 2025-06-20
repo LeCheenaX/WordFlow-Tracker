@@ -32,6 +32,9 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
 
     // Timers setting tab
     idleInterval: string;
+
+    // Status bar setting tab
+    enableMobileStatusBar: boolean;
 }
 
 export interface RecorderConfig extends WordflowRecorderConfigs {
@@ -64,6 +67,9 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 
     // Timers setting tab
     idleInterval: '3',
+
+    // Status bar setting tab
+    enableMobileStatusBar: false,
 }
 
 
@@ -667,6 +673,7 @@ export class StatusBarTab extends WordflowSubSettingsTab {
     display() {
         const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
         
+        /*
         new Setting(tabContent)
             .setName('Display format')
             .setDesc('How to display editing stats in status bar')
@@ -676,14 +683,16 @@ export class StatusBarTab extends WordflowSubSettingsTab {
                 .onChange(async (value) => {
                     // 这里可以添加具体的实现逻辑
                 }));
-
+        */
         new Setting(tabContent)
-            .setName('Real-time updating')
-            .setDesc('Enable live updates in status bar while typing')
-            .addToggle(toggle => toggle
-                .setValue(true)
+            .setName('Enforce status bar display in mobile')
+            .setDesc('Enforce the status bar of wordflow tracker to show up in mobile devices. If you have other css snippets do the same, they may be overwriten. ')
+            .addToggle(t => t
+                .setValue(this.plugin.settings.enableMobileStatusBar)
                 .onChange(async (value) => {
-                    // 这里可以添加具体的实现逻辑
+                    this.plugin.settings.enableMobileStatusBar = value;
+                    await this.plugin.saveSettings();
+                    updateStatusBarStyle(this.plugin.settings);
                 }));
     }
 }
@@ -708,6 +717,18 @@ function makeMultilineTextSetting(setting: Setting) {
     infoEl.classList.add('wordflow-info');
     textEl.classList.add('wordflow-textarea');
 };
+
+export function updateStatusBarStyle(settings: WordflowSettings){
+    if (settings.enableMobileStatusBar) {
+        document.body.classList.add('wordflow-status-bar-container');
+    } else {
+        removeStatusBarStyle();
+    }
+};
+
+export function removeStatusBarStyle(){
+    document.body.classList.remove('wordflow-status-bar-container');
+}
 
 class ConfirmationModal extends Modal {
     constructor(
