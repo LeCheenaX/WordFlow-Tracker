@@ -19,7 +19,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 	private activeTrackers: Map<string, boolean> = new Map(); // for multiple notes editing	
     private pathToNameMap: Map<string|undefined, string> = new Map(); // 新增：反向映射用于重命名检测
 	private isModeSwitch: boolean = false;
-	private lastActiveFile: string | undefined = undefined;
+	private lastActiveFile: { path: string|undefined; mode: 'source' | 'preview' | undefined} = {path: undefined, mode: undefined};
 
 	async onload() {
 		await this.loadSettings();
@@ -119,7 +119,8 @@ export default class WordflowTrackerPlugin extends Plugin {
         }));
 
 		this.registerEvent(this.app.workspace.on('layout-change', () => {
-			if (this.lastActiveFile == this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path){
+			if (this.lastActiveFile.path == this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path &&
+				this.lastActiveFile.mode !== this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode()){
 				this.isModeSwitch = true;
 				debouncedHandler();
 			} else {
@@ -131,6 +132,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source")
 			{
+				this.lastActiveFile.path = this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path;
+				this.lastActiveFile.mode = 'source';
 				debouncedHandler();
 			}
 
@@ -180,7 +183,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 			this.activateTracker(activeEditor); // activate without delay
 
 			await sleep(100); // set delay for getting the correct opened files for deactivating and deleting Map
-			this.lastActiveFile = activeEditor?.file?.path;
+			this.lastActiveFile.path = activeEditor?.file?.path;
+			this.lastActiveFile.mode = activeEditor?.getMode();
 			const potentialEditors = await this.getAllOpenedFilesWithMode();
 			//console.log(potentialEditors) // debug
 			this.trackerMap.forEach(async (tracker, filePath) => {
@@ -200,7 +204,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 		else{
 			// after leaf-change or mode-switch, current active leaf is not in 'source' mode
 			await sleep(100); // set delay for getting the correct opened files for deactivating and deleting Map
-			this.lastActiveFile = this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path;
+			this.lastActiveFile.path = this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path;
+			this.lastActiveFile.mode = this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode();
 			const potentialEditors = await this.getAllOpenedFilesWithMode();
 			//console.log(potentialEditors) // debug
 			this.trackerMap.forEach(async (tracker, filePath)=>{
