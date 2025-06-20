@@ -10,13 +10,16 @@ import { App, MarkdownView, Notice, Plugin, PluginSettingTab, TFile } from 'obsi
 const DEBUG = true as const;
 
 export default class WordflowTrackerPlugin extends Plugin {
-	settings: WordflowSettings;
-	private activeTrackers: Map<string, boolean> = new Map(); // for multiple notes editing	
-    private pathToNameMap: Map<string|undefined, string> = new Map(); // 新增：反向映射用于重命名检测
+	public settings: WordflowSettings;
 	public trackerMap: Map<string, DocTracker> = new Map<string, DocTracker>(); // give up nested map
 	public statusBarTrackerEl: HTMLElement; // for status bar tracking
 	public statusBarContent: string; // for status bar content editing
 	public DocRecorders: DataRecorder[] = [];
+
+	private activeTrackers: Map<string, boolean> = new Map(); // for multiple notes editing	
+    private pathToNameMap: Map<string|undefined, string> = new Map(); // 新增：反向映射用于重命名检测
+	private isModeSwitch: boolean = false;
+	private lastActiveFile: string | undefined = undefined;
 
 	async onload() {
 		await this.loadSettings();
@@ -116,7 +119,14 @@ export default class WordflowTrackerPlugin extends Plugin {
         }));
 
 		this.registerEvent(this.app.workspace.on('layout-change', () => {
-			debouncedHandler();
+			if (this.lastActiveFile == this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path){
+				this.isModeSwitch = true;
+				debouncedHandler();
+			} else {
+				debouncedHandler();
+			}
+//console.log('last active: ', this.lastActiveFile);
+//console.log('isModeSwitch: ', this.isModeSwitch)
         }));
 
 		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source")
@@ -170,115 +180,88 @@ export default class WordflowTrackerPlugin extends Plugin {
 			this.activateTracker(activeEditor); // activate without delay
 
 			await sleep(100); // set delay for getting the correct opened files for deactivating and deleting Map
-			const potentialEditors = this.getAllOpenedFilesWithMode();
-//			console.log(potentialEditors) // debug
+			this.lastActiveFile = activeEditor?.file?.path;
+			const potentialEditors = await this.getAllOpenedFilesWithMode();
+			//console.log(potentialEditors) // debug
 			this.trackerMap.forEach(async (tracker, filePath) => {
-				if(potentialEditors.has(filePath)) {
-					if (filePath !== activeEditor?.file?.path) tracker.deactivate();
-				}
-				else{
+				if(!potentialEditors.has(filePath)) {
 					tracker.deactivate();
-					let count = 0;
-					for (const DocRecorder of this.DocRecorders) {
-						switch(this.settings.notesToRecord)
-						{
-						case 't':
-							if (tracker.editTime >= 60000) {
-								DocRecorder.record(tracker);
-								++count;
-							}
-							break;
-						case 'ent':
-							if (tracker.editedTimes > 0 && tracker.editTime >= 60000) {
-								DocRecorder.record(tracker);
-								++count;
-							}
-							break;
-						case 'eot':
-							if (tracker.editedTimes > 0 || tracker.editTime >= 60000) {
-								DocRecorder.record(tracker);
-								++count;
-							}
-							break;
-						case 'n':
-							DocRecorder.record(tracker);
-							++count;
-							break;
-						default: // default is require edits only
-							if (tracker.editedTimes > 0) {
-								DocRecorder.record(tracker);
-								++count;
-							}
-							break;
-						}
-					}
+					await this.recordTracker(tracker);
 					tracker.destroyTimers();
 					this.trackerMap.delete(filePath);
-					//console.log("Closed file:", filePath, " triggers recording.")
-					if (count){
-						new Notice(`Edits from ${filePath} are recorded.`, 1000)
-					}
+					//console.log("Closed file:", filePath, " is recorded.")
+				}
+				else{
+					if (filePath !== activeEditor?.file?.path) tracker.deactivate();
 				}
 			});
-
-			
-		}
+			this.isModeSwitch = false;
+		} 
 		else{
-			// deregister all inactive files
+			// after leaf-change or mode-switch, current active leaf is not in 'source' mode
 			await sleep(100); // set delay for getting the correct opened files for deactivating and deleting Map
-			const potentialEditors = this.getAllOpenedFilesWithMode();
+			this.lastActiveFile = this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path;
+			const potentialEditors = await this.getAllOpenedFilesWithMode();
 			//console.log(potentialEditors) // debug
 			this.trackerMap.forEach(async (tracker, filePath)=>{
-				if(potentialEditors.get(filePath) == 'source') tracker.deactivate();
-				else{ // now preview mode or doesnot exist(closed)
-					tracker.deactivate();
-					let count = 0;
-					for (const DocRecorder of this.DocRecorders) {
-						switch(this.settings.notesToRecord)
-						{
-						case 't':
-							if (tracker.editTime >= 60000) {
-								DocRecorder.record(tracker);
-								++count;
-							}
-							break;
-						case 'ent':
-							if (tracker.editedTimes > 0 && tracker.editTime >= 60000) {
-								DocRecorder.record(tracker);
-								++count;
-							}
-							break;
-						case 'eot':
-							if (tracker.editedTimes > 0 || tracker.editTime >= 60000) {
-								DocRecorder.record(tracker);
-								++count;
-							}
-							break;
-						case 'n':
-							DocRecorder.record(tracker);
-							++count;
-							break;
-						default: // default is require edits only
-							if (tracker.editedTimes > 0) {
-								DocRecorder.record(tracker);
-								++count;
-							}
-							break;
-						}
-					}
-					//console.log ('Try recording', filePath);
-					if (!potentialEditors.has(filePath)) {
-						tracker.destroyTimers();
-						this.trackerMap.delete(filePath);
-						//console.log("Closed file:", filePath, " triggers recording.")
-					}
-					if (count){
-						new Notice(`Edits from ${filePath} are recorded.`, 1000)
-					}
+				tracker.deactivate();
+				if (!potentialEditors.has(filePath)) {
+					await this.recordTracker(tracker);
+					tracker.destroyTimers();
+					this.trackerMap.delete(filePath);
+					//console.log("Closed file:", filePath, " is recorded.")
 				}
+				else if (this.isModeSwitch && potentialEditors.get(filePath) == 'preview'){ // now preview mode
+					//console.log ('Try recording', filePath, ' current mode: ', potentialEditors.get(filePath));			
+					await this.recordTracker(tracker);
+				}
+				/*else if (this.isModeSwitch && potentialEditors.get(filePath) == 'source'){ 
+					console.log ('This note is under edit mode after switching mode: ', filePath);			
+				} else console.log('Layout changed but no mode switched');*/
 			});
+			this.isModeSwitch = false;
 			this.statusBarTrackerEl.setText(''); // clear status bar
 //if (DEBUG) console.log(`activeDocHandler: status bar cleared`);
+		}
+	};
+	private async recordTracker(tracker: DocTracker): Promise<void> {
+		let count = 0;
+		for (const DocRecorder of this.DocRecorders) {
+			switch(this.settings.notesToRecord)
+			{
+			case 't':
+				if (tracker.editTime >= 60000) {
+					DocRecorder.record(tracker);
+					++count;
+				}
+				break;
+			case 'ent':
+				if (tracker.editedTimes > 0 && tracker.editTime >= 60000) {
+					DocRecorder.record(tracker);
+					++count;
+				}
+				break;
+			case 'eot':
+				if (tracker.editedTimes > 0 || tracker.editTime >= 60000) {
+					DocRecorder.record(tracker);
+					++count;
+				}
+				break;
+			case 'n':
+				DocRecorder.record(tracker);
+				++count;
+				break;
+			default: // default is require edits only
+				if (tracker.editedTimes > 0) {
+					DocRecorder.record(tracker);
+					++count;
+				}
+				break;
+			}
+		}
+		if (count){
+			new Notice(`Edits from ${tracker.filePath} are recorded.`, 1000)
+			//if (DEBUG) console.log (`Edits from ${tracker.filePath} are recorded.`);	
 		}
 	};
 
@@ -322,12 +305,13 @@ export default class WordflowTrackerPlugin extends Plugin {
 */
 
 	// get markdown files (with path) that are in edit mode from all leaves
-	private getAllOpenedFilesWithMode(): Map<string, 'source' | 'preview' | unknown> {
+	private async getAllOpenedFilesWithMode(): Promise<Map<string, 'source' | 'preview' | unknown>> {
 		const fileMap = new Map<string, 'source' | 'preview' | unknown>();
 		
 		const addFileWithMode = (filePath: string, mode: 'source' | 'preview' | unknown) => {
-			if (fileMap.get(filePath) == 'source') return; // does not allow source overwrite preview mode
+			//if (fileMap.get(filePath) == 'source') return; // does not allow source overwrite preview mode, because item.state.state.mode may only return source and never return preview
 			fileMap.set(filePath, mode);
+			//console.log(filePath, ' changed to ', mode);
 		};
 		
 		const processLeafHistory = (historyItems: any) => {
@@ -371,6 +355,15 @@ export default class WordflowTrackerPlugin extends Plugin {
 					processLeafHistory(history?.forwardHistory);
 				}
 			}
+
+			// override the mode with the current active leaf, when multiple leaves of the same file exist
+			const currentActiveLeaf = this.app.workspace.getActiveViewOfType(MarkdownView);
+			if (currentActiveLeaf) {
+				addFileWithMode(
+					(currentActiveLeaf?.getState() as any)?.file, 
+					currentActiveLeaf?.getState()?.mode
+				);
+			}
 		} catch (e) {
 			console.error("Error in getAllOpenedFilesWithMode", e);
 		}
@@ -412,6 +405,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 	onunload() {
 		this.trackerMap.forEach((tracker, filePath)=>{
+			this.recordTracker(tracker);
 			tracker.deactivate();
 			tracker.destroyTimers();
 		})

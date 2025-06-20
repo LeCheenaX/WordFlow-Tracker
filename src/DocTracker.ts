@@ -41,13 +41,12 @@ export class DocTracker{
         this.fileName = this.plugin.app.vault.getFileByPath(this.filePath)?.basename ?? 'unknown';
         this.addWordsCt = wordsCounter();
         this.deleteWordsCt = wordsCounter();  
-        this.editTimer = new EditTimer(this.plugin, this);      
+        this.editTimer = new EditTimer(this.plugin, this);     
+//        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.filePath}`); 
         await this.activate();
         await this.countOrigin();
         await sleep(1000); // when open new notes, update with delay
         this.updateStatusBarTracker();
-
-//        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.filePath}`);
     }
 
     private trackChanges() {
@@ -232,7 +231,8 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
 
         this.editTimer?.start();
         this.activeEditor = this.plugin.app.workspace.getActiveViewOfType(MarkdownView); 
-//        if (DEBUG) console.log("DocTracker.activate: editor:", this.activeEditor)
+        //if (DEBUG) console.log("DocTracker.activate: editor:", this.activeEditor)
+        //console.log("DocTracker.activate: ", this.filePath)
         await sleep(20); // Warning: cm will be delayed for 3-5 ms to be bound to the updated editor.
         // @ts-expect-error
         const history = this.activeEditor?.editor.cm.state.field(historyField); // reference will be destroyed after initialization
