@@ -178,7 +178,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 //			if (DEBUG) new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
 			// done | need to improve when plugin starts, the cursor must at active document
 			const activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
-			if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
+			//if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
 
 			this.activateTracker(activeEditor); // activate without delay
 

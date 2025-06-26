@@ -160,7 +160,7 @@ this.existingDataMap.forEach((ExistingData)=>{
                         return null;
                     }
                 }
-                await this.plugin.app.vault.create(recordNotePath, '');
+                await this.createRecordNote(recordNotePath);
                 // Wait for file creation to complete
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
@@ -174,6 +174,11 @@ this.existingDataMap.forEach((ExistingData)=>{
         }
         
         return recordNote;
+    }
+
+    private async createRecordNote(recordNotePath: string): Promise<void> {
+        await this.plugin.app.vault.create(recordNotePath, ''); // now using templater folder templates
+        // to-do: use obsidian templates
     }
 
     private async loadExistingData(recordNote: TFile): Promise<void> {  
