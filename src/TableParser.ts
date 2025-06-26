@@ -173,7 +173,7 @@ export class TableParser{
                         case 'statBar':
                             return data.statBar.toNote();
                         case 'comment':
-                            return data.comment;
+                            return data.comment??'\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost
                         case 'editTime':
                             return formatTime(data.editTime);
                         default:
@@ -236,7 +236,7 @@ export class TableParser{
         
         // fetch heading and data rows from table syntax
         const headerColumns = headerRow.split('|').map(part => part.trim()).filter(Boolean);
-        const dataColumns = row.split('|').map(part => part.trim()).filter(Boolean);
+        const dataColumns = row.split('|').map(part => part.trim()).filter(Boolean); 
 
         if (dataColumns.length > 1 && dataColumns[0].includes('[[') && !dataColumns[0].includes(']]')) {
             // combine 2 columns with alias [[filePath\|alias]]
@@ -259,6 +259,7 @@ export class TableParser{
                     entry.filePath = match[1].replace(/\\+$/, '');
                     entry.fileName = match[2];
                 } else {
+                    console.error('The captured value: ', value, ' could not match the regex:', "/^\[\[([^\]]+)\\\|([^\]]+)\]\]$/")
                     new Notice ('❌Var template with note alias is not matched!', 0)
                     throw new Error ('❌Var template with note alias is not matched!\nConsider checking if table syntax contains "\\|" in the first coloumn, or if table in periodic note is mixed with notes with alias and notes without alias')
                 }
@@ -309,7 +310,7 @@ export class TableParser{
                     entry.statBar.fromNote(value);
                     break;
                 case 'comment':
-                    entry.comment = value;
+                    entry.comment = value??'\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost;
                     break;
                 case 'editTime':
                     entry.editTime = restoreTimeString(value);
