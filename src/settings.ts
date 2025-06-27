@@ -9,6 +9,8 @@ export interface WordflowRecorderConfigs {
     enableDynamicFolder: boolean;
     periodicNoteFolder: string;
     periodicNoteFormat: string;
+    templatePlugin: string;
+    templateFilePath: string;
     recordType: string;
     tableSyntax: string;
     bulletListSyntax: string;
@@ -54,6 +56,8 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 	enableDynamicFolder: false,
 	periodicNoteFolder: '',
 	periodicNoteFormat: 'YYYY-MM-DD',
+    templatePlugin:  'none',
+    templateFilePath: '',
 	recordType: 'table',
 	insertPlace: 'bottom',
 	tableSyntax: `| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| [[\${modifiedNote}\\|\${noteTitle}]] | \${editedWords} | \${lastModifiedTime} |`,
@@ -270,6 +274,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
             enableDynamicFolder: DEFAULT_SETTINGS.enableDynamicFolder,
             periodicNoteFolder: DEFAULT_SETTINGS.periodicNoteFolder,
             periodicNoteFormat: DEFAULT_SETTINGS.periodicNoteFormat,
+            templatePlugin: DEFAULT_SETTINGS.templatePlugin,
+            templateFilePath: DEFAULT_SETTINGS.templateFilePath,
             recordType: DEFAULT_SETTINGS.recordType,
             tableSyntax: DEFAULT_SETTINGS.tableSyntax,
             bulletListSyntax: DEFAULT_SETTINGS.bulletListSyntax,
@@ -417,6 +423,36 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 .setValue(settings.periodicNoteFormat)
                 .onChange(async (value) => {
                     settings.periodicNoteFormat = value;
+                    await this.plugin.saveSettings();
+                    recorderInstance.loadSettings();
+                })
+            );
+        
+        new Setting(container)
+            .setName('Template plugin')
+            .setDesc('Set the template plugin you use to apply template to new created periodic notes. Currently, only support the templates of core plugin "Templates". If you are using community plugin "Templater", please use the folder template feature of "Templater".')
+            .addDropdown(d => {
+                this.InsertPlaceComponent = d;
+                d.addOption('none', 'default (Templater folder template)');
+                d.addOption('Templates', 'Templates (core plugin)');
+                d.setValue(settings.templatePlugin)
+                .onChange(async (value) => {
+                    settings.templatePlugin = value;
+                    await this.plugin.saveSettings();
+                    // Show or hide subsettings based on dropdown value
+                    //this.toggleCustomPositionSettings(value === 'custom');
+                    recorderInstance.loadSettings();
+                })
+            });
+
+        new Setting(container)
+            .setName('Template file path (WIP)')
+            .setDesc('Set the file path for the template file to be applied. Currently, only support the templates of core plugin "Templates".')
+            .addText(text => text
+                .setPlaceholder('set template file')
+                .setValue(settings.templateFilePath)
+                .onChange(async (value) => {
+                    settings.templateFilePath = value;
                     await this.plugin.saveSettings();
                     recorderInstance.loadSettings();
                 })
