@@ -160,7 +160,7 @@ this.existingDataMap.forEach((ExistingData)=>{
                         return null;
                     }
                 }
-                await this.plugin.app.vault.create(recordNotePath, '');
+                await this.createRecordNote(recordNotePath);
                 // Wait for file creation to complete
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
@@ -174,6 +174,11 @@ this.existingDataMap.forEach((ExistingData)=>{
         }
         
         return recordNote;
+    }
+
+    private async createRecordNote(recordNotePath: string): Promise<void> {
+        await this.plugin.app.vault.create(recordNotePath, ''); // now using templater folder templates
+        // to-do: use obsidian templates
     }
 
     private async loadExistingData(recordNote: TFile): Promise<void> {  
@@ -370,13 +375,13 @@ this.existingDataMap.forEach((ExistingData)=>{
         if (existingContent){
 //console.log('existingContent:',existingContent)
             await this.plugin.app.vault.process(recordNote, (data) => {
-                return data.replace(existingContent, newContent.trimStart()); // do not trim end to allow empty comment
+                return data.replace(existingContent, newContent.trim()); 
             });
         } else if(YAMLStartIndex != -1){ // no existing data in yaml
             await this.plugin.app.vault.process(recordNote, (data) => {
                 const dataLines = data.split('\n');
                 // Insert the new content before the closing '---' line
-                dataLines.splice(YAMLEndIndex, 0, newContent.trimStart());
+                dataLines.splice(YAMLEndIndex, 0, newContent.trim());
 //console.log('datalines:',dataLines)
                 return dataLines.join('\n');
             });
@@ -420,7 +425,7 @@ export class ExistingData {
         this.docWords = 0;
         this.editedPercentage = new EditedPercentage();
         this.statBar = new StatBar();
-        this.comment = '';
+        this.comment = '\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost
         this.editTime = 0;
         this.totalWords = 0;
         this.totalEdits = 0;
@@ -442,7 +447,6 @@ export class NewData {
     originalWords: number;
     editedPercentage: EditedPercentage
     statBar: StatBar;
-    comment: string;
     editTime: number;
     
     constructor(tracker: DocTracker) {
@@ -497,7 +501,6 @@ export class MergedData {
             this.docWords = newData.docWords;
             this.editedPercentage = newData.editedPercentage;
             this.statBar = newData.statBar;
-            this.comment = '';
             this.editTime = newData.editTime;
             this.isNew = true;
         } else if (existingData) {
@@ -512,7 +515,7 @@ export class MergedData {
             this.docWords = existingData.docWords; 
             this.editedPercentage = existingData.editedPercentage;
             this.statBar = existingData.statBar;
-            this.comment = existingData.comment?? ''; 
+            this.comment = existingData.comment?? '\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost
             this.editTime = existingData.editTime;
             this.isNew = false;
         } else {
@@ -543,7 +546,7 @@ export class MergedData {
             this.addedWords
         )
 
-        this.comment = existingData.comment?? '';
+        this.comment = existingData.comment?? '\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost
 
 //console.log('newDocWords:', this.docWords)
 //console.log('newPercentage:',this.editedPercentage.percentage, '%')
