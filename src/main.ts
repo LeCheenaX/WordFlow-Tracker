@@ -233,41 +233,11 @@ export default class WordflowTrackerPlugin extends Plugin {
 		}
 	};
 	private async recordTracker(tracker: DocTracker): Promise<void> {
-		let count = 0;
-		for (const DocRecorder of this.DocRecorders) {
-			switch(this.settings.noteThreshold)
-			{
-			case 't':
-				if (tracker.editTime >= 60000) {
-					DocRecorder.record(tracker);
-					++count;
-				}
-				break;
-			case 'ent':
-				if (tracker.editedTimes > 0 && tracker.editTime >= 60000) {
-					DocRecorder.record(tracker);
-					++count;
-				}
-				break;
-			case 'eot':
-				if (tracker.editedTimes > 0 || tracker.editTime >= 60000) {
-					DocRecorder.record(tracker);
-					++count;
-				}
-				break;
-			case 'n':
+		if (tracker.meetThreshold())
+		{
+			for (const DocRecorder of this.DocRecorders) {
 				DocRecorder.record(tracker);
-				++count;
-				break;
-			default: // default is require edits only
-				if (tracker.editedTimes > 0) {
-					DocRecorder.record(tracker);
-					++count;
-				}
-				break;
 			}
-		}
-		if (count){
 			new Notice(`Edits from ${tracker.filePath} are recorded.`, 1000)
 			//if (DEBUG) console.log (`Edits from ${tracker.filePath} are recorded.`);	
 		}

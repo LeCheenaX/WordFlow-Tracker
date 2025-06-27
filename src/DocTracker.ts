@@ -278,6 +278,21 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
         this.docWords = this.originalWords + this.changedWords;
     }
 
+    public meetThreshold(): boolean {
+        switch(this.plugin.settings.noteThreshold) {
+            case 't':
+                return this.editTime >= 60000;
+            case 'ent':
+                return this.editedTimes > 0 && this.editTime >= 60000;
+            case 'eot':
+                return this.editedTimes > 0 || this.editTime >= 60000;
+            case 'n':
+                return true;
+            default: // default to requiring edits
+                return this.editedTimes > 0;
+        }
+    }
+
     public deactivate(){
         if (this.editorListener) {
             this.plugin.app.workspace.offref(this.editorListener);

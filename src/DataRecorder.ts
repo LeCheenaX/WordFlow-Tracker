@@ -184,6 +184,7 @@ this.existingDataMap.forEach((ExistingData)=>{
         this.newDataMap.clear();
         if (!p_tracker){
             for (const [filePath, tracker] of this.trackerMap.entries()) {
+                if (!tracker.meetThreshold()) continue;
                 await tracker.countActiveWords(); // generate accurate words for NewData by the time of recording
                 this.newDataMap.set(filePath, new NewData(tracker));
                 tracker.resetEdit(); // deleted await for performance 
