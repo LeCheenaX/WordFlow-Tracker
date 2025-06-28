@@ -30,6 +30,7 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
     noteThreshold: string;
     noteToRecord: string;
     autoRecordInterval: string;
+    currentVersion: string; // used to determine whether show change logs or not
 
     // Recorders tab for multiple recorders
     Recorders: RecorderConfig[];
@@ -51,6 +52,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 	noteThreshold: 'e', // requrie edits only
     noteToRecord: 'all', // requrie edits only
 	autoRecordInterval: '0', // disable
+    currentVersion: '1.4.2',
 
 	// Recorders tab for multiple recorders
 	Recorders: [],

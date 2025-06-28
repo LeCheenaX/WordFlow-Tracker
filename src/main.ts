@@ -1,7 +1,8 @@
 import { DocTracker } from './DocTracker';
 import { DataRecorder } from './DataRecorder';
 import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, updateStatusBarStyle, removeStatusBarStyle } from './settings';
-import { App, MarkdownView, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
+import { currentPluginVersion, changelog } from './changeLog';
+import { App, Component, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
 //import { EditorState, StateField, Extension, ChangeSet, Transaction } from "@codemirror/state";
 //import { historyField, history } from "@codemirror/commands";
 //import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from "@codemirror/view";
@@ -23,6 +24,13 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+
+		if (this.settings.currentVersion !== currentPluginVersion)
+		{
+			new ChangelogModal(this.app, '1.4.3', changelog).open();
+			this.settings.currentVersion = currentPluginVersion;
+			await this.saveSettings();
+		}
 
 		const defaultRecorder = new DataRecorder(this, this.trackerMap);
         this.DocRecorders.push(defaultRecorder);
@@ -458,4 +466,35 @@ export class WordflowSettingTab extends PluginSettingTab {
 		this.contentContainer.empty();
 		this.tabs[tabName].display();
 	}
+}
+
+class ChangelogModal extends Modal {
+	private renderComponent: Component;
+    constructor(app: App, private version: string, private content: string) {
+        super(app);
+		this.renderComponent = new Component();
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+        
+        contentEl.createEl('h2', { text: `Wordflow Tracker Changelogs - Latest: ${this.version}` });
+        
+        const container = contentEl.createDiv('wordflow-changelog-container');
+        
+        // render markdown contents
+        MarkdownRenderer.render(
+            this.app,
+            this.content,
+            container,
+            '',
+            this.renderComponent
+        );
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
 }
