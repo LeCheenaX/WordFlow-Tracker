@@ -97,7 +97,15 @@ export class GeneralTab extends WordflowSubSettingsTab {
         
         new Setting(tabContent)
             .setName('Threshold for notes to record in edit mode')
-            .setDesc('Select a requirement for notes to be recorded in live preview and source mode. Require edits means you should at least type anything or delete anything, even just a space. Require focus time means you should leave the note under edit mode over 1 minute. If require none above, the recorder will track all files you opened under edit mode. ')
+            .setDesc(createFragment(f => {
+                f.appendText('Select a requirement for notes to be recorded in live preview and source mode.');
+                f.createEl('br');
+                f.appendText('Require edits means you should at least type anything or delete anything, even just a space.');
+                f.createEl('br');
+                f.appendText('Require focus time means you should leave the note under edit mode over 1 minute.');
+                f.createEl('br');
+                f.appendText('If require none above, the recorder will track all files you opened under edit mode.')
+            }))
             .addDropdown(d => d
                 .addOption('e', 'require edits only')
                 .addOption('t', 'require focus time only')
@@ -113,7 +121,13 @@ export class GeneralTab extends WordflowSubSettingsTab {
 
         new Setting(tabContent)
             .setName('Notes to record while quiting editing mode')
-            .setDesc('Select the behavior when switching a note from editing mode to reading mode. Editing mode includes live preview and source mode. If recording current note only, other notes may not be automactically recorded if you don\'t manually record. ')
+            .setDesc(createFragment(f => {
+                f.appendText('Select the behavior when switching a note from editing mode to reading mode.')
+                f.createEl('br')
+                f.appendText('Editing mode includes live preview and source mode.')
+                f.createEl('br')
+                f.appendText('If recording current note only, other notes may not be automactically recorded if you don\'t manually record.')
+            }))
             .addDropdown(d => d
                 .addOption('all', 'current and other notes in edit mode')
                 .addOption('crt', 'current note only')
@@ -126,7 +140,11 @@ export class GeneralTab extends WordflowSubSettingsTab {
         
         new Setting(tabContent)
             .setName('Automatic recording interval')
-            .setDesc('Set the interval in seconds, influencing when the plugin would record all tracked notes and to periodic notes. Set to 0 to disable. ')
+            .setDesc(createFragment(f => {
+                f.appendText('Set the interval in seconds, influencing when the plugin would record all tracked notes and to periodic notes.')
+                f.createEl('br')
+                f.appendText('Set to 0 to disable.')
+            }))
             .addText(text => text
                 .setPlaceholder('Set to 0 to disable')
                 .setValue(this.plugin.settings.autoRecordInterval)
@@ -191,7 +209,11 @@ export class RecordersTab extends WordflowSubSettingsTab {
         
         const recorderActions = new Setting(recorderSelectionContainer)
             .setName('Current recorder')
-            .setDesc('Select which recorder configuration to edit.\nYou can add new recorders to save different sets of statistics to different locations.');
+            .setDesc(createFragment(f=>{
+                f.appendText('Select which recorder configuration to edit.')
+                f.createEl('br')
+                f.appendText('You can add new recorders to save different sets of statistics to different locations.')
+            }));
             // Only show rename/delete for additional recorders
         if (this.activeRecorderIndex > 0) {
             recorderActions
@@ -436,7 +458,13 @@ export class RecordersTab extends WordflowSubSettingsTab {
         
         new Setting(container)
             .setName('Template plugin')
-            .setDesc('Set the template plugin you use to apply template to new created periodic notes. Currently, only support the templates of core plugin "Templates". If you are using community plugin "Templater", please use the folder template feature of "Templater".')
+            .setDesc(createFragment(f => {
+                f.appendText('Set the template plugin you use to apply template to new created periodic notes.')
+                f.createEl('br')
+                f.appendText('Currently, only support the templates of core plugin "Templates".')
+                f.createEl('br')
+                f.appendText('If you are using community plugin "Templater", please use the folder template feature of "Templater".')
+            }))
             .addDropdown(d => {
                 this.InsertPlaceComponent = d;
                 d.addOption('none', 'default (Templater folder template)');
@@ -446,26 +474,48 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     settings.templatePlugin = value;
                     await this.plugin.saveSettings();
                     // Show or hide subsettings based on dropdown value
-                    //this.toggleCustomPositionSettings(value === 'custom');
+                    this.toggleTemplatePluginSettings(value === 'Templates');
                     recorderInstance.loadSettings();
                 })
             });
+        
+        const templatePluginSettingsContainer = container.createDiv();
+        templatePluginSettingsContainer.id = "wordflow-recorder-templatePlugin-settings";
+        // Add custom CSS to remove separation between settings
+        templatePluginSettingsContainer.addClass('wordflow-recorder-templatePlugin-container');
+        // Initially set visibility based on current value
+        this.toggleTemplatePluginSettings(settings.templatePlugin === 'Templates');
 
-        new Setting(container)
+        let templateFilePathPreviewText: HTMLSpanElement;
+        new Setting(templatePluginSettingsContainer)
             .setName('Template file path (WIP)')
-            .setDesc('Set the file path for the template file to be applied. Currently, only support the templates of core plugin "Templates".')
+            .setDesc(createFragment((f) => {
+                f.appendText('Set the file path for the template file to be applied. ')
+                f.createEl('br')
+                f.appendText('Currently, only support the templates of core plugin "Templates".')
+                f.createEl('br')
+                f.appendText('Input validation check: ')
+
+                templateFilePathPreviewText = f.createEl('span', {
+                    cls: 'wordflow-setting-previewText' // add custom CSS class
+                });
+                templateFilePathPreviewText.setText(
+                    this.app.vault.getAbstractFileByPath(settings.templateFilePath) ?'✅':'❌');
+            }))
             .addText(text => text
                 .setPlaceholder('set template file')
                 .setValue(settings.templateFilePath)
                 .onChange(async (value) => {
-                    settings.templateFilePath = normalizePath(value);;
+                    settings.templateFilePath = normalizePath(value);
+                    templateFilePathPreviewText.setText(
+                        this.app.vault.getAbstractFileByPath(settings.templateFilePath) ?'✅':'❌');
                     await this.plugin.saveSettings();
                     recorderInstance.loadSettings();
                 })
             );
 
         let templateDateFormatPreviewText: HTMLSpanElement;
-        new Setting(container)
+        new Setting(templatePluginSettingsContainer)
             .setName('Template file date format')
             .setDesc(createFragment((f) => {
                 f.appendText('{{date}} in the template file will be replaced with this value.');
@@ -481,7 +531,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 f.appendText('Your current syntax looks like this: ');
 
                 templateDateFormatPreviewText = f.createEl('span', {
-                    cls: 'wordflow-setting-previewText' // 添加自定义CSS类
+                    cls: 'wordflow-setting-previewText' // add custom CSS class
                 });
                 templateDateFormatPreviewText.setText(moment().format(settings.templateDateFormat));
             }))
@@ -497,7 +547,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             );
         
         let templateTimeFormatPreviewText: HTMLSpanElement;
-        new Setting(container)
+        new Setting(templatePluginSettingsContainer)
             .setName('Template file time format')
             .setDesc(createFragment((f) => {
                 f.appendText('{{time}} in the template file will be replaced with this value.');
@@ -553,7 +603,14 @@ export class RecordersTab extends WordflowSubSettingsTab {
         makeMultilineTextSetting(
             new Setting(container)
                 .setName('Wordflow recording syntax')
-                .setDesc('Modified the syntax with \'${}\' syntax, see doc for supported regular expressions.\n')
+                .setDesc(createFragment(f => {
+                    f.appendText('Modified the syntax with \'${}\' syntax, see ')
+                    f.createEl('a', {
+                        text: 'document',
+                        href: 'https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations'
+                      });
+                    f.appendText(' for supported string interpolation expressions.')
+                }))
                 .addTextArea(text => {
                     this.SyntaxComponent = text;
                     if (settings.recordType == 'table'){
@@ -585,7 +642,13 @@ export class RecordersTab extends WordflowSubSettingsTab {
         
         new Setting(container)
             .setName('Insert to position')
-            .setDesc('Insert to this position if no previous record exist. If using a custom position, the start position and end position must exist and be unique in periodic note! Make sure your template is correctly applied while creating new periodic note. ')
+            .setDesc(createFragment(f => {
+                f.appendText('Insert to this position if no previous record exist.')
+                f.createEl('br')
+                f.appendText('If using a custom position, the start position and end position must exist and be unique in periodic note!')
+                f.createEl('br')
+                f.appendText('Make sure your template is correctly applied while creating new periodic note.')
+            }))
             .addDropdown(d => {
                 this.InsertPlaceComponent = d;
                 if (settings.recordType === 'metadata') {
@@ -679,14 +742,25 @@ export class RecordersTab extends WordflowSubSettingsTab {
         // Initially set visibility based on current value
         this.toggleMTimeVisibility(settings.recordType !== 'metadata');
 
+        let mTimeFormatPreviewText: HTMLSpanElement;
         const mTimeFormatSetting = new Setting(mTimeFormatSettingsContainer)
             .setName('Last modified time format')
-            .setDesc('Set the format of \'${lastModifiedTime}\' to record on notes.')
+            .setDesc(createFragment((f) => {
+                f.appendText('Set the format of \'${lastModifiedTime}\' to be recorded on notes.')
+                f.createEl('br')
+                f.appendText('Your current syntax looks like this: ');
+
+                mTimeFormatPreviewText = f.createEl('span', {
+                    cls: 'wordflow-setting-previewText' // add custom CSS class
+                });
+                mTimeFormatPreviewText.setText(moment().format(settings.timeFormat));
+            }))
             .addText(text => text
                 .setPlaceholder('YYYY-MM-DD | hh:mm')
                 .setValue(settings.timeFormat)
                 .onChange(async (value) => {
-                    settings.timeFormat = value;
+                    settings.timeFormat = (value != '')? value: DEFAULT_SETTINGS.timeFormat;
+                    mTimeFormatPreviewText.setText(moment().format(settings.timeFormat));
                     await this.plugin.saveSettings();
                     recorderInstance.loadSettings();
                 })
@@ -719,6 +793,12 @@ export class RecordersTab extends WordflowSubSettingsTab {
 		this.toggleCustomPositionSettings(false);
 		await this.plugin.saveSettings();
 	}
+
+    private toggleTemplatePluginSettings(show: boolean) {
+        const templatePluginSettingsContainer = document.getElementById("wordflow-recorder-templatePlugin-settings");
+        if (templatePluginSettingsContainer)
+            templatePluginSettingsContainer.style.display = show ? "block" : "none";
+    }
 
 	private toggleCustomPositionSettings(show: boolean) {
         const customSettingsContainer = document.getElementById("wordflow-recorder-custom-position-settings");
@@ -761,7 +841,11 @@ export class TimersTab extends WordflowSubSettingsTab {
 */
         new Setting(tabContent)
             .setName('Idle interval')
-            .setDesc('Interval in minutes when the timer in status bar will pause when idled for a period of time.\n Any document clicking, outline clicking or editing behavior will refresh the timer from idling. ')
+            .setDesc(createFragment(f => {
+                f.appendText('Interval in minutes when the timer in status bar will pause when idled for a period of time.')
+                f.createEl('br')
+                f.appendText('Any document clicking, outline clicking or editing behavior will refresh the timer from idling.')
+            }))
             .addText(text => text
                 .setPlaceholder('Set idle time in minute')
                 .setValue(this.plugin.settings.idleInterval)
@@ -792,7 +876,11 @@ export class StatusBarTab extends WordflowSubSettingsTab {
         */
         new Setting(tabContent)
             .setName('Enforce status bar display in mobile')
-            .setDesc('Enforce the status bar of wordflow tracker to show up in mobile devices. If you have other css snippets do the same, they may be overwriten. ')
+            .setDesc(createFragment(f => {
+                f.appendText('Enforce the status bar of wordflow tracker to show up in mobile devices.')
+                f.createEl('br');
+                f.appendText('If you have other css snippets do the same, they may be overwriten.')
+            }))
             .addToggle(t => t
                 .setValue(this.plugin.settings.enableMobileStatusBar)
                 .onChange(async (value) => {
