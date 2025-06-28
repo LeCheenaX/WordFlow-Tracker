@@ -557,13 +557,15 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
         let templateFilePathPreviewText: HTMLSpanElement;
         new Setting(templatePluginSettingsContainer)
-            .setName('Template file path (WIP)')
+            .setName('Template file path')
             .setDesc(createFragment((f) => {
                 f.appendText('Set the file path for the template file to be applied. ')
                 f.createEl('br')
                 f.appendText('Currently, only support the templates of core plugin "Templates".')
                 f.createEl('br')
-                f.appendText('Input validation check: ')
+                f.appendText('Example: Templates/daily note template.md')
+                f.createEl('br')
+                f.appendText('Input template file founded: ')
 
                 templateFilePathPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // add custom CSS class

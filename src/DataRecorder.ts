@@ -177,8 +177,26 @@ this.existingDataMap.forEach((ExistingData)=>{
     }
 
     private async createRecordNote(recordNotePath: string): Promise<void> {
-        await this.plugin.app.vault.create(recordNotePath, ''); // now using templater folder templates
-        // to-do: use obsidian templates
+        if (this.plugin.settings.templatePlugin == 'none') {
+            await this.plugin.app.vault.create(recordNotePath, ''); // now using templater folder templates
+            return;
+        }
+        else { // now using Templates core plugin
+            const templateFilePath = this.plugin.settings.templateFilePath;
+            const templateFile = this.plugin.app.vault.getAbstractFileByPath(templateFilePath) as TFile;
+            if (!templateFile) {
+                new Notice ("Error: Template file not found in wordflow recorders!")
+                console.error("Error: Tempalte file not found in creating periodic note! Please check each of your recorder setting")
+            }
+            let content = await this.plugin.app.vault.read(templateFile);
+            
+            // try applying templates as Obsidian Templates plugin does
+            content = content
+                .replace(/{{date}}/g, moment().format(this.plugin.settings.templateDateFormat))
+                .replace(/{{time}}/g, moment().format(this.plugin.settings.templateTimeFormat))
+            
+            await this.plugin.app.vault.create(recordNotePath, content);
+        }
     }
 
     private async loadExistingData(recordNote: TFile): Promise<void> {  
