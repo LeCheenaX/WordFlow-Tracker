@@ -57,6 +57,11 @@
     padding: 0 4px; /* 减少内边距 */
 }
 
+.wordflow-setting-previewText { /* for setting descriptions that have dynamic values according to user input */
+    color: var(--text-accent); 
+    font-weight: bold;  
+}
+
 /* ======================= */
 /*  Recorders Setting Tab  */
 /* ======================= */

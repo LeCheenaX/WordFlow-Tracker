@@ -1,7 +1,7 @@
 import WordflowTrackerPlugin from './main';
-import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, PluginSettingTab } from 'obsidian';
+import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent } from 'obsidian';
 import { DataRecorder } from './DataRecorder';
-import { normalizePath } from 'obsidian';
+import { moment, normalizePath } from 'obsidian';
 
 // Obsidian supports only string and boolean for settings. numbers are not supported. 
 export interface WordflowRecorderConfigs {
@@ -11,6 +11,8 @@ export interface WordflowRecorderConfigs {
     periodicNoteFormat: string;
     templatePlugin: string;
     templateFilePath: string;
+    templateDateFormat: string;
+    templateTimeFormat: string;
     recordType: string;
     tableSyntax: string;
     bulletListSyntax: string;
@@ -58,6 +60,8 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 	periodicNoteFormat: 'YYYY-MM-DD',
     templatePlugin:  'none',
     templateFilePath: '',
+    templateDateFormat: 'YYYY-MM-DD',
+    templateTimeFormat: 'HH:mm',
 	recordType: 'table',
 	insertPlace: 'bottom',
 	tableSyntax: `| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| [[\${modifiedNote}\\|\${noteTitle}]] | \${editedWords} | \${lastModifiedTime} |`,
@@ -276,6 +280,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
             periodicNoteFormat: DEFAULT_SETTINGS.periodicNoteFormat,
             templatePlugin: DEFAULT_SETTINGS.templatePlugin,
             templateFilePath: DEFAULT_SETTINGS.templateFilePath,
+            templateDateFormat: DEFAULT_SETTINGS.templateDateFormat,
+            templateTimeFormat: DEFAULT_SETTINGS.templateTimeFormat,
             recordType: DEFAULT_SETTINGS.recordType,
             tableSyntax: DEFAULT_SETTINGS.tableSyntax,
             bulletListSyntax: DEFAULT_SETTINGS.bulletListSyntax,
@@ -452,7 +458,71 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 .setPlaceholder('set template file')
                 .setValue(settings.templateFilePath)
                 .onChange(async (value) => {
-                    settings.templateFilePath = value;
+                    settings.templateFilePath = normalizePath(value);;
+                    await this.plugin.saveSettings();
+                    recorderInstance.loadSettings();
+                })
+            );
+
+        let templateDateFormatPreviewText: HTMLSpanElement;
+        new Setting(container)
+            .setName('Template file date format')
+            .setDesc(createFragment((f) => {
+                f.appendText('{{date}} in the template file will be replaced with this value.');
+                f.createEl('br');
+                f.appendText('You can also use {{date:YYYY-MM-DD}} to override the format once.');
+                f.createEl('br');
+                f.appendText('For more syntax, refer to ')
+                f.createEl('a', {
+                    text: 'format reference',
+                    href: 'https://momentjs.com/docs/#/displaying/'
+                  });
+                f.createEl('br');
+                f.appendText('Your current syntax looks like this: ');
+
+                templateDateFormatPreviewText = f.createEl('span', {
+                    cls: 'wordflow-setting-previewText' // 添加自定义CSS类
+                });
+                templateDateFormatPreviewText.setText(moment().format(settings.templateDateFormat));
+            }))
+            .addText(text => text
+                .setPlaceholder('YYYY-MM-DD')
+                .setValue(settings.templateDateFormat)
+                .onChange(async (value) => {
+                    settings.templateDateFormat = (value != '')? value: DEFAULT_SETTINGS.templateDateFormat;
+                    templateDateFormatPreviewText.setText(moment().format(settings.templateDateFormat));
+                    await this.plugin.saveSettings();
+                    recorderInstance.loadSettings();
+                })
+            );
+        
+        let templateTimeFormatPreviewText: HTMLSpanElement;
+        new Setting(container)
+            .setName('Template file time format')
+            .setDesc(createFragment((f) => {
+                f.appendText('{{time}} in the template file will be replaced with this value.');
+                f.createEl('br');
+                f.appendText('You can also use {{time:HH:mm}} to override the format once.');
+                f.createEl('br');
+                f.appendText('For more syntax, refer to ')
+                f.createEl('a', {
+                    text: 'format reference',
+                    href: 'https://momentjs.com/docs/#/displaying/'
+                  });
+                f.createEl('br');
+                f.appendText('Your current syntax looks like this: ');
+
+                templateTimeFormatPreviewText = f.createEl('span', {
+                    cls: 'wordflow-setting-previewText' // 添加自定义CSS类
+                });
+                templateTimeFormatPreviewText.setText(moment().format(settings.templateTimeFormat));
+            }))
+            .addText(text => text
+                .setPlaceholder('HH:mm')
+                .setValue(settings.templateTimeFormat)
+                .onChange(async (value) => {
+                    settings.templateTimeFormat = (value != '')? value: DEFAULT_SETTINGS.templateTimeFormat;
+                    templateTimeFormatPreviewText.setText(moment().format(settings.templateTimeFormat));
                     await this.plugin.saveSettings();
                     recorderInstance.loadSettings();
                 })
