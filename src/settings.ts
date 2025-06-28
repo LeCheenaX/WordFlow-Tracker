@@ -399,10 +399,24 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
         container.classList.add('wordflow-setting-tab'); // for styles.css
 
+        let periodicFolderPreviewText: HTMLSpanElement;
         new Setting(container).setName('Periodic note to record').setHeading();
         const periodicFolder = new Setting(container)
             .setName('Periodic note folder')
-            .setDesc('Select whether to enable dynamic folder, and set the folder for daily notes or weekly note to place, which should correspond to the same folder of Obsidian daily note plugin and of templater plugin(if installed).')
+            .setDesc(createFragment(f => {
+                f.appendText('Toggle the button to enable dynamic folder. Disabled by default.')
+                f.createEl('br')
+                f.appendText('Specify the block for the folder of daily notes or weekly note.')
+                f.createEl('br')
+                f.appendText('Your current periodic note folder looks like this: ')
+                
+                periodicFolderPreviewText = f.createEl('span', {
+                    cls: 'wordflow-setting-previewText' // add custom CSS class
+                })
+                periodicFolderPreviewText.setText(
+                    (settings.enableDynamicFolder)? moment().format(settings.periodicNoteFolder)
+                                                  : settings.periodicNoteFolder)
+            }))
             .addToggle(t => {
                 const toggle = t;
                 toggle
@@ -420,6 +434,9 @@ export class RecordersTab extends WordflowSubSettingsTab {
                             `Please make sure that: \n\t1. You will adjust the periodic note folder after toggling dynamic folder. Example formats are as followed: \n\t\tIf dynamic folder is enabled, the moment format must be used: \n\t\t\t[MonthlyLogs\/]MM-YYYY\n\t\tIf dynamic folder is disabled, a folder path must be used: \n\t\t\tLogs\/MonthlyLogs \n\t2. Do not forget to do the same changes to other recorders if you want them to record in the same folder!`,
                             async () => {
                                 settings.enableDynamicFolder = value;
+                                periodicFolderPreviewText.setText(
+                                    (settings.enableDynamicFolder)? moment().format(settings.periodicNoteFolder)
+                                                                  : settings.periodicNoteFolder)
                                 await this.plugin.saveSettings();			
                                 recorderInstance.loadSettings();
                                 // now update placeholder based on the setting. 
@@ -438,24 +455,44 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 .setPlaceholder((settings.enableDynamicFolder)?'[MonthlyLogs\/]MM-YYYY': 'Example: "Monthly logs"')
                 .onChange(async (value) => {
                     settings.periodicNoteFolder = (value == '')? value: normalizePath(value);
+                    periodicFolderPreviewText.setText(
+                        (settings.enableDynamicFolder)? moment().format(settings.periodicNoteFolder)
+                                                      : settings.periodicNoteFolder)
                     await this.plugin.saveSettings();
                     recorderInstance.loadSettings();
                 })
             });
 
+        let periodicNoteFormatPreviewText: HTMLSpanElement;
         new Setting(container)
             .setName('Periodic note format')
-            .setDesc('Set the file name (in moment format) for newly created daily notes or weekly note, which should correspond to the same format setting of Obsidian daily note plugin and of templater plugin(if installed).')
+            .setDesc(createFragment(f => {
+                f.appendText('Set the file name (in ')
+                f.createEl('a', {
+                    text: 'moment format',
+                    href: 'https://momentjs.com/docs/#/displaying/'
+                    });
+                f.appendText(') for newly created daily notes or weekly note.');
+                f.createEl('br')
+                f.appendText('Your current periodic note looks like this: ')
+
+                periodicNoteFormatPreviewText = f.createEl('span', {
+                    cls: 'wordflow-setting-previewText' // add custom CSS class
+                });
+                periodicNoteFormatPreviewText.setText(moment().format(settings.periodicNoteFormat) + '.md');
+            }))
             .addText(text => text
                 .setPlaceholder('YYYY-MM-DD')
                 .setValue(settings.periodicNoteFormat)
                 .onChange(async (value) => {
-                    settings.periodicNoteFormat = value;
+                    settings.periodicNoteFormat = (value !== '')? value: DEFAULT_SETTINGS.periodicNoteFormat;
+                    periodicNoteFormatPreviewText.setText(moment().format(settings.periodicNoteFormat) + '.md');
                     await this.plugin.saveSettings();
                     recorderInstance.loadSettings();
                 })
             );
         
+        let templatePluginPreviewText: HTMLSpanElement
         new Setting(container)
             .setName('Template plugin')
             .setDesc(createFragment(f => {
@@ -464,6 +501,25 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 f.appendText('Currently, only support the templates of core plugin "Templates".')
                 f.createEl('br')
                 f.appendText('If you are using community plugin "Templater", please use the folder template feature of "Templater".')
+                f.createEl('br')
+                f.appendText('If you do not need to apply template, kindly use the "defaut" option.')
+                f.createEl('br')
+
+                templatePluginPreviewText = f.createEl('span', {
+                    cls: 'wordflow-setting-previewText' // add custom CSS class
+                });
+                if(settings.templatePlugin == 'none') {
+                    let templaterPluginEnabled = false;
+                    //@ts-expect-error
+                    if (this.app.plugins.getPlugin("templater-obsidian")) {
+                        //@ts-expect-error
+                        templaterPluginEnabled = this.app.plugins.getPlugin("templater-obsidian")._loaded;
+                    }
+                    templatePluginPreviewText.setText(
+                    'Templater plugin enabled: ' + (templaterPluginEnabled ?'✅':'❌'));
+                } else {
+                    templatePluginPreviewText.setText('');
+                }
             }))
             .addDropdown(d => {
                 this.InsertPlaceComponent = d;
@@ -473,6 +529,19 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 .onChange(async (value) => {
                     settings.templatePlugin = value;
                     await this.plugin.saveSettings();
+                    // change validation check if value changed
+                    if(settings.templatePlugin == 'none') {
+                        let templaterPluginEnabled = false;
+                        //@ts-expect-error
+                        if (this.app.plugins.getPlugin("templater-obsidian")) {
+                            //@ts-expect-error
+                            templaterPluginEnabled = this.app.plugins.getPlugin("templater-obsidian")._loaded;
+                        }
+                        templatePluginPreviewText.setText(
+                        'Templater plugin enabled: ' + (templaterPluginEnabled ?'✅':'❌'));
+                    } else {
+                        templatePluginPreviewText.setText('');
+                    }
                     // Show or hide subsettings based on dropdown value
                     this.toggleTemplatePluginSettings(value === 'Templates');
                     recorderInstance.loadSettings();
