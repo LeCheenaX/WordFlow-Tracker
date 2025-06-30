@@ -4,7 +4,7 @@
 [中文文档](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/README_ZH_CN.md) | [English](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file)
 
 ## Introduction
-WordFlow Tracker is a lite plugin that track your edits on each note and automatically record these edits statistics to your periodic note, like your daily note. 
+WordFlow Tracker is a lite plugin that track your focused time and edits statistics on each note and automatically record to your daily note or periodic notes. 
 
 ![wordflow3](https://github.com/user-attachments/assets/e323477d-d38e-4a6c-8d98-83bda5818a07)
 
