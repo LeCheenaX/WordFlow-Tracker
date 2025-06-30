@@ -4,7 +4,7 @@
 [中文文档](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/README_ZH_CN.md) | [English](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file)
 
 ## Introduction
-WorkFlow Tracker is a lite plugin that track your edits on each note and automatically record these edits statistics to your periodic note, like your daily note. 
+WordFlow Tracker is a lite plugin that track your edits on each note and automatically record these edits statistics to your periodic note, like your daily note. 
 
 ![wordflow3](https://github.com/user-attachments/assets/e323477d-d38e-4a6c-8d98-83bda5818a07)
 
@@ -109,6 +109,14 @@ For details regarding how to implement this, see [Enable dynamic folder](https:/
 Please also ensure that this folder is the same folder where templates from other plugin will be applied. 
 
 ## Settings documentation
+### General 
+- **Threshold for notes to record in edit mode**: Select a requirement for notes to be recorded in live preview and source mode.
+	- Require edits means you should at least type anything or delete anything, even just a space.
+	- Require focus time means you should leave the note under edit mode over 1 minute.
+	- If require none above, the recorder will track all files you opened under edit mode.
+ - **Notes to record while quiting editing mode**: Select the behavior when switching a note from editing mode to reading mode.
+	- Editing mode includes live preview and source mode.
+	- If recording current note only, other notes may not be automactically recorded if you don\'t manually record.
 ### Recorder
 - **Create**: Create a new recorder so that the edit stats in tracker will be additionally recorded. Common usages are as followed:
 	- Create a recorder for another periodic note: current recorder will record to daily note, and you create an additional one to record to monthly note. 
@@ -117,7 +125,7 @@ Please also ensure that this folder is the same folder where templates from othe
 		![image](https://github.com/user-attachments/assets/56a03e3c-930c-4d0e-b901-a07e95099105)
 - **Rename**: Rename your recorders.
 - **Delete**: Delete the current recorder and abandon its settings. 
-### Recorder Basics
+#### Recorder Basics
 - **Periodic note folder:** Set the folder for daily notes or weekly note to place, which should correspond to the same folder of Obsidian daily note plugin and of templater plugin(if installed).
 	- **Enable dynamic folder:** Record the note to a dynamic folder rather than a static folder. If enabled, the folder must be in a [moment compatible format](https://momentjs.com/docs/#/displaying/format/).
 	
@@ -127,13 +135,17 @@ Please also ensure that this folder is the same folder where templates from othe
 		| [Monthly Notes/]YYYY  | Monthly Notes/2025            | MMM YYYY             | Monthly Notes/2025/Mar 2025.md     |
 
 - **Periodic note format:** Set the file name for newly created daily notes or weekly note, which should correspond to the same format setting of Obsidian daily note plugin and of templater plugin(if installed).
-### Recording Settings
+- **Template plugin:**
+	- If you are using templater folder template feature, the default option should be selected, which will delegate the template applying to templater plugin.
+ 	- If you have your own method(scripts or other plugins) of applying templates after creating note in the folder, kindly also use the default option. You can ignore the templater plugin not enabled prompt in this case. 
+  	- If you are using the obsidian core plugin "templates", select the "templates" option. This will apply the template you specified to periodic notes. 
+#### Recording Settings
 - **Record content type:** Select a type of content to record on specified notes. Currently, table and bullet list are supported.
 	- Note: when using a table format, the modified note must be at the first column.  
 - **Insert to position:** If using a custom position, the start position and end position must exist and be unique in periodic note! Make sure your template is correctly applied while creating new periodic note.
 - **Wordflow recording syntax:** Used for customizaing recording content. The regular expressions are supported with '${modifiedNote}', you can also generate link to the note by using a '[[${modifiedNote}]]'.
 
-### Supported String Interpolations
+#### Supported String Interpolations
 
 
 | String Interpolation   | Description                                                                                                                                                                         | Compatible Record Types | Example                                                                                   | Note                                                                                                                                                                                                      |
