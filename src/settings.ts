@@ -504,7 +504,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 f.createEl('br')
                 f.appendText('If you are using community plugin "Templater", please use the folder template feature of "Templater".')
                 f.createEl('br')
-                f.appendText('If you do not need to apply template, kindly use the "defaut" option.')
+                f.appendText('If you do not need to apply template, kindly use the "default" option.')
                 f.createEl('br')
 
                 templatePluginPreviewText = f.createEl('span', {
