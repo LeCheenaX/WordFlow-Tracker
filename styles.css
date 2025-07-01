@@ -125,6 +125,46 @@
     width:auto; /* control left background */
 }
 
+/* ======================== */
+/*  Widget Setting Tab  */
+/* ======================== */
+
+/* New styles for wordflow widget progress bar and text colors */
+.wordflow-widget-progress-bar-container {
+    width: 100%; /* Make the progress bar take full width */
+    height: 8px; /* Adjust height as needed */
+    background-color: var(--background-modifier-hover); /* Background for empty part of bar */
+    margin-bottom: 5px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.wordflow-widget-total-progress-bar-container {
+    height: 20px;
+    background-color: var(--background-modifier-hover);
+    margin-top: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.wordflow-widget-progress-bar {
+    height: 100%;
+    border-radius: 4px;
+}
+
+.wordflow-widget-progress-bar-segment {
+    float: left;
+    height: 100%;
+}
+
+.wordflow-widget-data-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+    font-weight: bold;
+}
+
 /* ==================== */
 /*  Confirmation Modal  */
 /* ==================== */

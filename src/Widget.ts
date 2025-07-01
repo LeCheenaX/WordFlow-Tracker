@@ -115,11 +115,62 @@ export class WordflowWidgetView extends ItemView {
         this.dataContainer.empty();
         if (!dataMap) return;
 
+        // Calculate the total value for the current field across all entries
+        let totalValue = 0;
+        dataMap.forEach(rowData => {
+            const value = parseInt(this.getFieldValue(rowData, field));
+            if (!isNaN(value)) {
+                totalValue += value;
+            }
+        });
+
+        const totalProgressBarContainer = this.dataContainer.createDiv({ 
+            cls: 'wordflow-widget-total-progress-bar-container' 
+        });
+
         const dataList = this.dataContainer.createEl('ul');
         dataMap.forEach(rowData => {
             const value = this.getFieldValue(rowData, field);
-            dataList.createEl('li', { text: `${rowData.filePath}: ${value}`});
+            const numericValue = parseInt(value);
+            let percentage = 0;
+            if (totalValue > 0 && !isNaN(numericValue)) {
+                percentage = (numericValue / totalValue) * 100;
+            }
+            
+            let barColor = this.getRandomColor()
+            // add to total progress bar
+            const segment = totalProgressBarContainer.createDiv({ 
+                cls: 'wordflow-widget-progress-bar-segment' 
+            });
+            
+            segment.style.width = `${percentage}%`;
+            segment.style.backgroundColor = barColor;
+
+            const listItem = dataList.createEl('li');
+
+            // File path and value display
+            const textDisplay = listItem.createDiv({ cls: 'wordflow-widget-data-entry' });
+            textDisplay.createEl('span', { text: `${rowData.filePath}: `, cls: 'wordflow-widget-data-entry' });
+            textDisplay.createEl('span', { text: value, cls: `wordflow-widget-data-entry` });
+            textDisplay.style.color = barColor;
         });
+    }
+
+    private getRandomColor(): string {
+        const color = [
+            '#E6194B', // 鲜艳红
+            '#3CB44B', // 饱和绿
+            '#4363D8', // 群青蓝
+            '#F58231', // 橙黄
+            '#911EB4', // 紫罗兰
+            '#46F0F0', // 青蓝
+            '#F032E6', // 洋红
+            '#BCF60C', // 荧光绿
+            '#FABEBE', // 粉红
+            '#008080', // 深青
+        ];
+
+        return color[Math.floor(Math.random()*color.length)];
     }
 
     private getFieldValue(data: ExistingData, field: string): string {
