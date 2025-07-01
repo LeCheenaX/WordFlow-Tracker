@@ -1,11 +1,10 @@
 import { DocTracker } from './DocTracker';
 import { DataRecorder } from './DataRecorder';
 import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, updateStatusBarStyle, removeStatusBarStyle } from './settings';
+import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_TRACKER } from './Widget';
 import { currentPluginVersion, changelog } from './changeLog';
 import { App, Component, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
-//import { EditorState, StateField, Extension, ChangeSet, Transaction } from "@codemirror/state";
-//import { historyField, history } from "@codemirror/commands";
-//import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from "@codemirror/view";
+
 
 // Remember to rename these classes and interfaces!
 const DEBUG = true as const;
@@ -16,6 +15,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 	public statusBarTrackerEl: HTMLElement; // for status bar tracking
 	public statusBarContent: string; // for status bar content editing
 	public DocRecorders: DataRecorder[] = [];
+	public Widget: WordflowWidgetView | null = null;
 
 	private activeTrackers: Map<string, boolean> = new Map(); // for multiple notes editing	
     private pathToNameMap: Map<string|undefined, string> = new Map(); // 新增：反向映射用于重命名检测
@@ -31,6 +31,14 @@ export default class WordflowTrackerPlugin extends Plugin {
 			this.settings.currentVersion = currentPluginVersion;
 			await this.saveSettings();
 		}
+
+		this.registerView(
+			VIEW_TYPE_WORDFLOW_TRACKER,
+			(leaf) => {
+				this.Widget = new WordflowWidgetView(leaf, this);
+				return this.Widget;
+			}
+		);
 
 		const defaultRecorder = new DataRecorder(this, this.trackerMap);
         this.DocRecorders.push(defaultRecorder);
@@ -54,6 +62,10 @@ export default class WordflowTrackerPlugin extends Plugin {
 			}
 
 		});
+
+		this.addRibbonIcon('bar-chart-horizontal', 'Reveal wordflow tracker widget', (evt: MouseEvent) => {
+			this.activateView();
+		});
 		// Perform additional things with the ribbon
 		//ribbonIconEl.addClass('my-plugin-ribbon-class');
 
@@ -69,6 +81,14 @@ export default class WordflowTrackerPlugin extends Plugin {
                     DocRecorder.record();
                 }
 				new Notice(`Try recording wordflows to periodic note!`, 3000);
+			}
+		});
+		
+		this.addCommand({
+			id: 'reveal-wordflow-tracker-widget',
+			name: 'Reveal wordflow tracker widget',
+			callback: () => {
+				this.activateView();
 			}
 		});
 		/*
@@ -274,6 +294,20 @@ export default class WordflowTrackerPlugin extends Plugin {
 		}
 		//await sleep(50); // for the process completion
 	};
+
+	async activateView(){
+		const existingLeafView = this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_TRACKER);
+		if (existingLeafView.length == 0) {
+			await this.app.workspace.getRightLeaf(false)?.setViewState({
+				type: VIEW_TYPE_WORDFLOW_TRACKER,
+				active: true,
+			});
+		}
+
+		this.app.workspace.revealLeaf(
+			this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_TRACKER)[0]
+		);
+	}
 /*
 		if(DEBUG){	
 			const trackerEntries:any = [];
@@ -289,6 +323,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			console.log("Following files were opened:", potentialEditors2.map(f => f)); 
 		}
 */
+
 
 	// get markdown files (with path) that are in edit mode from all leaves
 	private async getAllOpenedFilesWithMode(): Promise<Map<string, 'source' | 'preview' | unknown>> {

@@ -9,9 +9,9 @@ import { moment, Notice, TFile } from 'obsidian';
 export class DataRecorder {
     public existingDataMap: Map<string, ExistingData> = new Map();
     private newDataMap: Map<string, NewData> = new Map();
-    private enableDynamicFolder: boolean;
-    private periodicNoteFolder: string;
-    private periodicNoteFormat: string;
+    public enableDynamicFolder: boolean;
+    public periodicNoteFolder: string;
+    public periodicNoteFormat: string;
     public recordType: string;
     public timeFormat: string;
     public sortBy: string;
@@ -67,6 +67,10 @@ export class DataRecorder {
         }
         //new Notice(`Setting changed! Record type:${this.recordType}`, 3000)
         this.loadParsers();
+    }
+
+    public getParser(): Readonly<TableParser | BulletListParser | MetaDataParser> {
+        return this.Parser;
     }
 
     private loadParsers(){
@@ -136,6 +140,11 @@ this.existingDataMap.forEach((ExistingData)=>{
         default: // default insert to bottom if not found
             await this.updateNoteToBottom(recordNote, newContent);
             break;
+        }
+
+        if (this.plugin.Widget) {
+            await sleep(50);
+            this.plugin.Widget.update();
         }
     }
 

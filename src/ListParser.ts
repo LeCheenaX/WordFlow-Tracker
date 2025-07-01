@@ -30,6 +30,10 @@ export class BulletListParser{
         this.setPatterns(); // doesnot has varName
     }
 
+    public getSyntax(): Readonly<string> {
+        return this.syntax;
+    }
+
     public async extractData(recordNote: TFile): Promise< Map<string, ExistingData> > {
         this.noteContent = await this.plugin.app.vault.read(recordNote);
         const lines = this.noteContent.split('\n');

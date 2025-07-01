@@ -26,6 +26,10 @@ export class MetaDataParser{
         this.syntax = this.DataRecorder.metadataSyntax;
     }
 
+    public getSyntax(): Readonly<string> {
+        return this.syntax;
+    }
+
     public async extractData(recordNote: TFile): Promise< Map<string, ExistingData>> {
         const [startIndex, endIndex] = await this.getIndex(recordNote);
         const existingDataMap: Map<string, ExistingData> = new Map();
