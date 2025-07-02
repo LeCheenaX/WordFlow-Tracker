@@ -1,7 +1,7 @@
 import { DocTracker } from './DocTracker';
 import { DataRecorder } from './DataRecorder';
 import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, updateStatusBarStyle, removeStatusBarStyle } from './settings';
-import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_TRACKER } from './Widget';
+import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
 import { currentPluginVersion, changelog } from './changeLog';
 import { App, Component, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
 
@@ -33,7 +33,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		}
 
 		this.registerView(
-			VIEW_TYPE_WORDFLOW_TRACKER,
+			VIEW_TYPE_WORDFLOW_WIDGET,
 			(leaf) => {
 				this.Widget = new WordflowWidgetView(leaf, this);
 				return this.Widget;
@@ -296,16 +296,16 @@ export default class WordflowTrackerPlugin extends Plugin {
 	};
 
 	async activateView(){
-		const existingLeafView = this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_TRACKER);
+		const existingLeafView = this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET);
 		if (existingLeafView.length == 0) {
 			await this.app.workspace.getRightLeaf(false)?.setViewState({
-				type: VIEW_TYPE_WORDFLOW_TRACKER,
+				type: VIEW_TYPE_WORDFLOW_WIDGET,
 				active: true,
 			});
 		}
 
 		this.app.workspace.revealLeaf(
-			this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_TRACKER)[0]
+			this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET)[0]
 		);
 	}
 /*

@@ -4,7 +4,7 @@ import { ExistingData, DataRecorder } from "./DataRecorder";
 import { formatTime } from "./EditTimer";
 import { MetaDataParser } from "./MetaDataParser";
 
-export const VIEW_TYPE_WORDFLOW_TRACKER = "wordflow-tracker-view";
+export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
 
 export class WordflowWidgetView extends ItemView {
     plugin: WordflowTrackerPlugin;
@@ -12,29 +12,31 @@ export class WordflowWidgetView extends ItemView {
     private fieldDropdown: DropdownComponent;
     private dataContainer: HTMLDivElement;
     private selectedRecorder: DataRecorder | null = null;
+    private selectedField: string | null = null;
+    private dataMap: Map<string, ExistingData> | null = null;
 
     constructor(leaf: WorkspaceLeaf, plugin: WordflowTrackerPlugin) {
         super(leaf);
         this.plugin = plugin;
     }
 
-    getViewType() {
-        return VIEW_TYPE_WORDFLOW_TRACKER;
+    public getViewType() {
+        return VIEW_TYPE_WORDFLOW_WIDGET;
     }
 
-    getDisplayText() {
+    public getDisplayText() {
         return "Wordflow Tracker";
     }
 
-    async onOpen() {
+    public async onOpen() {
         const container = this.containerEl.children[1];
         container.empty();
         container.createEl("h2", { text: "Wordflow Tracker" });
 
         const controls = container.createDiv();
-        controls.createEl("span", { text: "Select Recorder: " });
+        controls.createEl("span", { text: "Recorder: " });
         this.recorderDropdown = new DropdownComponent(controls);
-        controls.createEl("span", { text: "Select Field: " });
+        controls.createEl("span", { text: "Field: " });
         this.fieldDropdown = new DropdownComponent(controls);
 
         this.dataContainer = container.createDiv();
@@ -42,48 +44,29 @@ export class WordflowWidgetView extends ItemView {
         this.draw();
     }
 
-    async onClose() {
+    public async onClose() {
         this.plugin.Widget = null;
     }
 
-    async update() {
+    public async updateData() {
+        this.dataMap = await this.getDataMap();
+        this.renderData(this.dataMap, this.selectedField);
+    }
+
+    public async updateAll() {
         await this.draw();
     }
 
     private async draw() {
         if (!this.dataContainer) return;
 
-        this.populateRecorderDropdown();
-
-        const dataMap = await this.getData();
-        const options = this.getDropdownOptions();
-
-        this.fieldDropdown.selectEl.empty();
-        options.forEach(option => {
-            this.fieldDropdown.addOption(option, option);
-        });
-
-        this.fieldDropdown.onChange(async (value) => {
-            this.renderData(dataMap, value);
-        });
-
-        // Set default and render
-        if (options.length > 0) {
-            const defaultOption = options[0];
-            this.fieldDropdown.setValue(defaultOption);
-            this.renderData(dataMap, defaultOption);
-        } else {
-            this.dataContainer.empty();
-            this.dataContainer.createEl("p", { text: "No data options available for this recorder." });
-        }
+        this.initRecorderDropdown();
+        this.initFieldDropDown();
     }
 
-    private populateRecorderDropdown() {
+    private initRecorderDropdown() {
         this.recorderDropdown.selectEl.empty();
-        if (this.plugin.DocRecorders.length === 0) {
-            this.selectedRecorder = null;
-            return;
-        }
+        let availableRecorders = 0;
 
         for (let index = 0; index < this.plugin.DocRecorders.length; ++index){
             if (this.plugin.DocRecorders[index].getParser() instanceof MetaDataParser) continue;
@@ -93,9 +76,15 @@ export class WordflowWidgetView extends ItemView {
             } else {
                 recorderName = this.plugin.settings.name;
             }
+            ++availableRecorders;
             this.recorderDropdown.addOption(index.toString(), recorderName);
         }
 
+        if (!availableRecorders) {
+            this.selectedRecorder = null;
+            this.recorderDropdown.addOption('tempError', 'No available recorder');
+            return;
+        }
 
         // Set initial selected recorder and its display name
         if (!this.selectedRecorder) {
@@ -111,9 +100,41 @@ export class WordflowWidgetView extends ItemView {
         });
     }
 
-    private renderData(dataMap: Map<string, ExistingData> | null, field: string) {
+    private async initFieldDropDown(){
+        this.dataMap = await this.getDataMap();
+        const fieldOptions = this.getFieldOptions();
+
+        this.fieldDropdown.selectEl.empty();
+        fieldOptions.forEach(option => {
+            this.fieldDropdown.addOption(option, option);
+        });
+
+        // Set default and render
+        if (fieldOptions.length === 0) {
+            this.dataContainer.empty();
+            this.dataContainer.createEl("p", { text: "No available field for this recorder" });
+        }
+
+        if(!this.selectedField) {
+            const defaultField = fieldOptions[0];
+            this.fieldDropdown.setValue(defaultField);
+            this.selectedField = defaultField;
+            this.renderData(this.dataMap, defaultField);
+        }
+
+        this.fieldDropdown.onChange(async (value) => {
+            this.fieldDropdown.setValue(value);
+            this.selectedField = value;
+            this.renderData(this.dataMap, value);
+        });
+    }
+
+    private renderData(dataMap: Map<string, ExistingData> | null, field: string | null) {
         this.dataContainer.empty();
-        if (!dataMap) return;
+        if (!dataMap || !field) {
+            this.dataContainer.createEl('span', { text: 'No available data in this field'});
+            return;
+        }
 
         // Calculate the total value for the current field across all entries
         let totalValue = 0;
@@ -202,7 +223,7 @@ export class WordflowWidgetView extends ItemView {
         }
     }
 
-    private getDropdownOptions(): string[] {
+    private getFieldOptions(): string[] {
         if (!this.selectedRecorder) {
             return ['No available field in wordflow recording syntax to display.'];
         }
@@ -224,7 +245,7 @@ export class WordflowWidgetView extends ItemView {
         return availableFields.filter(field => syntax.includes(`\${${field}}`))?? 'No available field in wordflow recording syntax to display.';
     }
 
-    private async getData(): Promise<Map<string, ExistingData> | null> {
+    private async getDataMap(): Promise<Map<string, ExistingData> | null> {
         if (!this.selectedRecorder) {
             return null;
         }

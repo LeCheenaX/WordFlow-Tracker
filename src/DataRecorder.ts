@@ -144,7 +144,7 @@ this.existingDataMap.forEach((ExistingData)=>{
 
         if (this.plugin.Widget) {
             await sleep(50);
-            this.plugin.Widget.update();
+            this.plugin.Widget.updateData();
         }
     }
 
