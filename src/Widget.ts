@@ -45,9 +45,11 @@ export class WordflowWidgetView extends ItemView {
         this.recorderDropdown = new DropdownComponent(recorderDropdownContainer);
         
         const rightGroup = controls.createDiv({cls: "wordflow-widget-control-rightgroup-container"})
-        this.totalDataContainer = rightGroup.createEl("span", {cls: "totalDataContainer"});
         const fieldDropdownContainer = rightGroup.createEl("span", {cls: "field-dropdown-container"});
         this.fieldDropdown = new DropdownComponent(fieldDropdownContainer);
+        fieldDropdownContainer.insertAdjacentText("afterend", ':');
+
+        this.totalDataContainer = rightGroup.createEl("span", {cls: "totalDataContainer"});
 
         this.dataContainer = container.createDiv();
 

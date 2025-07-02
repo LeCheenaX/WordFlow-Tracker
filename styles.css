@@ -128,24 +128,32 @@
 /* ======================== */
 /*  Widget Setting Tab  */
 /* ======================== */
-/*
-.workspace-leaf-content[data-type="wordflow-widget-view"] .view-content div > select.dropdown {
-    background-image: none;
-    background-blend-mode: normal;
-    background-color: unset;
-    background: none;
-    border: none;
-    box-shadow: none;
-    padding-left: 4px;
-    padding-right: 4px;
-    font-size: 16px;
+
+.wordflow-widget-current-note-row {
+    /*display: flex;*/
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--background-modifier-border);
 }
-.workspace-leaf-content[data-type="wordflow-widget-view"] .view-content div > select.dropdown:hover {
-    cursor: pointer;
-    background-color: hsla(var(--interactive-hover),0.2);
-    color: var(--text-accent-hover);
+
+.wordflow-widget-current-note-label {
+    font-weight: bold;
+    color: var(--text-normal);
+    margin-right: 16px;
 }
-*/
+
+.wordflow-widget-current-note-faint-label {
+    font-weight: bold;
+    color: var(--text-faint);
+}
+
+.wordflow-widget-current-note-value {
+    font-weight: bold;
+    color: var(--text-accent);
+}
+
 .wordflow-widget-control-container {
     display: flex;
     justify-content: space-between;
@@ -196,13 +204,19 @@
     border: none;
     box-shadow: none;
     padding-left: 4px;
-    padding-right: 4px;
+    padding-right: 0px;
     font-size: 20px;
 
     font-weight: 350;
     display: flex;
     text-align: right;
 }
+
+.wordflow-widget-control-container .wordflow-widget-control-rightgroup-container .totalDataContainer {
+    margin-left: 8px;
+    min-width: max-content;
+}
+
 /* New styles for wordflow widget progress bar and text colors */
 .wordflow-widget-progress-bar-container {
     width: 100%; /* Make the progress bar take full width */
@@ -267,30 +281,6 @@
     margin-left: 8px;
     font-weight: 400;
     flex-shrink: 0;
-}
-
-.wordflow-widget-current-note-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.wordflow-widget-current-note-label {
-    font-weight: bold;
-    color: var(--text-normal);
-}
-
-.wordflow-widget-current-note-faint-label {
-    font-weight: bold;
-    color: var(--text-faint);
-}
-
-.wordflow-widget-current-note-value {
-    font-weight: bold;
-    color: var(--text-accent);
 }
 
 /* ==================== */
