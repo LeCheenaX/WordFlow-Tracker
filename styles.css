@@ -129,13 +129,14 @@
 /*  Widget Setting Tab  */
 /* ======================== */
 
-.wordflow-widget-current-note-row {
-    /*display: flex;*/
+.wordflow-widget-current-note-data {
+    display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--background-modifier-border);
+    font-size: 18px;
 }
 
 .wordflow-widget-current-note-label {
@@ -152,6 +153,30 @@
 .wordflow-widget-current-note-value {
     font-weight: bold;
     color: var(--text-accent);
+}
+
+.wordflow-widget-current-note-buttons {
+    display: flex;
+    gap: 5px;
+    margin-left: auto; /* Push buttons to the right */
+    flex-shrink: 0;
+}
+
+.wordflow-widget-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 50%; /* Changed to 50% for circular shape */
+    background-color: var(--background-secondary);
+    cursor: pointer;
+    width: 36px; /* Ensure consistent circular shape */
+    height: 36px; /* Ensure consistent circular shape */
+}
+
+.wordflow-widget-button:hover {
+    background-color: var(--background-modifier-hover);
 }
 
 .wordflow-widget-control-container {

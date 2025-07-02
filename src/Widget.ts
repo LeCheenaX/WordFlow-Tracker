@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, TFile, moment, DropdownComponent } from "obsidian";
+import { ItemView, WorkspaceLeaf, TFile, moment, DropdownComponent, setIcon } from "obsidian";
 import WordflowTrackerPlugin from "./main";
 import { ExistingData, DataRecorder } from "./DataRecorder";
 import { formatTime } from "./EditTimer";
@@ -14,6 +14,9 @@ export class WordflowWidgetView extends ItemView {
     private totalDataContainer: HTMLSpanElement;
     private dataContainer: HTMLDivElement;
     private currentNoteDataContainer: HTMLDivElement;
+    private currentNoteRow: HTMLDivElement;
+    private recordButton: HTMLElement;
+    private focusButton: HTMLElement;
     private selectedRecorder: DataRecorder | null = null;
     private selectedField: string;
     private dataMap: Map<string, ExistingData> | null = null;
@@ -37,6 +40,7 @@ export class WordflowWidgetView extends ItemView {
         container.createEl("h2", { text: "Wordflow Tracker" });
 
         this.currentNoteDataContainer = container.createDiv({cls: "wordflow-widget-current-note-data"});
+        this.currentNoteRow = this.currentNoteDataContainer.createDiv({ cls: 'wordflow-widget-current-note-row' });
 
         const controls = container.createDiv({cls: "wordflow-widget-control-container"});
 
@@ -62,6 +66,23 @@ export class WordflowWidgetView extends ItemView {
             const inNewTab: boolean = evt.ctrlKey || evt.metaKey;
             this.plugin.app.workspace.openLinkText(filePath, filePath, inNewTab);
         });
+        
+        const buttonContainer = this.currentNoteDataContainer.createDiv({ cls: 'wordflow-widget-current-note-buttons' });
+
+        this.recordButton = buttonContainer.createEl('em', { cls: 'wordflow-widget-button' });
+        setIcon(this.recordButton, 'file-clock');
+
+        this.focusButton = buttonContainer.createEl('em', { cls: 'wordflow-widget-button' });
+        
+        this.updateButtonIcons(); // Initial icon setup
+
+        this.recordButton.addEventListener('click', () => {
+            //
+        });
+
+        this.focusButton.addEventListener('click', () => {
+            //
+        });
     }
 
     public async onClose() {
@@ -75,8 +96,9 @@ export class WordflowWidgetView extends ItemView {
     }
 
     public updateCurrentData() {
-        this.currentNoteDataContainer.empty();
+        this.currentNoteRow.empty();
         // Display current note's data
+
         const activeFile = this.plugin.app.workspace.getActiveFile();
         if (activeFile) {
             const activeTracker = this.plugin.trackerMap.get(activeFile.path);
@@ -86,18 +108,26 @@ export class WordflowWidgetView extends ItemView {
                 currentNoteValue += existingFieldValue;
 
                 const currentValueString = (this.selectedField == 'editTime')? formatTime(currentNoteValue): currentNoteValue.toString();
-                const currentNoteRow = this.currentNoteDataContainer.createDiv({ cls: 'wordflow-widget-current-note-row' });
-                currentNoteRow.createEl('span', { text: `${activeFile.basename}`, cls: 'wordflow-widget-current-note-label' });
-                currentNoteRow.createEl('span', { text: currentValueString, cls: 'wordflow-widget-current-note-value' });
+                
+                this.currentNoteRow.createEl('span', { text: `${activeFile.basename}`, cls: 'wordflow-widget-current-note-label' });
+                this.currentNoteRow.createEl('span', { text: currentValueString, cls: 'wordflow-widget-current-note-value' });
             } else {
-                const currentNoteRow = this.currentNoteDataContainer.createDiv({ cls: 'wordflow-widget-current-note-row' });
-                currentNoteRow.createEl('span', { text: "this file has no tracker", cls: 'wordflow-widget-current-note-faint-label' });
+                this.currentNoteRow.createEl('span', { text: "this file has no tracker", cls: 'wordflow-widget-current-note-faint-label' });
             }
         } else {
-            const currentNoteRow = this.currentNoteDataContainer.createDiv({ cls: 'wordflow-widget-current-note-row' });
-            currentNoteRow.createEl('span', { text: "no file opened", cls: 'wordflow-widget-current-note-faint-label' });
+            this.currentNoteRow.createEl('span', { text: "no file opened", cls: 'wordflow-widget-current-note-faint-label' });
         }
+        this.updateButtonIcons();
     }
+
+    public updateButtonIcons() {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (activeFile && this.plugin.trackerMap.get(activeFile.path)?.editTimer?.isRunning()) {
+            setIcon(this.focusButton, 'pause');
+        } else {
+            setIcon(this.focusButton, 'play');
+        }
+    };
 
     public async updateAll() {
         if (!this.dataContainer) return;
