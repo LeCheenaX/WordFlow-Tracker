@@ -47,6 +47,7 @@ export class DocTracker{
         await this.countOrigin();
         await sleep(1000); // when open new notes, update with delay
         this.updateStatusBarTracker();
+        this.plugin.Widget?.updateCurrentData();
     }
 
     private trackChanges() {
@@ -200,6 +201,7 @@ if (fixedToA != toA) console.log("Fixed toA from ", (toA == this.activeEditor.ed
         this.lastUndone = currentUndone;
         if (Number(history.prevTime) !== 0) this.lastModifiedTime = Number(history.prevTime);
         this.updateStatusBarTracker();
+        this.plugin.Widget?.updateCurrentData();
 /*
 console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
     currentEditedTimes: this.editedTimes,
@@ -254,6 +256,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
                 this.editTimer?.debouncedStarter();
         });
         this.updateStatusBarTracker();
+        this.plugin.Widget?.updateCurrentData();
         this.isActive = true;
     }
 
@@ -316,6 +319,7 @@ console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
         this.changedWords = 0;
         this.editTimer?.reset();
         this.updateStatusBarTracker();
+        this.plugin.Widget?.updateCurrentData();
     }
 
     public destroyTimers(){

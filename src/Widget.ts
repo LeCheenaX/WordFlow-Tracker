@@ -3,6 +3,7 @@ import WordflowTrackerPlugin from "./main";
 import { ExistingData, DataRecorder } from "./DataRecorder";
 import { formatTime } from "./EditTimer";
 import { MetaDataParser } from "./MetaDataParser";
+import { DocTracker } from "./DocTracker";
 
 export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
 
@@ -12,9 +13,10 @@ export class WordflowWidgetView extends ItemView {
     private fieldDropdown: DropdownComponent;
     private totalDataContainer: HTMLSpanElement;
     private dataContainer: HTMLDivElement;
+    private currentNoteDataContainer: HTMLDivElement;
     private selectedRecorder: DataRecorder | null = null;
-    private selectedField: string | null = null;
-    private data: ExistingData[] | null = null;
+    private selectedField: string;
+    private dataMap: Map<string, ExistingData> | null = null;
 
     constructor(leaf: WorkspaceLeaf, plugin: WordflowTrackerPlugin) {
         super(leaf);
@@ -33,6 +35,8 @@ export class WordflowWidgetView extends ItemView {
         const container = this.containerEl.children[1];
         container.empty();
         container.createEl("h2", { text: "Wordflow Tracker" });
+
+        this.currentNoteDataContainer = container.createDiv({cls: "wordflow-widget-current-note-data"});
 
         const controls = container.createDiv({cls: "wordflow-widget-control-container"});
 
@@ -63,8 +67,29 @@ export class WordflowWidgetView extends ItemView {
     }
 
     public async updateData() {
-        this.data = await this.getData(this.selectedField);
-        this.renderData(this.data, this.selectedField);
+        this.dataMap = await this.getDataMap(this.selectedField);
+        this.renderData(this.selectedField);
+        this.updateCurrentData();
+    }
+
+    public updateCurrentData() {
+        this.currentNoteDataContainer.empty();
+        // Display current note's data
+        const activeFile = this.plugin.app.workspace.getActiveFile();
+        if (activeFile) {
+            const activeTracker = this.plugin.trackerMap.get(activeFile.path);
+            if (activeTracker) {
+                let currentNoteValue = this.getFieldValueFromTracker(activeTracker, this.selectedField);
+                let existingFieldValue = this.getFieldValue(this.dataMap?.get(activeFile.path), this.selectedField);
+                currentNoteValue = (parseInt(currentNoteValue)+parseInt(existingFieldValue)).toString();
+                const currentNoteRow = this.currentNoteDataContainer.createDiv({ cls: 'wordflow-widget-current-note-row' });
+                currentNoteRow.createEl('span', { text: `${activeFile.basename}`, cls: 'wordflow-widget-current-note-label' });
+                currentNoteRow.createEl('span', { text: currentNoteValue, cls: 'wordflow-widget-current-note-value' });
+            } else {
+                const currentNoteRow = this.currentNoteDataContainer.createDiv({ cls: 'wordflow-widget-current-note-row' });
+                currentNoteRow.createEl('span', { text: "this file has no tracker", cls: 'wordflow-widget-current-note-label' });
+            }
+        }
     }
 
     public async updateAll() {
@@ -130,26 +155,28 @@ export class WordflowWidgetView extends ItemView {
         }
 
         this.fieldDropdown.setValue(this.selectedField)
-        this.data = await this.getData(this.selectedField);
-        this.renderData(this.data, this.selectedField);
+        this.updateData();
 
         this.fieldDropdown.onChange(async (value) => {
             this.fieldDropdown.setValue(value);
             this.selectedField = value;
-            this.renderData(this.data, value);
+            this.renderData(value);
+            this.updateCurrentData();
         });
     }
 
-    private renderData(data: ExistingData[] | null, field: string | null) {
+    private async renderData(field: string | null) {
         this.dataContainer.empty();
-        if (!data || !field) {
+        if (!this.dataMap || !field) {
             this.dataContainer.createEl('span', { text: 'No available data in this field'});
             return;
         }
 
+        const sortedData = await this.getSortedData(field);
+
         // Calculate the total value for the current field across all entries
         let totalValue = 0;
-        data.forEach(rowData => {
+        sortedData.forEach(rowData => {
             const value = parseInt(this.getFieldValue(rowData, field));
             if (!isNaN(value)) {
                 totalValue += value;
@@ -162,7 +189,7 @@ export class WordflowWidgetView extends ItemView {
             cls: 'wordflow-widget-total-progress-bar-container' 
         });
 
-        data.forEach(rowData => {
+        sortedData.forEach(rowData => {
             const value = this.getFieldValue(rowData, field);
             const numericValue = parseInt(value);
             let percentage = 0;
@@ -197,91 +224,9 @@ export class WordflowWidgetView extends ItemView {
         });
     }
 
-    private getRandomColor(): string {
-        const color = [
-            '#E6194B', // 鲜艳红
-            '#3CB44B', // 饱和绿
-            '#4363D8', // 群青蓝
-            '#F58231', // 橙黄
-            '#911EB4', // 紫罗兰
-            '#46F0F0', // 青蓝
-            '#F032E6', // 洋红
-            '#BCF60C', // 荧光绿
-            '#FABEBE', // 粉红
-            '#008080', // 深青
-        ];
-
-        return color[Math.floor(Math.random()*color.length)];
-    }
-
-    private getFieldValue(data: ExistingData, field: string): string {
-        if (!this.selectedRecorder) return '';
-
-        switch (field) {
-            case 'editedWords':
-                return data.editedWords.toString();
-            case 'editedTimes':
-                return data.editedTimes.toString();
-            case 'addedWords':
-                return data.addedWords.toString();
-            case 'deletedWords':
-                return data.deletedWords.toString();
-            case 'changedWords':
-                return data.changedWords.toString();
-            case 'docWords':
-                return data.docWords.toString();
-            case 'editTime':
-                return formatTime(data.editTime);
-            case 'totalEdits':
-                return data.totalEdits.toString();
-            case 'totalWords':
-                return data.totalWords.toString();
-            case 'totalEditTime':
-                return formatTime(data.totalEditTime);
-            default:
-                return '';
-        }
-    }
-
-    private getFieldOptions(): string[] {
-        if (!this.selectedRecorder) {
-            return ['No available field in wordflow recording syntax to display.'];
-        }
-
-        const syntax = this.selectedRecorder.getParser().getSyntax();
-        const availableFields = [
-            'editedWords',
-            'editedTimes',
-            'addedWords',
-            'deletedWords',
-            'changedWords',
-            'docWords',
-            'editTime'
-        ];
-
-        return availableFields.filter(field => syntax.includes(`\${${field}}`))?? 'No available field in wordflow recording syntax to display.';
-    }
-
-    private async getData(field: string | null): Promise<ExistingData[] | null> {
-        if (!this.selectedRecorder || !field) {
-            return null;
-        }
-
-        const recordNoteName = moment().format(this.selectedRecorder.periodicNoteFormat);
-        const recordNoteFolder = (this.selectedRecorder.enableDynamicFolder)? moment().format(this.selectedRecorder.periodicNoteFolder): this.selectedRecorder.periodicNoteFolder;
-        const isRootFolder: boolean = (recordNoteFolder.trim() == '')||(recordNoteFolder.trim() == '/');
-        let recordNotePath = (isRootFolder)? '': recordNoteFolder+'/';
-        recordNotePath += recordNoteName + '.md';
-        
-        const recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
-
-        if (!recordNote) {
-            return null;
-        }
-
-        // Use the recorder's own parser
-        const existingDataMap = await this.selectedRecorder.getParser().extractData(recordNote);
-        const existingData: ExistingData[] = Array.from(existingDataMap.values());
+    private async getSortedData(field: string): Promise<ExistingData[]> {
+        if (!this.dataMap) return [];
+        const existingData: ExistingData[] = Array.from(this.dataMap.values());
 
         existingData.sort((a, b) => {
             let aVal: number, bVal: number;
@@ -322,5 +267,117 @@ export class WordflowWidgetView extends ItemView {
             return bVal - aVal;
         });
         return existingData;
+    }
+
+    private getRandomColor(): string {
+        const color = [
+            '#E6194B', // 鲜艳红
+            '#3CB44B', // 饱和绿
+            '#4363D8', // 群青蓝
+            '#F58231', // 橙黄
+            '#911EB4', // 紫罗兰
+            '#46F0F0', // 青蓝
+            '#F032E6', // 洋红
+            '#BCF60C', // 荧光绿
+            '#FABEBE', // 粉红
+            '#008080', // 深青
+        ];
+
+        return color[Math.floor(Math.random()*color.length)];
+    }
+
+    private getFieldValue(data: ExistingData | undefined, field: string): string {
+        if (!this.selectedRecorder || !data) return '';
+
+        switch (field) {
+            case 'editedWords':
+                return data.editedWords.toString();
+            case 'editedTimes':
+                return data.editedTimes.toString();
+            case 'addedWords':
+                return data.addedWords.toString();
+            case 'deletedWords':
+                return data.deletedWords.toString();
+            case 'changedWords':
+                return data.changedWords.toString();
+            case 'docWords':
+                return data.docWords.toString();
+            case 'editTime':
+                return formatTime(data.editTime);
+            case 'totalEdits':
+                return data.totalEdits.toString();
+            case 'totalWords':
+                return data.totalWords.toString();
+            case 'totalEditTime':
+                return formatTime(data.totalEditTime);
+            default:
+                return '';
+        }
+    }
+
+    private getFieldValueFromTracker(tracker: DocTracker, field: string): string {
+        switch (field) {
+            case 'editedWords':
+                return tracker.editedWords.toString();
+            case 'editedTimes':
+                return tracker.editedTimes.toString();
+            case 'addedWords':
+                return tracker.addedWords.toString();
+            case 'deletedWords':
+                return tracker.deletedWords.toString();
+            case 'changedWords':
+                return tracker.changedWords.toString();
+            case 'docWords':
+                return tracker.docWords.toString();
+            case 'editTime':
+                return formatTime(tracker.editTime);
+            case 'totalEdits':
+                return tracker.editedTimes.toString(); // Assuming totalEdits maps to editedTimes for current note
+            case 'totalWords':
+                return tracker.docWords.toString(); // Assuming totalWords maps to docWords for current note
+            case 'totalEditTime':
+                return formatTime(tracker.editTime); // Assuming totalEditTime maps to editTime for current note
+            default:
+                return '';
+        }
+    }
+
+    private getFieldOptions(): string[] {
+        if (!this.selectedRecorder) {
+            return ['No available field in wordflow recording syntax to display.'];
+        }
+
+        const syntax = this.selectedRecorder.getParser().getSyntax();
+        const availableFields = [
+            'editedWords',
+            'editedTimes',
+            'addedWords',
+            'deletedWords',
+            'changedWords',
+            'docWords',
+            'editTime'
+        ];
+
+        return availableFields.filter(field => syntax.includes(`\${${field}}`))?? 'No available field in wordflow recording syntax to display.';
+    }
+
+    private async getDataMap(field: string | null): Promise<Map<string, ExistingData> | null> {
+        if (!this.selectedRecorder || !field) {
+            return null;
+        }
+
+        const recordNoteName = moment().format(this.selectedRecorder.periodicNoteFormat);
+        const recordNoteFolder = (this.selectedRecorder.enableDynamicFolder)? moment().format(this.selectedRecorder.periodicNoteFolder): this.selectedRecorder.periodicNoteFolder;
+        const isRootFolder: boolean = (recordNoteFolder.trim() == '')||(recordNoteFolder.trim() == '/');
+        let recordNotePath = (isRootFolder)? '': recordNoteFolder+'/';
+        recordNotePath += recordNoteName + '.md';
+        
+        const recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
+
+        if (!recordNote) {
+            return null;
+        }
+        
+        return await this.selectedRecorder.getParser().extractData(recordNote);;
     }
 }

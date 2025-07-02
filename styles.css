@@ -269,6 +269,30 @@
     flex-shrink: 0;
 }
 
+.wordflow-widget-current-note-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.wordflow-widget-current-note-label {
+    font-weight: bold;
+    color: var(--text-normal);
+}
+
+.wordflow-widget-current-note-faint-label {
+    font-weight: bold;
+    color: var(--text-faint);
+}
+
+.wordflow-widget-current-note-value {
+    font-weight: bold;
+    color: var(--text-accent);
+}
+
 /* ==================== */
 /*  Confirmation Modal  */
 /* ==================== */
