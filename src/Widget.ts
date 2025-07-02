@@ -81,14 +81,19 @@ export class WordflowWidgetView extends ItemView {
             if (activeTracker) {
                 let currentNoteValue = this.getFieldValueFromTracker(activeTracker, this.selectedField);
                 let existingFieldValue = this.getFieldValue(this.dataMap?.get(activeFile.path), this.selectedField);
-                currentNoteValue = (parseInt(currentNoteValue)+parseInt(existingFieldValue)).toString();
+                currentNoteValue += existingFieldValue;
+
+                const currentValueString = (this.selectedField == 'editTime')? formatTime(currentNoteValue): currentNoteValue.toString();
                 const currentNoteRow = this.currentNoteDataContainer.createDiv({ cls: 'wordflow-widget-current-note-row' });
                 currentNoteRow.createEl('span', { text: `${activeFile.basename}`, cls: 'wordflow-widget-current-note-label' });
-                currentNoteRow.createEl('span', { text: currentNoteValue, cls: 'wordflow-widget-current-note-value' });
+                currentNoteRow.createEl('span', { text: currentValueString, cls: 'wordflow-widget-current-note-value' });
             } else {
                 const currentNoteRow = this.currentNoteDataContainer.createDiv({ cls: 'wordflow-widget-current-note-row' });
-                currentNoteRow.createEl('span', { text: "this file has no tracker", cls: 'wordflow-widget-current-note-label' });
+                currentNoteRow.createEl('span', { text: "this file has no tracker", cls: 'wordflow-widget-current-note-faint-label' });
             }
+        } else {
+            const currentNoteRow = this.currentNoteDataContainer.createDiv({ cls: 'wordflow-widget-current-note-row' });
+            currentNoteRow.createEl('span', { text: "no file opened", cls: 'wordflow-widget-current-note-faint-label' });
         }
     }
 
@@ -177,13 +182,10 @@ export class WordflowWidgetView extends ItemView {
         // Calculate the total value for the current field across all entries
         let totalValue = 0;
         sortedData.forEach(rowData => {
-            const value = parseInt(this.getFieldValue(rowData, field));
-            if (!isNaN(value)) {
-                totalValue += value;
-            }
+                totalValue += this.getFieldValue(rowData, field);
         });
 
-        this.totalDataContainer.textContent = (field == 'editTime')? formatTime(totalValue*60000): totalValue.toString();
+        this.totalDataContainer.textContent = (field == 'editTime')? formatTime(totalValue): totalValue.toString();
 
         const totalProgressBarContainer = this.dataContainer.createDiv({ 
             cls: 'wordflow-widget-total-progress-bar-container' 
@@ -191,11 +193,11 @@ export class WordflowWidgetView extends ItemView {
 
         sortedData.forEach(rowData => {
             const value = this.getFieldValue(rowData, field);
-            const numericValue = parseInt(value);
             let percentage = 0;
-            if (totalValue > 0 && !isNaN(numericValue)) {
-                percentage = (numericValue / totalValue) * 100;
+            if (totalValue > 0) {
+                percentage = (value / totalValue) * 100;
             }
+            const valueString = (field == 'editTime')? formatTime(value): value.toString();
             
             let barColor = this.getRandomColor()
             // add to total progress bar
@@ -219,7 +221,7 @@ export class WordflowWidgetView extends ItemView {
                     : this.app.vault.getFileByPath(rowData.filePath)?.basename?? 'file deleted';
             filePathSpan.textContent = filePathSpan.dataset.fileName;
 
-            const rowText = dataRow.createEl('span', { text: value, cls: `wordflow-widget-data-row-value`});
+            const rowText = dataRow.createEl('span', { text: valueString, cls: `wordflow-widget-data-row-value`});
             rowText.style.color = barColor;
         });
     }
@@ -286,59 +288,59 @@ export class WordflowWidgetView extends ItemView {
         return color[Math.floor(Math.random()*color.length)];
     }
 
-    private getFieldValue(data: ExistingData | undefined, field: string): string {
-        if (!this.selectedRecorder || !data) return '';
+    private getFieldValue(data: ExistingData | undefined, field: string): number {
+        if (!this.selectedRecorder || !data) return 0;
 
         switch (field) {
             case 'editedWords':
-                return data.editedWords.toString();
+                return data.editedWords;
             case 'editedTimes':
-                return data.editedTimes.toString();
+                return data.editedTimes;
             case 'addedWords':
-                return data.addedWords.toString();
+                return data.addedWords;
             case 'deletedWords':
-                return data.deletedWords.toString();
+                return data.deletedWords;
             case 'changedWords':
-                return data.changedWords.toString();
+                return data.changedWords;
             case 'docWords':
-                return data.docWords.toString();
+                return data.docWords;
             case 'editTime':
-                return formatTime(data.editTime);
+                return data.editTime;
             case 'totalEdits':
-                return data.totalEdits.toString();
+                return data.totalEdits;
             case 'totalWords':
-                return data.totalWords.toString();
+                return data.totalWords;
             case 'totalEditTime':
-                return formatTime(data.totalEditTime);
+                return data.totalEditTime;
             default:
-                return '';
+                return 0;
         }
     }
 
-    private getFieldValueFromTracker(tracker: DocTracker, field: string): string {
+    private getFieldValueFromTracker(tracker: DocTracker, field: string): number {
         switch (field) {
             case 'editedWords':
-                return tracker.editedWords.toString();
+                return tracker.editedWords;
             case 'editedTimes':
-                return tracker.editedTimes.toString();
+                return tracker.editedTimes;
             case 'addedWords':
-                return tracker.addedWords.toString();
+                return tracker.addedWords;
             case 'deletedWords':
-                return tracker.deletedWords.toString();
+                return tracker.deletedWords;
             case 'changedWords':
-                return tracker.changedWords.toString();
+                return tracker.changedWords;
             case 'docWords':
-                return tracker.docWords.toString();
+                return tracker.docWords;
             case 'editTime':
-                return formatTime(tracker.editTime);
+                return tracker.editTime;
             case 'totalEdits':
-                return tracker.editedTimes.toString(); // Assuming totalEdits maps to editedTimes for current note
+                return tracker.editedTimes; // Assuming totalEdits maps to editedTimes for current note
             case 'totalWords':
-                return tracker.docWords.toString(); // Assuming totalWords maps to docWords for current note
+                return tracker.docWords; // Assuming totalWords maps to docWords for current note
             case 'totalEditTime':
-                return formatTime(tracker.editTime); // Assuming totalEditTime maps to editTime for current note
+                return tracker.editTime; // Assuming totalEditTime maps to editTime for current note
             default:
-                return '';
+                return 0;
         }
     }
 
