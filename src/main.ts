@@ -63,7 +63,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		});
 
-		this.addRibbonIcon('bar-chart-horizontal', 'Reveal wordflow tracker widget', (evt: MouseEvent) => {
+		this.addRibbonIcon('bar-chart-horizontal', 'Reveal and refresh wordflow tracker widget', (evt: MouseEvent) => {
 			this.activateView();
 		});
 		// Perform additional things with the ribbon
@@ -85,8 +85,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 		});
 		
 		this.addCommand({
-			id: 'reveal-wordflow-tracker-widget',
-			name: 'Reveal wordflow tracker widget',
+			id: 'reveal-and-refresh-wordflow-tracker-widget',
+			name: 'Reveal and refresh wordflow tracker widget',
 			callback: () => {
 				this.activateView();
 			}
@@ -307,6 +307,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		this.app.workspace.revealLeaf(
 			this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET)[0]
 		);
+		this.Widget?.updateAll();
 	}
 /*
 		if(DEBUG){	
