@@ -41,7 +41,15 @@ export class WordflowWidgetView extends ItemView {
 
         this.dataContainer = container.createDiv();
 
-        this.draw();
+        this.updateAll();
+        this.registerDomEvent(this.dataContainer, 'click', (evt: MouseEvent) => {
+            const target = evt.target as HTMLSpanElement;
+            const filePathSpan = target.closest('.wordflow-widget-data-row-file-path') as HTMLSpanElement;
+            if (!filePathSpan || !filePathSpan.dataset.filePath) return;
+            const filePath = filePathSpan.dataset.filePath;
+            const inNewTab: boolean = evt.ctrlKey || evt.metaKey;
+            this.plugin.app.workspace.openLinkText(filePath, filePath, inNewTab);
+        });
     }
 
     public async onClose() {
@@ -54,10 +62,6 @@ export class WordflowWidgetView extends ItemView {
     }
 
     public async updateAll() {
-        await this.draw();
-    }
-
-    private async draw() {
         if (!this.dataContainer) return;
 
         this.initRecorderDropdown();
@@ -95,7 +99,7 @@ export class WordflowWidgetView extends ItemView {
 
         this.recorderDropdown.onChange(async (value) => {
             this.selectedRecorder = this.plugin.DocRecorders[parseInt(value)];
-            await this.draw(); // Redraw the entire widget when recorder changes
+            await this.updateAll(); // Redraw the entire widget when recorder changes
             this.recorderDropdown.setValue(value); // put after draw to render correct selection
         });
     }
@@ -115,11 +119,13 @@ export class WordflowWidgetView extends ItemView {
             this.dataContainer.createEl("p", { text: "No available field for this recorder" });
         }
 
-        if(!this.selectedField) {
+        if(!this.selectedField || !fieldOptions.contains(this.selectedField)) {
             const defaultField = fieldOptions[0];
             this.fieldDropdown.setValue(defaultField);
             this.selectedField = defaultField;
             this.renderData(this.dataMap, defaultField);
+        } else {
+            this.renderData(this.dataMap, this.selectedField)
         }
 
         this.fieldDropdown.onChange(async (value) => {
@@ -149,7 +155,6 @@ export class WordflowWidgetView extends ItemView {
             cls: 'wordflow-widget-total-progress-bar-container' 
         });
 
-        const dataList = this.dataContainer.createEl('ul');
         dataMap.forEach(rowData => {
             const value = this.getFieldValue(rowData, field);
             const numericValue = parseInt(value);
@@ -167,13 +172,22 @@ export class WordflowWidgetView extends ItemView {
             segment.style.width = `${percentage}%`;
             segment.style.backgroundColor = barColor;
 
-            const listItem = dataList.createEl('li');
+            const dataRow = this.dataContainer.createDiv({ cls: 'wordflow-widget-data-row' });
 
-            // File path and value display
-            const textDisplay = listItem.createDiv({ cls: 'wordflow-widget-data-entry' });
-            textDisplay.createEl('span', { text: `${rowData.filePath}: `, cls: 'wordflow-widget-data-entry' });
-            textDisplay.createEl('span', { text: value, cls: `wordflow-widget-data-entry` });
-            textDisplay.style.color = barColor;
+            const circleSpan = dataRow.createEl('span', { cls: 'wordflow-widget-data-row-circle' });
+            circleSpan.style.backgroundColor = barColor;
+
+            const filePathSpan = dataRow.createEl('span', { cls: 'wordflow-widget-data-row-file-path' });
+            filePathSpan.dataset.filePath = rowData.filePath;
+            filePathSpan.dataset.fileName = 
+                (rowData.fileName !== 'unknown')
+                    ? rowData.fileName
+                    : this.app.vault.getFileByPath(rowData.filePath)?.basename?? 'file deleted';
+            filePathSpan.textContent = filePathSpan.dataset.fileName;
+
+            const rowText = dataRow.createEl('span', { text: value, cls: `wordflow-widget-data-row-value`});
+            rowText.style.color = barColor;
+
         });
     }
 
