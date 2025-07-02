@@ -13,7 +13,7 @@ export class WordflowWidgetView extends ItemView {
     private dataContainer: HTMLDivElement;
     private selectedRecorder: DataRecorder | null = null;
     private selectedField: string | null = null;
-    private dataMap: Map<string, ExistingData> | null = null;
+    private data: ExistingData[] | null = null;
 
     constructor(leaf: WorkspaceLeaf, plugin: WordflowTrackerPlugin) {
         super(leaf);
@@ -57,8 +57,8 @@ export class WordflowWidgetView extends ItemView {
     }
 
     public async updateData() {
-        this.dataMap = await this.getDataMap();
-        this.renderData(this.dataMap, this.selectedField);
+        this.data = await this.getData(this.selectedField);
+        this.renderData(this.data, this.selectedField);
     }
 
     public async updateAll() {
@@ -105,7 +105,6 @@ export class WordflowWidgetView extends ItemView {
     }
 
     private async initFieldDropDown(){
-        this.dataMap = await this.getDataMap();
         const fieldOptions = this.getFieldOptions();
 
         this.fieldDropdown.selectEl.empty();
@@ -123,28 +122,28 @@ export class WordflowWidgetView extends ItemView {
             const defaultField = fieldOptions[0];
             this.fieldDropdown.setValue(defaultField);
             this.selectedField = defaultField;
-            this.renderData(this.dataMap, defaultField);
-        } else {
-            this.renderData(this.dataMap, this.selectedField)
         }
+
+        this.data = await this.getData(this.selectedField);
+        this.renderData(this.data, this.selectedField);
 
         this.fieldDropdown.onChange(async (value) => {
             this.fieldDropdown.setValue(value);
             this.selectedField = value;
-            this.renderData(this.dataMap, value);
+            this.renderData(this.data, value);
         });
     }
 
-    private renderData(dataMap: Map<string, ExistingData> | null, field: string | null) {
+    private renderData(data: ExistingData[] | null, field: string | null) {
         this.dataContainer.empty();
-        if (!dataMap || !field) {
+        if (!data || !field) {
             this.dataContainer.createEl('span', { text: 'No available data in this field'});
             return;
         }
 
         // Calculate the total value for the current field across all entries
         let totalValue = 0;
-        dataMap.forEach(rowData => {
+        data.forEach(rowData => {
             const value = parseInt(this.getFieldValue(rowData, field));
             if (!isNaN(value)) {
                 totalValue += value;
@@ -155,7 +154,7 @@ export class WordflowWidgetView extends ItemView {
             cls: 'wordflow-widget-total-progress-bar-container' 
         });
 
-        dataMap.forEach(rowData => {
+        data.forEach(rowData => {
             const value = this.getFieldValue(rowData, field);
             const numericValue = parseInt(value);
             let percentage = 0;
@@ -250,18 +249,19 @@ export class WordflowWidgetView extends ItemView {
             'deletedWords',
             'changedWords',
             'docWords',
-            'editTime',
-            'totalEdits',
-            'totalWords',
-            'totalEditTime'
+            'editTime'
         ];
 
         return availableFields.filter(field => syntax.includes(`\${${field}}`))?? 'No available field in wordflow recording syntax to display.';
     }
 
-    private async getDataMap(): Promise<Map<string, ExistingData> | null> {
+    private async getData(field: string|null): Promise<ExistingData[] | null> {
         if (!this.selectedRecorder) {
             return null;
+        }
+
+        if (!field){
+
         }
 
         const recordNoteName = moment().format(this.selectedRecorder.periodicNoteFormat);
@@ -277,6 +277,47 @@ export class WordflowWidgetView extends ItemView {
         }
 
         // Use the recorder's own parser
-        return await this.selectedRecorder.getParser().extractData(recordNote);
+        const existingDataMap = await this.selectedRecorder.getParser().extractData(recordNote);
+        const existingData: ExistingData[] = Array.from(existingDataMap.values());
+
+        existingData.sort((a, b) => {
+            let aVal: number, bVal: number;
+
+            switch (field) {
+                case 'editedWords':
+                    aVal = a.editedWords;
+                    bVal = b.editedWords;
+                    break;
+                case 'editedTimes':
+                    aVal = a.editedTimes;
+                    bVal = b.editedTimes;
+                    break;
+                case 'addedWords':
+                    aVal = a.addedWords;
+                    bVal = b.addedWords;
+                    break;
+                case 'deletedWords':
+                    aVal = a.deletedWords;
+                    bVal = b.deletedWords;
+                    break;
+                case 'changedWords':
+                    aVal = a.changedWords;
+                    bVal = b.changedWords;
+                    break;
+                case 'docWords':
+                    aVal = a.docWords;
+                    bVal = b.docWords;
+                    break;
+                case 'editTime':
+                    aVal = a.editTime;
+                    bVal = b.editTime;
+                    break;
+                default:
+                    return 0; // just use default sequence 
+            }
+
+            return bVal - aVal;
+        });
+        return existingData;
     }
 }
