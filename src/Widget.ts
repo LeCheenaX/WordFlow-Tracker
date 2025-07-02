@@ -10,6 +10,7 @@ export class WordflowWidgetView extends ItemView {
     plugin: WordflowTrackerPlugin;
     private recorderDropdown: DropdownComponent;
     private fieldDropdown: DropdownComponent;
+    private totalDataContainer: HTMLSpanElement;
     private dataContainer: HTMLDivElement;
     private selectedRecorder: DataRecorder | null = null;
     private selectedField: string | null = null;
@@ -33,11 +34,16 @@ export class WordflowWidgetView extends ItemView {
         container.empty();
         container.createEl("h2", { text: "Wordflow Tracker" });
 
-        const controls = container.createDiv();
-        controls.createEl("span", { text: "Recorder: " });
-        this.recorderDropdown = new DropdownComponent(controls);
-        controls.createEl("span", { text: "Field: " });
-        this.fieldDropdown = new DropdownComponent(controls);
+        const controls = container.createDiv({cls: "wordflow-widget-control-container"});
+
+        const leftGroup = controls.createDiv({cls: "wordflow-widget-control-leftgroup-container"})
+        const recorderDropdownContainer = leftGroup.createEl("span", {cls: "recorder-dropdown-container"});
+        this.recorderDropdown = new DropdownComponent(recorderDropdownContainer);
+        
+        const rightGroup = controls.createDiv({cls: "wordflow-widget-control-rightgroup-container"})
+        this.totalDataContainer = rightGroup.createEl("span", {cls: "totalDataContainer"});
+        const fieldDropdownContainer = rightGroup.createEl("span", {cls: "field-dropdown-container"});
+        this.fieldDropdown = new DropdownComponent(fieldDropdownContainer);
 
         this.dataContainer = container.createDiv();
 
@@ -120,10 +126,10 @@ export class WordflowWidgetView extends ItemView {
 
         if(!this.selectedField || !fieldOptions.contains(this.selectedField)) {
             const defaultField = fieldOptions[0];
-            this.fieldDropdown.setValue(defaultField);
             this.selectedField = defaultField;
         }
 
+        this.fieldDropdown.setValue(this.selectedField)
         this.data = await this.getData(this.selectedField);
         this.renderData(this.data, this.selectedField);
 
@@ -149,6 +155,8 @@ export class WordflowWidgetView extends ItemView {
                 totalValue += value;
             }
         });
+
+        this.totalDataContainer.textContent = (field == 'editTime')? formatTime(totalValue*60000): totalValue.toString();
 
         const totalProgressBarContainer = this.dataContainer.createDiv({ 
             cls: 'wordflow-widget-total-progress-bar-container' 
@@ -186,7 +194,6 @@ export class WordflowWidgetView extends ItemView {
 
             const rowText = dataRow.createEl('span', { text: value, cls: `wordflow-widget-data-row-value`});
             rowText.style.color = barColor;
-
         });
     }
 
@@ -255,13 +262,9 @@ export class WordflowWidgetView extends ItemView {
         return availableFields.filter(field => syntax.includes(`\${${field}}`))?? 'No available field in wordflow recording syntax to display.';
     }
 
-    private async getData(field: string|null): Promise<ExistingData[] | null> {
-        if (!this.selectedRecorder) {
+    private async getData(field: string | null): Promise<ExistingData[] | null> {
+        if (!this.selectedRecorder || !field) {
             return null;
-        }
-
-        if (!field){
-
         }
 
         const recordNoteName = moment().format(this.selectedRecorder.periodicNoteFormat);

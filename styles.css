@@ -128,7 +128,81 @@
 /* ======================== */
 /*  Widget Setting Tab  */
 /* ======================== */
+/*
+.workspace-leaf-content[data-type="wordflow-widget-view"] .view-content div > select.dropdown {
+    background-image: none;
+    background-blend-mode: normal;
+    background-color: unset;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding-left: 4px;
+    padding-right: 4px;
+    font-size: 16px;
+}
+.workspace-leaf-content[data-type="wordflow-widget-view"] .view-content div > select.dropdown:hover {
+    cursor: pointer;
+    background-color: hsla(var(--interactive-hover),0.2);
+    color: var(--text-accent-hover);
+}
+*/
+.wordflow-widget-control-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 100%;
+}
 
+.wordflow-widget-control-container *> select.dropdown:hover {
+    cursor: pointer;
+    background-color: hsla(var(--interactive-hover),0.2);
+    color: var(--text-accent-hover);
+}
+
+.wordflow-widget-control-container .wordflow-widget-control-leftgroup-container *> select.dropdown {
+    background-image: none;
+    background-blend-mode: normal;
+    background-color: unset;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding-left: 4px;
+    padding-right: 4px;
+    font-size: 20px;
+
+    flex-shrink: 1;
+    min-width: 0;
+    width: 100%;
+    overflow:hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-accent);
+    font-weight: bold;
+}
+
+.wordflow-widget-control-container .wordflow-widget-control-rightgroup-container {
+    flex-shrink: 0; 
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    font-weight: 350;
+}
+
+.wordflow-widget-control-container .wordflow-widget-control-rightgroup-container *> select.dropdown {
+    background-image: none;
+    background-blend-mode: normal;
+    background-color: unset;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding-left: 4px;
+    padding-right: 4px;
+    font-size: 20px;
+
+    font-weight: 350;
+    display: flex;
+    text-align: right;
+}
 /* New styles for wordflow widget progress bar and text colors */
 .wordflow-widget-progress-bar-container {
     width: 100%; /* Make the progress bar take full width */
@@ -191,7 +265,7 @@
 
 .wordflow-widget-data-row-value {
     margin-left: 8px;
-    font-weight: bold;
+    font-weight: 400;
     flex-shrink: 0;
 }
 

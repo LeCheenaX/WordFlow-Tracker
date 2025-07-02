@@ -964,6 +964,28 @@ export class StatusBarTab extends WordflowSubSettingsTab {
     }
 }
 
+/*
+export class WidgetTab extends WordflowSubSettingsTab {
+    display() {
+        const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
+        
+        new Setting(tabContent)
+            .setName('Alias for fields')
+            .setDesc(createFragment(f => {
+                f.appendText('Enforce the status bar of wordflow tracker to show up in mobile devices.')
+                f.createEl('br');
+                f.appendText('If you have other css snippets do the same, they may be overwriten.')
+            }))
+            .addToggle(t => t
+                .setValue(this.plugin.settings.enableMobileStatusBar)
+                .onChange(async (value) => {
+                    this.plugin.settings.enableMobileStatusBar = value;
+                    await this.plugin.saveSettings();
+                    updateStatusBarStyle(this.plugin.settings);
+                }));
+    }
+}
+*/
 // ========================================
 // 主设置标签页（管理所有子标签页）
 // ========================================
