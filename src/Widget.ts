@@ -1,14 +1,16 @@
-import { ItemView, WorkspaceLeaf, TFile, moment, DropdownComponent, setIcon } from "obsidian";
 import WordflowTrackerPlugin from "./main";
 import { ExistingData, DataRecorder } from "./DataRecorder";
 import { formatTime } from "./EditTimer";
 import { MetaDataParser } from "./MetaDataParser";
 import { DocTracker } from "./DocTracker";
+import { UniqueColorGenerator } from "./Utils/UniqueColorGenerator";
+import { DropdownComponent, IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon } from "obsidian";
 
 export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
 
 export class WordflowWidgetView extends ItemView {
     plugin: WordflowTrackerPlugin;
+    public colorGenerator: UniqueColorGenerator;
     private recorderDropdown: DropdownComponent;
     private fieldDropdown: DropdownComponent;
     private totalDataContainer: HTMLSpanElement;
@@ -20,10 +22,14 @@ export class WordflowWidgetView extends ItemView {
     private selectedRecorder: DataRecorder | null = null;
     private selectedField: string;
     private dataMap: Map<string, ExistingData> | null = null;
+    private totalFieldValue: number = 0;
+    private colorMap: Map<string, string>; // <filePath, color>
 
     constructor(leaf: WorkspaceLeaf, plugin: WordflowTrackerPlugin) {
         super(leaf);
         this.plugin = plugin;
+        this.colorGenerator = new UniqueColorGenerator(66, [60, 85]);
+        this.colorMap = new Map<string, string>;
     }
 
     public getViewType() {
@@ -32,6 +38,10 @@ export class WordflowWidgetView extends ItemView {
 
     public getDisplayText() {
         return "Wordflow Tracker";
+    }
+
+    public getIcon(): IconName {
+        return "chart-bar-decreasing";
     }
 
     public async onOpen() {
@@ -77,7 +87,10 @@ export class WordflowWidgetView extends ItemView {
         this.updateButtonIcons(); // Initial icon setup
 
         this.recordButton.addEventListener('click', () => {
-            //
+            for (const DocRecorder of this.plugin.DocRecorders) {
+                DocRecorder.record();
+            }
+            new Notice(`Try recording wordflows to periodic note!`, 3000);
         });
 
         this.focusButton.addEventListener('click', () => {
@@ -91,7 +104,7 @@ export class WordflowWidgetView extends ItemView {
 
     public async updateData() {
         this.dataMap = await this.getDataMap(this.selectedField);
-        this.renderData(this.selectedField);
+        await this.renderData(this.selectedField); // must use await or the total counting in updateCurrentData will use the old value
         this.updateCurrentData();
     }
 
@@ -103,14 +116,35 @@ export class WordflowWidgetView extends ItemView {
         if (activeFile) {
             const activeTracker = this.plugin.trackerMap.get(activeFile.path);
             if (activeTracker) {
-                let currentNoteValue = this.getFieldValueFromTracker(activeTracker, this.selectedField);
-                let existingFieldValue = this.getFieldValue(this.dataMap?.get(activeFile.path), this.selectedField);
-                currentNoteValue += existingFieldValue;
+                const currentNoteValue = this.getFieldValueFromTracker(activeTracker, this.selectedField);
+                const existingFieldValue = this.getFieldValue(this.dataMap?.get(activeFile.path), this.selectedField);
+                const currentTotalValue = currentNoteValue + existingFieldValue;
 
-                const currentValueString = (this.selectedField == 'editTime')? formatTime(currentNoteValue): currentNoteValue.toString();
+                const currentValueString = (this.selectedField == 'editTime')? formatTime(currentTotalValue): currentTotalValue.toString();
                 
-                this.currentNoteRow.createEl('span', { text: `${activeFile.basename}`, cls: 'wordflow-widget-current-note-label' });
-                this.currentNoteRow.createEl('span', { text: currentValueString, cls: 'wordflow-widget-current-note-value' });
+                const leftContentWrapper = this.currentNoteRow.createDiv({ cls: 'wordflow-widget-current-note-left-content-wrapper' });
+
+                const textContainer = leftContentWrapper.createDiv({ cls: 'wordflow-widget-current-note-text-container' });
+                textContainer.createEl('span', { text: `${activeFile.basename}`, cls: 'wordflow-widget-current-note-label' });
+                const noteValueStyle = textContainer.createEl('span', { text: currentValueString, cls: 'wordflow-widget-current-note-value' });
+                noteValueStyle.style.color = this.colorMap.get(activeTracker.filePath)?? 'initial';
+
+                if (currentTotalValue > 0) {
+                    const barContainer = leftContentWrapper.createDiv({ cls: 'wordflow-widget-current-note-bar-container' });
+                    const widthPercentage = (currentTotalValue / (currentNoteValue + this.totalFieldValue)) * 100;
+                    console.log('new: ', currentNoteValue, '\nExisting: ', existingFieldValue, '\nTotal: ', this.totalFieldValue)
+                    barContainer.style.width = `${widthPercentage}%`;
+
+                    const existingPercentage = (existingFieldValue / currentTotalValue) * 100;
+                    const currentPercentage = (currentNoteValue / currentTotalValue) * 100;
+
+                    const existingBar = barContainer.createEl('span', { cls: 'wordflow-widget-current-note-bar-existing' });
+                    existingBar.style.width = `${existingPercentage}%`;
+
+                    const currentBar = barContainer.createEl('span', { cls: 'wordflow-widget-current-note-bar-current' });
+                    currentBar.style.width = `${currentPercentage}%`;
+                    currentBar.style.backgroundColor = noteValueStyle.style.color;
+                }
             } else {
                 this.currentNoteRow.createEl('span', { text: "this file has no tracker", cls: 'wordflow-widget-current-note-faint-label' });
             }
@@ -122,7 +156,7 @@ export class WordflowWidgetView extends ItemView {
 
     public updateButtonIcons() {
         const activeFile = this.app.workspace.getActiveFile();
-        if (activeFile && this.plugin.trackerMap.get(activeFile.path)?.editTimer?.isRunning()) {
+        if (activeFile && this.plugin.trackerMap.size > 0 && this.plugin.trackerMap.get(activeFile.path)?.editTimer?.isRunning()) { // add empty detecting in case of reporting errors
             setIcon(this.focusButton, 'pause');
         } else {
             setIcon(this.focusButton, 'play');
@@ -134,6 +168,12 @@ export class WordflowWidgetView extends ItemView {
 
         this.initRecorderDropdown();
         this.initFieldDropDown();
+    }
+
+    public regenerateColors() {
+        this.colorMap.forEach( (color:string, filePath: string)=>{
+            this.colorMap.set(filePath, this.colorGenerator.generate());
+        });
     }
 
     private initRecorderDropdown() {
@@ -197,7 +237,7 @@ export class WordflowWidgetView extends ItemView {
         this.fieldDropdown.onChange(async (value) => {
             this.fieldDropdown.setValue(value);
             this.selectedField = value;
-            this.renderData(value);
+            await this.renderData(value);
             this.updateCurrentData();
         });
     }
@@ -205,19 +245,19 @@ export class WordflowWidgetView extends ItemView {
     private async renderData(field: string | null) {
         this.dataContainer.empty();
         if (!this.dataMap || !field) {
-            this.dataContainer.createEl('span', { text: 'No available data in this field'});
+            this.dataContainer.createEl('span', { text: 'No available data in this field', cls: 'wordflow-widget-no-data-message'});
             return;
         }
 
         const sortedData = await this.getSortedData(field);
 
         // Calculate the total value for the current field across all entries
-        let totalValue = 0;
+        this.totalFieldValue = 0;
         sortedData.forEach(rowData => {
-                totalValue += this.getFieldValue(rowData, field);
+                this.totalFieldValue += this.getFieldValue(rowData, field);
         });
 
-        this.totalDataContainer.textContent = (field == 'editTime')? formatTime(totalValue): totalValue.toString();
+        this.totalDataContainer.textContent = (field == 'editTime')? formatTime(this.totalFieldValue): this.totalFieldValue.toString();
 
         const totalProgressBarContainer = this.dataContainer.createDiv({ 
             cls: 'wordflow-widget-total-progress-bar-container' 
@@ -226,12 +266,15 @@ export class WordflowWidgetView extends ItemView {
         sortedData.forEach(rowData => {
             const value = this.getFieldValue(rowData, field);
             let percentage = 0;
-            if (totalValue > 0) {
-                percentage = (value / totalValue) * 100;
+            if (this.totalFieldValue > 0) {
+                percentage = (value / this.totalFieldValue) * 100;
             }
             const valueString = (field == 'editTime')? formatTime(value): value.toString();
-            
-            let barColor = this.getRandomColor()
+
+            if (!this.colorMap.has(rowData.filePath)) {
+                this.colorMap.set(rowData.filePath, this.colorGenerator.generate())
+            }
+            let barColor = this.colorMap.get(rowData.filePath)?? 'initial'; // 'initial' is useless, only for passing the compiler warning. 
             // add to total progress bar
             const segment = totalProgressBarContainer.createDiv({ 
                 cls: 'wordflow-widget-progress-bar-segment' 
@@ -301,23 +344,6 @@ export class WordflowWidgetView extends ItemView {
             return bVal - aVal;
         });
         return existingData;
-    }
-
-    private getRandomColor(): string {
-        const color = [
-            '#E6194B', // 鲜艳红
-            '#3CB44B', // 饱和绿
-            '#4363D8', // 群青蓝
-            '#F58231', // 橙黄
-            '#911EB4', // 紫罗兰
-            '#46F0F0', // 青蓝
-            '#F032E6', // 洋红
-            '#BCF60C', // 荧光绿
-            '#FABEBE', // 粉红
-            '#008080', // 深青
-        ];
-
-        return color[Math.floor(Math.random()*color.length)];
     }
 
     private getFieldValue(data: ExistingData | undefined, field: string): number {

@@ -63,7 +63,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		});
 
-		this.addRibbonIcon('bar-chart-horizontal', 'Reveal and refresh wordflow tracker widget', (evt: MouseEvent) => {
+		this.addRibbonIcon('chart-bar-decreasing', 'Reveal and refresh wordflow tracker widget', (evt: MouseEvent) => {
 			this.activateView();
 		});
 		// Perform additional things with the ribbon
@@ -88,6 +88,15 @@ export default class WordflowTrackerPlugin extends Plugin {
 			id: 'reveal-and-refresh-wordflow-tracker-widget',
 			name: 'Reveal and refresh wordflow tracker widget',
 			callback: () => {
+				this.activateView();
+			}
+		});
+
+		this.addCommand({
+			id: 'refresh-widget-with-random-colors',
+			name: 'Refresh widget with random colors',
+			callback: () => {
+				this.Widget?.regenerateColors();
 				this.activateView();
 			}
 		});
