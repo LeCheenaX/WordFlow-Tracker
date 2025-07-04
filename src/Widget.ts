@@ -1,6 +1,6 @@
 import WordflowTrackerPlugin from "./main";
 import { ExistingData, DataRecorder } from "./DataRecorder";
-import { formatTime } from "./EditTimer";
+import { formatTime } from "./Timer";
 import { MetaDataParser } from "./MetaDataParser";
 import { DocTracker } from "./DocTracker";
 import { UniqueColorGenerator } from "./Utils/UniqueColorGenerator";
@@ -11,6 +11,7 @@ export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
 export class WordflowWidgetView extends ItemView {
     plugin: WordflowTrackerPlugin;
     public colorGenerator: UniqueColorGenerator;
+    public onFocusMode: boolean = false;
     private recorderDropdown: DropdownComponent;
     private fieldDropdown: DropdownComponent;
     private totalDataContainer: HTMLSpanElement;
@@ -94,7 +95,8 @@ export class WordflowWidgetView extends ItemView {
         });
 
         this.focusButton.addEventListener('click', () => {
-            //
+            this.onFocusMode = !this.onFocusMode;
+            this.updateButtonIcons(); 
         });
     }
 
@@ -109,46 +111,68 @@ export class WordflowWidgetView extends ItemView {
     }
 
     public updateCurrentData() {
-        this.currentNoteRow.empty();
         // Display current note's data
-
         const activeFile = this.plugin.app.workspace.getActiveFile();
         if (activeFile) {
             const activeTracker = this.plugin.trackerMap.get(activeFile.path);
             if (activeTracker) {
+                // intitial data counting
                 const currentNoteValue = this.getFieldValueFromTracker(activeTracker, this.selectedField);
                 const existingFieldValue = this.getFieldValue(this.dataMap?.get(activeFile.path), this.selectedField);
                 const currentTotalValue = currentNoteValue + existingFieldValue;
 
                 const currentValueString = (this.selectedField == 'editTime')? formatTime(currentTotalValue): currentTotalValue.toString();
                 
-                const leftContentWrapper = this.currentNoteRow.createDiv({ cls: 'wordflow-widget-current-note-left-content-wrapper' });
+                // html element creating or re-using
+                let leftContentWrapper: HTMLDivElement | null = this.currentNoteRow.querySelector('.wordflow-widget-current-note-left-content-wrapper');
+                let textContainer: HTMLDivElement | null | undefined = leftContentWrapper?.querySelector('.wordflow-widget-current-note-text-container');
 
-                const textContainer = leftContentWrapper.createDiv({ cls: 'wordflow-widget-current-note-text-container' });
+                if (!leftContentWrapper || !textContainer || currentTotalValue == 0) {
+                    this.currentNoteRow.empty();
+                    leftContentWrapper = this.currentNoteRow.createDiv({ cls: 'wordflow-widget-current-note-left-content-wrapper' });
+                    textContainer = leftContentWrapper.createDiv({ cls: 'wordflow-widget-current-note-text-container' });
+                }
+                textContainer.empty();
+
                 textContainer.createEl('span', { text: `${activeFile.basename}`, cls: 'wordflow-widget-current-note-label' });
                 const noteValueStyle = textContainer.createEl('span', { text: currentValueString, cls: 'wordflow-widget-current-note-value' });
                 noteValueStyle.style.color = this.colorMap.get(activeTracker.filePath)?? 'initial';
 
                 if (currentTotalValue > 0) {
-                    const barContainer = leftContentWrapper.createDiv({ cls: 'wordflow-widget-current-note-bar-container' });
+                    let barContainer: HTMLDivElement | null = leftContentWrapper?.querySelector('.wordflow-widget-current-note-bar-container');
+                    let existingBar: HTMLSpanElement | null | undefined = barContainer?.querySelector('.wordflow-widget-current-note-bar-existing'); 
+                    let currentBar: HTMLSpanElement | null | undefined = barContainer?.querySelector('.wordflow-widget-current-note-bar-current');
+                    if (!barContainer || !existingBar || !currentBar) {
+                        barContainer = leftContentWrapper.createDiv({ cls: 'wordflow-widget-current-note-bar-container' });
+                        existingBar = barContainer.createEl('span', { cls: 'wordflow-widget-current-note-bar-existing' });
+                        currentBar = barContainer.createEl('span', { cls: 'wordflow-widget-current-note-bar-current' });
+                        barContainer.style.width = '0';
+                        existingBar.style.width = '0';
+                        currentBar.style.width = '0';
+                    }
+                    
                     const widthPercentage = (currentTotalValue / (currentNoteValue + this.totalFieldValue)) * 100;
-                    console.log('new: ', currentNoteValue, '\nExisting: ', existingFieldValue, '\nTotal: ', this.totalFieldValue)
-                    barContainer.style.width = `${widthPercentage}%`;
+                    //console.log('new: ', currentNoteValue, '\nExisting: ', existingFieldValue, '\nTotal: ', this.totalFieldValue)
+                    barContainer.offsetWidth; // may be deleted
+                    existingBar.offsetWidth;
+                    currentBar.offsetWidth;
+                    
 
                     const existingPercentage = (existingFieldValue / currentTotalValue) * 100;
                     const currentPercentage = (currentNoteValue / currentTotalValue) * 100;
 
-                    const existingBar = barContainer.createEl('span', { cls: 'wordflow-widget-current-note-bar-existing' });
+                    barContainer.style.width = `${widthPercentage}%`;
                     existingBar.style.width = `${existingPercentage}%`;
-
-                    const currentBar = barContainer.createEl('span', { cls: 'wordflow-widget-current-note-bar-current' });
+                    
                     currentBar.style.width = `${currentPercentage}%`;
                     currentBar.style.backgroundColor = noteValueStyle.style.color;
                 }
             } else {
+                this.currentNoteRow.empty();
                 this.currentNoteRow.createEl('span', { text: "this file has no tracker", cls: 'wordflow-widget-current-note-faint-label' });
             }
         } else {
+            this.currentNoteRow.empty();
             this.currentNoteRow.createEl('span', { text: "no file opened", cls: 'wordflow-widget-current-note-faint-label' });
         }
         this.updateButtonIcons();
@@ -156,7 +180,7 @@ export class WordflowWidgetView extends ItemView {
 
     public updateButtonIcons() {
         const activeFile = this.app.workspace.getActiveFile();
-        if (activeFile && this.plugin.trackerMap.size > 0 && this.plugin.trackerMap.get(activeFile.path)?.editTimer?.isRunning()) { // add empty detecting in case of reporting errors
+        if (activeFile && this.onFocusMode) { // add empty detecting in case of reporting errors
             setIcon(this.focusButton, 'pause');
         } else {
             setIcon(this.focusButton, 'play');
@@ -337,6 +361,14 @@ export class WordflowWidgetView extends ItemView {
                     aVal = a.editTime;
                     bVal = b.editTime;
                     break;
+                case 'readTime':
+                    aVal = a.readTime;
+                    bVal = b.readTime;
+                    break;
+                case 'readEditTime':
+                    aVal = a.readEditTime;
+                    bVal = b.readEditTime;
+                    break;
                 default:
                     return 0; // just use default sequence 
             }
@@ -364,6 +396,10 @@ export class WordflowWidgetView extends ItemView {
                 return data.docWords;
             case 'editTime':
                 return data.editTime;
+            case 'readTime':
+                return data.readTime;
+            case 'readEditTime':
+                return data.readEditTime;    
             case 'totalEdits':
                 return data.totalEdits;
             case 'totalWords':
@@ -391,6 +427,10 @@ export class WordflowWidgetView extends ItemView {
                 return tracker.docWords;
             case 'editTime':
                 return tracker.editTime;
+            case 'readTime':
+                return tracker.readTime;
+            case 'readEditTime':
+                return (tracker.readTime + tracker.editTime);  
             case 'totalEdits':
                 return tracker.editedTimes; // Assuming totalEdits maps to editedTimes for current note
             case 'totalWords':
@@ -415,7 +455,9 @@ export class WordflowWidgetView extends ItemView {
             'deletedWords',
             'changedWords',
             'docWords',
-            'editTime'
+            'editTime',
+            'readTime',
+            'readEditTime',
         ];
 
         return availableFields.filter(field => syntax.includes(`\${${field}}`))?? 'No available field in wordflow recording syntax to display.';

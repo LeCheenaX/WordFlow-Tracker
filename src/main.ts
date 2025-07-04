@@ -20,7 +20,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 	private activeTrackers: Map<string, boolean> = new Map(); // for multiple notes editing	
     private pathToNameMap: Map<string|undefined, string> = new Map(); // 新增：反向映射用于重命名检测
 	private isModeSwitch: boolean = false;
-	private lastActiveFile: { path: string|undefined; mode: 'source' | 'preview' | undefined} = {path: undefined, mode: undefined};
+	private lastActiveFile: { path: string; mode: 'source' | 'preview'} = {path: '', mode: 'preview'};
 
 	async onload() {
 		await this.loadSettings();
@@ -167,10 +167,12 @@ export default class WordflowTrackerPlugin extends Plugin {
 //console.log('isModeSwitch: ', this.isModeSwitch)
         }));
 
-		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source")
+		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode())
 			{
-				this.lastActiveFile.path = this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path;
-				this.lastActiveFile.mode = 'source';
+				this.lastActiveFile = {
+					path: this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path?? this.lastActiveFile.path,
+					mode: this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode()?? this.lastActiveFile.mode
+				};
 				debouncedHandler();
 			}
 
@@ -185,8 +187,9 @@ export default class WordflowTrackerPlugin extends Plugin {
 			{
 //console.log(this.app.workspace.activeEditor.file?.path)
 				const docTracker = this.trackerMap.get(this.app.workspace.activeEditor.file?.path)
-				if (docTracker && docTracker.isActive && docTracker.editTimer?.debouncedStarter) 
-					docTracker.editTimer?.debouncedStarter();
+				if (docTracker && docTracker.isActive) // to-do: change later
+					if (docTracker.prevViewMode == 'source' && docTracker.editTimer?.debouncedStarter) docTracker.editTimer?.debouncedStarter();
+					else if (docTracker.prevViewMode == 'preview' && docTracker.readTimer?.debouncedStarter) docTracker.readTimer?.debouncedStarter();
 			}
 		});
 		
@@ -211,17 +214,17 @@ export default class WordflowTrackerPlugin extends Plugin {
 		
 //		console.log("trackerMap",this.trackerMap);
 		//console.log("editor:", this.app.workspace.getActiveViewOfType(MarkdownView)); // bug & warning: get null when open new files, get old files if no delay
-		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source"){
+		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source" || this.Widget?.onFocusMode ){
 //			if (DEBUG) new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
 			// done | need to improve when plugin starts, the cursor must at active document
 			const activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
-			//if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
+if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
 
 			this.activateTracker(activeEditor); // activate without delay
 
 			await sleep(100); // set delay for getting the correct opened files for deactivating and deleting Map
-			this.lastActiveFile.path = activeEditor?.file?.path;
-			this.lastActiveFile.mode = activeEditor?.getMode();
+			this.lastActiveFile.path = activeEditor?.file?.path?? this.lastActiveFile.path;
+			this.lastActiveFile.mode = activeEditor?.getMode()?? this.lastActiveFile.mode;
 			const potentialEditors = await this.getAllOpenedFilesWithMode();
 			//console.log(potentialEditors) // debug
 			this.trackerMap.forEach(async (tracker, filePath) => {
@@ -230,19 +233,19 @@ export default class WordflowTrackerPlugin extends Plugin {
 					await this.recordTracker(tracker);
 					tracker.destroyTimers();
 					this.trackerMap.delete(filePath);
-					//console.log("Closed file:", filePath, " is recorded.")
+console.log("Closed file:", filePath, " is recorded.")
 				}
 				else{
-					if (filePath !== activeEditor?.file?.path) tracker.deactivate();
+					if (filePath !== this.lastActiveFile.path) tracker.deactivate(); // 1.5.0: no longer deactivate tracker when clicked elsewhere
 				}
 			});
 			this.isModeSwitch = false;
-		} 
+		}
 		else{
 			// after leaf-change or mode-switch, current active leaf is not in 'source' mode
 			await sleep(100); // set delay for getting the correct opened files for deactivating and deleting Map
-			this.lastActiveFile.path = this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path;
-			this.lastActiveFile.mode = this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode();
+			this.lastActiveFile.path = this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path?? this.lastActiveFile.path;
+			this.lastActiveFile.mode = this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode()?? this.lastActiveFile.mode;
 			const potentialEditors = await this.getAllOpenedFilesWithMode();
 			//console.log(potentialEditors) // debug
 			this.trackerMap.forEach(async (tracker, filePath)=>{
@@ -251,15 +254,15 @@ export default class WordflowTrackerPlugin extends Plugin {
 					await this.recordTracker(tracker);
 					tracker.destroyTimers();
 					this.trackerMap.delete(filePath);
-					//console.log("Closed file:", filePath, " is recorded.")
+console.log("Closed file:", filePath, " is recorded.")
 				}
 				//else if (this.isModeSwitch && potentialEditors.get(filePath) == 'preview'){// now preview mode}
 				else if (this.isModeSwitch && filePath == this.lastActiveFile.path){ 
-					//console.log ('Try recording', filePath, ' current mode: ', potentialEditors.get(filePath));
+console.log ('Try recording', filePath, ' current mode: ', potentialEditors.get(filePath));
 					await this.recordTracker(tracker);
 				}
 				else if (this.isModeSwitch && this.settings.noteToRecord == 'all' && potentialEditors.get(filePath) == 'source'){ 
-					//console.log ('This note is under edit mode after switching mode: ', filePath);	
+console.log ('This note is under edit mode after switching mode: ', filePath);	
 					await this.recordTracker(tracker);		
 				} 
 				// else console.log('Layout changed but no mode switched');*/
@@ -299,7 +302,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 		this.trackerMap.set(activeFilePath, newTracker);
 		} 
 		else{
-			this.trackerMap.get(activeFilePath)?.activate();
+			const activeFileViewMode = activeEditor?.getMode();
+			this.trackerMap.get(activeFilePath)?.activate(activeFileViewMode);
 		}
 		//await sleep(50); // for the process completion
 	};

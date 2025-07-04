@@ -1,5 +1,5 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
-import { formatTime, restoreTimeString } from "./EditTimer";
+import { formatTime, restoreTimeString } from "./Timer";
 import { moment, Plugin, TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
 
@@ -154,6 +154,8 @@ export class BulletListParser{
                 if (groupData.comment !== '') ListData.comment = groupData.comment;
 
                 if (groupData.editTime !== undefined) ListData.editTime = restoreTimeString(groupData.editTime);
+                if (groupData.readTime !== undefined) ListData.readTime = restoreTimeString(groupData.readTime);
+                if (groupData.readEditTime !== undefined) ListData.readEditTime = restoreTimeString(groupData.readEditTime);
                 
                 existingDataMap.set(ListData.filePath, ListData);
  
@@ -249,7 +251,9 @@ export class BulletListParser{
                 .replace(/\${editedPercentage}/g, data.editedPercentage.toNote())
                 .replace(/\${statBar}/g, data.statBar.toNote())
                 .replace(/\${comment}/g, data.comment)
-                .replace(/\${editTime}/g, formatTime(data.editTime));
+                .replace(/\${editTime}/g, formatTime(data.editTime))
+                .replace(/\${readTime}/g, formatTime(data.readTime))
+                .replace(/\${readEditTime}/g, formatTime(data.readEditTime));
             
             output += (line.endsWith('\n'))? line : line + '\n';
         }

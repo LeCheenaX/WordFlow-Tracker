@@ -437,9 +437,13 @@ export class ExistingData {
     statBar: StatBar;
     comment: string;
     editTime: number;
+    readTime: number;
+    readEditTime: number;
     totalWords: number;
     totalEdits: number;
     totalEditTime: number;
+    totalReadTime: number;
+    totalTime: number;
     
     constructor() {
         this.fileName = 'unknown';
@@ -454,9 +458,13 @@ export class ExistingData {
         this.statBar = new StatBar();
         this.comment = '\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost
         this.editTime = 0;
+        this.readTime = 0;
+        this.readEditTime = 0;
         this.totalWords = 0;
         this.totalEdits = 0;
         this.totalEditTime = 0;
+        this.totalReadTime = 0;
+        this.totalTime = 0;
     }
 }
 
@@ -475,6 +483,7 @@ export class NewData {
     editedPercentage: EditedPercentage
     statBar: StatBar;
     editTime: number;
+    readTime: number;
     
     constructor(tracker: DocTracker) {
         this.filePath = tracker.filePath;
@@ -492,6 +501,7 @@ export class NewData {
         this.statBar = new StatBar();
         this.statBar.fromTracker(tracker);
         this.editTime = tracker.editTime;
+        this.readTime = tracker.readTime;
     }
 }
 
@@ -510,10 +520,14 @@ export class MergedData {
     comment: string;
     docWords: number;
     editTime: number;
+    readTime: number;
+    readEditTime: number;
     isNew: boolean;
     totalWords: number;
     totalEdits: number;
     totalEditTime: number;
+    totalReadTime: number;
+    totalTime: number;
     
     constructor(newData?: NewData, existingData?: ExistingData) {
         if (newData) {
@@ -529,6 +543,8 @@ export class MergedData {
             this.editedPercentage = newData.editedPercentage;
             this.statBar = newData.statBar;
             this.editTime = newData.editTime;
+            this.readTime = newData.readTime;
+            this.readEditTime = newData.editTime + newData.readTime;
             this.isNew = true;
         } else if (existingData) {
             this.filePath = existingData.filePath;
@@ -544,6 +560,8 @@ export class MergedData {
             this.statBar = existingData.statBar;
             this.comment = existingData.comment?? '\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost
             this.editTime = existingData.editTime;
+            this.readTime = existingData.readTime;
+            this.readEditTime = existingData.readEditTime;
             this.isNew = false;
         } else {
             this.filePath = '|M|E|T|A|D|A|T|A|';
@@ -559,6 +577,8 @@ export class MergedData {
         this.deletedWords += existingData.deletedWords;
         this.changedWords += existingData.changedWords;
         this.editTime += existingData.editTime;
+        this.readTime += existingData.readTime;
+        this.readEditTime += existingData.readEditTime;
         
         // Let existing data outweighs the new data
         this.editedPercentage.setEdits(

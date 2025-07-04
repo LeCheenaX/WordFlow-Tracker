@@ -183,15 +183,24 @@
     overflow: hidden;
     background-color: var(--background-modifier-hover); /* Background for empty part of bar */
     margin-top: 5px;
+    width: initial;
+    transition: width 1000ms ease-in-out; /*must be much slower than exsting and current bar transition for technique issues*/
+    will-change: width;
 }
 
 .wordflow-widget-current-note-bar-existing {
     height: 100%;
     background-color: var(--tab-text-color); /* Example color for existing data */
+    width: initial;
+    transition: width 200ms ease-in-out;
+    will-change: width;
 }
 
 .wordflow-widget-current-note-bar-current {
     height: 100%;
+    width: initial;
+    transition: width 200ms ease-in-out;
+    will-change: width;
 }
 
 .wordflow-widget-current-note-buttons {

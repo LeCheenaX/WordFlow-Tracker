@@ -1,5 +1,5 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
-import { formatTime, restoreTimeString } from "./EditTimer";
+import { formatTime, restoreTimeString } from "./Timer";
 import { moment, Notice, TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
 
@@ -180,6 +180,10 @@ export class TableParser{
                             return data.comment??'\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost
                         case 'editTime':
                             return formatTime(data.editTime);
+                        case 'readTime':
+                            return formatTime(data.readTime);
+                        case 'readEditTime':
+                            return formatTime(data.readEditTime);
                         default:
                             return '';
                     }
@@ -318,6 +322,12 @@ export class TableParser{
                     break;
                 case 'editTime':
                     entry.editTime = restoreTimeString(value);
+                    break;
+                case 'readTime':
+                    entry.readTime = restoreTimeString(value);
+                    break;
+                case 'readEditTime':
+                    entry.readEditTime = restoreTimeString(value);
                     break;
                 default:
                     new Notice ('❌A name of ${} is not recognized, please examine the syntax in settings!', 0);

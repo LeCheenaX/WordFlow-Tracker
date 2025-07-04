@@ -1,5 +1,5 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
-import { formatTime, restoreTimeString } from "./EditTimer";
+import { formatTime, restoreTimeString } from "./Timer";
 import { MetadataCache, moment, TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
 
@@ -84,6 +84,12 @@ export class MetaDataParser{
         if (YAMLData.totalEditTime !== undefined) {
             extractedData.totalEditTime = restoreTimeString(YAMLData.totalEditTime) || 0;
         }
+        if (YAMLData.totalReadTime !== undefined) {
+            extractedData.totalReadTime = restoreTimeString(YAMLData.totalReadTime) || 0;
+        }
+        if (YAMLData.totalTime !== undefined) {
+            extractedData.totalTime = restoreTimeString(YAMLData.totalTime) || 0;
+        }
         // unique string as key to fetch existing data
         existingDataMap.set('|M|E|T|A|D|A|T|A|', extractedData);
         return existingDataMap;
@@ -156,7 +162,9 @@ export class MetaDataParser{
             let line = this.syntax
                 .replace(/\${totalEdits}/g, data.totalEdits.toString())
                 .replace(/\${totalWords}/g, data.totalWords.toString())
-                .replace(/\${totalEditTime}/g, formatTime(data.totalEditTime));
+                .replace(/\${totalEditTime}/g, formatTime(data.totalEditTime))
+                .replace(/\${totalReadTime}/g, formatTime(data.totalReadTime))
+                .replace(/\${totalTime}/g, formatTime(data.totalTime));
             
             output += line + '\n';
         }

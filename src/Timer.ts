@@ -1,8 +1,8 @@
 import { DocTracker } from "./DocTracker";
 import WordflowTrackerPlugin from "./main";
-import { debounce, moment } from "obsidian";
+import { debounce, MarkdownViewModeType, moment } from "obsidian";
 
-export default class EditTimer {
+export default class Timer {
     public debouncedStarter: ReturnType<typeof debounce> | null = null;
 
     private intervalId: number | null = null;
@@ -12,13 +12,14 @@ export default class EditTimer {
     private timeToNextUpdate: number = 0; // miliseconds until next update
 
     private startDebounceInterval: number = 1000 as const; 
-    private readonly updateInterval: number = 60000; // 60 seconds
+    private readonly updateInterval: number = 1000; // 60 seconds
     private readonly idleInterval: number = parseInt(this.plugin.settings.idleInterval)*60000; // convert to miliseconds
     private debouncedPauser: ReturnType<typeof debounce> | null = null;
 
     constructor(
         private plugin: WordflowTrackerPlugin,
         private tracker: DocTracker,
+        private mode: MarkdownViewModeType
     ) {
         this.debouncedStarter = debounce(() => {
             if (this.debouncedPauser != null) this.debouncedPauser(); // refresh pauser
@@ -35,7 +36,7 @@ export default class EditTimer {
         if (this.isRunning()) return;
 //console.log("Timer started!")
         this.startTime = Date.now();
-        this.accumulatedTime = this.tracker.editTime;
+        this.accumulatedTime = (this.mode == 'source')? this.tracker.editTime: this.tracker.readTime;
 
         if (this.debouncedPauser != null) this.debouncedPauser();
 
@@ -126,7 +127,8 @@ export default class EditTimer {
     }
 
     private updateTrackerProp(): void { // update only prop
-        this.tracker.editTime = this.getElapsedTime();
+        if (this.mode == 'source') this.tracker.editTime = this.getElapsedTime();
+        else this.tracker.readTime = this.getElapsedTime();
     }
 
     private updateToTracker(): void { // update prop and status bar
