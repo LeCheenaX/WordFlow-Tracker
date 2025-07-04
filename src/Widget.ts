@@ -3,6 +3,7 @@ import { ExistingData, DataRecorder } from "./DataRecorder";
 import { formatTime } from "./Timer";
 import { MetaDataParser } from "./MetaDataParser";
 import { DocTracker } from "./DocTracker";
+import { ConfirmationModal } from "./settings"
 import { UniqueColorGenerator } from "./Utils/UniqueColorGenerator";
 import { DropdownComponent, IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon } from "obsidian";
 
@@ -94,9 +95,21 @@ export class WordflowWidgetView extends ItemView {
             new Notice(`Try recording wordflows to periodic note!`, 3000);
         });
 
-        this.focusButton.addEventListener('click', () => {
-            this.onFocusMode = !this.onFocusMode;
-            this.updateButtonIcons(); 
+        this.focusButton.addEventListener('click', () => {           
+            if (!this.onFocusMode) {
+                const options = this.getFieldOptions();
+                if (options.indexOf('readTime')== -1 && options.indexOf('editTime') == -1 && options.indexOf('readEditTime') == -1)
+                {
+                    const tempMessage = new ConfirmationModal(
+                        this.app, 
+                        'Caution: There\'s no time property in recording syntax of the selected recorder. \n\nTo make use of this feature, it\'s recommended to click "cancel" button, and switch to a recorder that has the time peroperty. \n\nYou can also add "${readTime}", "${editTime}" or "${readEditTime}" in recording syntax of your table/bullet-list recorder. \n\nAre you sure to turn on focus mode? This will do no harm but the focused time will not be recorded.', 
+                        async ()=>{
+                            this.switchFocusMode();
+                    });
+                    tempMessage.open();
+                } else this.switchFocusMode();
+            } else this.switchFocusMode();
+            //if (this.onFocusMode && this.plugin.settings.focusAutoSwitch) this.selectedField = this.plugin.settings.focusAutoSwitch
         });
     }
 
@@ -121,7 +134,7 @@ export class WordflowWidgetView extends ItemView {
                 const existingFieldValue = this.getFieldValue(this.dataMap?.get(activeFile.path), this.selectedField);
                 const currentTotalValue = currentNoteValue + existingFieldValue;
 
-                const currentValueString = (this.selectedField == 'editTime')? formatTime(currentTotalValue): currentTotalValue.toString();
+                const currentValueString = (this.selectedField == 'editTime' || 'readTime' || 'readEditTime')? formatTime(currentTotalValue): currentTotalValue.toString();
                 
                 // html element creating or re-using
                 let leftContentWrapper: HTMLDivElement | null = this.currentNoteRow.querySelector('.wordflow-widget-current-note-left-content-wrapper');
@@ -281,7 +294,7 @@ export class WordflowWidgetView extends ItemView {
                 this.totalFieldValue += this.getFieldValue(rowData, field);
         });
 
-        this.totalDataContainer.textContent = (field == 'editTime')? formatTime(this.totalFieldValue): this.totalFieldValue.toString();
+        this.totalDataContainer.textContent = (field == 'editTime' || 'readTime' || 'readEditTime')? formatTime(this.totalFieldValue): this.totalFieldValue.toString();
 
         const totalProgressBarContainer = this.dataContainer.createDiv({ 
             cls: 'wordflow-widget-total-progress-bar-container' 
@@ -293,7 +306,7 @@ export class WordflowWidgetView extends ItemView {
             if (this.totalFieldValue > 0) {
                 percentage = (value / this.totalFieldValue) * 100;
             }
-            const valueString = (field == 'editTime')? formatTime(value): value.toString();
+            const valueString = (field == 'editTime' || 'readTime' || 'readEditTime')? formatTime(value): value.toString();
 
             if (!this.colorMap.has(rowData.filePath)) {
                 this.colorMap.set(rowData.filePath, this.colorGenerator.generate())
@@ -481,5 +494,10 @@ export class WordflowWidgetView extends ItemView {
         }
         
         return await this.selectedRecorder.getParser().extractData(recordNote);;
+    }
+
+    private async switchFocusMode():Promise<void>{
+        this.onFocusMode = !this.onFocusMode;
+        this.updateButtonIcons(); 
     }
 }

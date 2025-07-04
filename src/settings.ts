@@ -1019,7 +1019,7 @@ export function removeStatusBarStyle(){
     document.body.classList.remove('wordflow-status-bar-container');
 }
 
-class ConfirmationModal extends Modal {
+export class ConfirmationModal extends Modal {
     constructor(
 	    app: App,
 		private message: string,
