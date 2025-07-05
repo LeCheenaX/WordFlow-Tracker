@@ -60,11 +60,13 @@ export class WordflowWidgetView extends ItemView {
         const leftGroup = controls.createDiv({cls: "wordflow-widget-control-leftgroup-container"})
         const recorderDropdownContainer = leftGroup.createEl("span", {cls: "recorder-dropdown-container"});
         this.recorderDropdown = new DropdownComponent(recorderDropdownContainer);
+        setTooltip(recorderDropdownContainer, 'Switch the recorder')
         
         const rightGroup = controls.createDiv({cls: "wordflow-widget-control-rightgroup-container"})
         const fieldDropdownContainer = rightGroup.createEl("span", {cls: "field-dropdown-container"});
         this.fieldDropdown = new DropdownComponent(fieldDropdownContainer);
         fieldDropdownContainer.insertAdjacentText("afterend", ':');
+        setTooltip(fieldDropdownContainer, 'switch data to display from recording syntax')
 
         this.totalDataContainer = rightGroup.createEl("span", {cls: "totalDataContainer"});
 
@@ -105,7 +107,7 @@ export class WordflowWidgetView extends ItemView {
                 {
                     const tempMessage = new ConfirmationModal(
                         this.app, 
-                        'Caution: There\'s no time property in recording syntax of the selected recorder. \n\nTo make use of this feature, it\'s recommended to click "cancel" button, and switch to a recorder that has the time peroperty. \n\nYou can also add "${readTime}", "${editTime}" or "${readEditTime}" in recording syntax of your table/bullet-list recorder. \n\nAre you sure to turn on focus mode? This will do no harm but the focused time will not be recorded.', 
+                        'Caution: There\'s no reading time property in recording syntax of the selected recorder. \n\nTo make use of this feature, it\'s recommended to click "cancel" button, and switch to a recorder that has the reading time peroperty. \n\nIf you are not sure which recorder has, kindly add "${readTime}" or "${readEditTime}" in recording syntax of your table/bullet-list recorder. \n\nAre you sure to turn on focus mode? This will do no harm but the focused time will not be recorded.', 
                         async ()=>{
                             this.startFocus();
                     });

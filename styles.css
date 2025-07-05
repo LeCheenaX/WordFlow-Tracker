@@ -167,6 +167,7 @@
 }
 
 .wordflow-widget-current-note-faint-label {
+    font-size: 16px;
     font-weight: bold;
     color: var(--text-faint);
 }
