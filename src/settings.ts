@@ -958,7 +958,7 @@ export class TimersTab extends WordflowSubSettingsTab {
                 }));
 
         new Setting(tabContent)
-            .setName('Show second in widget pane(beta)')
+            .setName('Show second in widget pane (beta)')
             .setDesc(createFragment(f => {
                 f.appendText('Display seconds together with minute in the widget pane.')
                 f.createEl('br');
