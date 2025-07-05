@@ -1,7 +1,28 @@
-export const currentPluginVersion = '1.4.3';
+export const currentPluginVersion = '1.5.0';
 
 export const changelog = `
 --> Kindly see full change logs including previous versions at [releases](https://github.com/LeCheenaX/WordFlow-Tracker/releases).
+
+### 1.5.0 updates
+**New Features:**
+1. Side pane widget to display timer and other stats.
+2. New interpolation expressions:
+    1. \${readTime} to record reading time per note 
+    2. \${readEditTime} to combine reading time + editing time per note
+    3. \${totalReadTime} for total reading time from all notes
+    4. \${totalTime} to combine reading total time + editing total time from all notes
+3. Focus mode that could be controled by the widget:
+    1. when entering focus mode, the reading time will be recorded, this will accumulate the new fields \${readTime} and \${readEditTime}. 
+    2. when focused, the docTracker will no longer be deactivated when you click elsewhere of Obsidian.
+    3. when focused, the docTracker will not be really deactivated when mode switched. Instead, it will switch mode to either track editing or track reading.
+    4. when pausing from focused, the reading timer will be paused, while the editing timer will still function to accumulate \${editTime} and \${readEditTime}.
+    5. when quiting focus mode, the statistics of notes will be recorded to periodic notes.
+4. Open files in current tab or in new tab by clicking file entries in the Widget. 
+5. Display seconds for the timer in the widget. 
+    note: Technically, this could be applied to status bar, existing data in periodic note. However, this is restricted to the timer in widget in this version, as this introduces multiple undefined issues otherwise. 
+
+Rebuilt: 
+- EditTimer is rebuilt into Timer, with capability of mode detecting.
 
 ### 1.4.3 updates 
 **Bug Fixed:**
@@ -18,35 +39,5 @@ export const changelog = `
 
 **Rebuilt:**
 - Settings page are rebuilt to preview user input at real time, and validate legal inputs. 
-
-### 1.4.2 updates
-**Bug Fixed:**
-- (Emergent fix) **The rebuilt logic could now record other notes in edit mode correctly**.
-- Require none option is no longer flawed, now it can trigger the correct recording only when mode switched, and no longer trigger recording on active leaf change.
-- Mode switch checking returns false if the note is in edit mode when enabling the plugin, after which is switched to reading mode.
-
-**New features:**
-- Option to choose whether auto record other notes in edit mode when quiting editing mode.
-- Option to control status bar on mobile device.
-
-**Enhancement:**
-- Safer mode-switch checking
-
-**Rebuilt:**
-- Recording logics, now will only trigger recording on mode switch, and no longer triggers recording on active leaf change.
-- Function 'getAllOpenedFiles()' will now return the mode of last active view, if the same file is opened in multiple tabs and the modes of tabs are different
-
-### 1.4.1 updates
-**Bug Fixed:**
-- Status bar will update as expected if switched mode twice in a second, while maintain the ability added in 1.3.1 to update as expected when edit sth and immediately open a new note.
-- Updates from prev-1.4.0 versions will now have no influence if not using new features. In 1.4.0, users may have to tolerate potential bugs from new features.
-
-**Rebuilt:**
-- Rebuilt the filter notes to record behavior, now we use mode switch rather than toggle button to control.
-- No longer frequently create docTracker when switching mode, now only do this when new note opens. This is for the 1.5 version to record focused time under reading mode.
-- The getAllOpenedFiles function will now get mode of current file
-
-**Caution:**
-- The new option: require none in notesToRecord is flawed: It should not trigger recording when active leaf changes but current view is reading mode (brought by getAllOpenedFiles rebuilding)
 
 `;
