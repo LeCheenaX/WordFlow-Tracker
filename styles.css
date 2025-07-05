@@ -158,23 +158,56 @@
     display: flex;
     align-items: baseline; /* Align text baselines */
     margin-bottom: 0px; /* Space between text and progress bar */
+    
+    container-type: inline-size;
+    container-name: wordflow-widget-current-note-text-container;
 }
 
 .wordflow-widget-current-note-label {
     font-weight: bold;
     color: var(--text-normal);
     margin-right: 16px;
+
+    overflow:hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .wordflow-widget-current-note-faint-label {
     font-size: 16px;
     font-weight: bold;
     color: var(--text-faint);
+
+    overflow:hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .wordflow-widget-current-note-value {
     font-weight: bold;
     color: var(--text-accent);
+
+    display: flex;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* 当容器宽度小于300px时 */
+@container wordflow-widget-current-note-text-container (max-width: 200px) {
+    .wordflow-widget-current-note-label,
+    .wordflow-widget-current-note-faint-label,
+    .wordflow-widget-current-note-value {
+        font-size: 16px;
+    }
+}
+
+/* 当容器宽度小于200px时 */
+@container wordflow-widget-current-note-text-container (max-width: 160px) {
+    .wordflow-widget-current-note-label,
+    .wordflow-widget-current-note-faint-label,
+    .wordflow-widget-current-note-value {
+        font-size: 14px;
+    }
 }
 
 .wordflow-widget-current-note-bar-container {
@@ -212,6 +245,7 @@
 
 .wordflow-widget-button {
     display: flex;
+    position: static;
     align-items: center;
     justify-content: center;
     padding: 5px;

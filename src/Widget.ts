@@ -31,7 +31,10 @@ export class WordflowWidgetView extends ItemView {
     constructor(leaf: WorkspaceLeaf, plugin: WordflowTrackerPlugin) {
         super(leaf);
         this.plugin = plugin;
-        this.colorGenerator = new UniqueColorGenerator(66, [60, 85]);
+        this.colorGenerator = new UniqueColorGenerator(
+                                    parseInt(this.plugin.settings.colorGroupLightness), 
+                                    this.plugin.settings.colorGroupSaturation
+                                );
         this.colorMap = new Map<string, string>;
     }
 
@@ -103,7 +106,7 @@ export class WordflowWidgetView extends ItemView {
         this.focusButton.addEventListener('click', () => {           
             if (!this.onFocusMode) {
                 const options = this.getFieldOptions();
-                if (options.indexOf('readTime')== -1 && options.indexOf('editTime') == -1 && options.indexOf('readEditTime') == -1)
+                if (options.indexOf('readTime')== -1 && options.indexOf('readEditTime') == -1)
                 {
                     const tempMessage = new ConfirmationModal(
                         this.app, 
@@ -117,7 +120,6 @@ export class WordflowWidgetView extends ItemView {
                 this.onFocusMode = false;
                 this.updateButtons_Pause();
             }
-            //if (this.onFocusMode && this.plugin.settings.focusAutoSwitch) this.selectedField = this.plugin.settings.focusAutoSwitch
         });
     }
 
@@ -142,7 +144,9 @@ export class WordflowWidgetView extends ItemView {
                 const existingFieldValue = this.getFieldValue(this.dataMap?.get(activeFile.path), this.selectedField);
                 const currentTotalValue = currentNoteValue + existingFieldValue;
 
-                const currentValueString = (this.selectedField == 'editTime' || this.selectedField == 'readTime' || this.selectedField == 'readEditTime')? formatTime(currentTotalValue): currentTotalValue.toString();
+                const currentValueString = (this.selectedField == 'editTime' || this.selectedField == 'readTime' || this.selectedField == 'readEditTime')
+                    ? formatTime(currentTotalValue, this.plugin.settings.useSecondInWidget)
+                    : currentTotalValue.toString();
                 
                 // html element creating or re-using
                 let leftContentWrapper: HTMLDivElement | null = this.currentNoteRow.querySelector('.wordflow-widget-current-note-left-content-wrapper');
@@ -317,7 +321,9 @@ export class WordflowWidgetView extends ItemView {
                 this.totalFieldValue += this.getFieldValue(rowData, field);
         });
 
-        this.totalDataContainer.textContent = (field == 'editTime' || field == 'readTime' || field == 'readEditTime')? formatTime(this.totalFieldValue): this.totalFieldValue.toString();
+        this.totalDataContainer.textContent = (field == 'editTime' || field == 'readTime' || field == 'readEditTime')
+            ? formatTime(this.totalFieldValue)
+            : this.totalFieldValue.toString();
 
         const totalProgressBarContainer = this.dataContainer.createDiv({ 
             cls: 'wordflow-widget-total-progress-bar-container' 
@@ -329,7 +335,9 @@ export class WordflowWidgetView extends ItemView {
             if (this.totalFieldValue > 0) {
                 percentage = (value / this.totalFieldValue) * 100;
             }
-            const valueString = (field == 'editTime' || field == 'readTime' || field == 'readEditTime')? formatTime(value): value.toString();
+            const valueString = (field == 'editTime' || field == 'readTime' || field == 'readEditTime')
+                ? formatTime(value)
+                : value.toString();
 
             if (!this.colorMap.has(rowData.filePath)) {
                 this.colorMap.set(rowData.filePath, this.colorGenerator.generate())
@@ -478,7 +486,7 @@ export class WordflowWidgetView extends ItemView {
         }
     }
 
-    private getFieldOptions(): string[] {
+    public getFieldOptions(): string[] {
         if (!this.selectedRecorder) {
             return ['No available field in wordflow recording syntax to display.'];
         }
@@ -522,5 +530,16 @@ export class WordflowWidgetView extends ItemView {
     private async startFocus():Promise<void>{
         this.onFocusMode = true;
         this.updateButtons_Start();
+        if (this.plugin.settings.switchToFieldOnFocus !== 'disabled') {
+            const newField = this.plugin.settings.switchToFieldOnFocus;
+            if (this.getFieldOptions().indexOf(newField) == -1) {
+                new Notice('No available time field to switch in current recorder. \nStay on current field. ', 3000);
+                return;
+            }
+            this.fieldDropdown.setValue(newField);
+            this.selectedField = newField;
+            await this.renderData(newField);
+            this.updateCurrentData();
+        }
     }
 }

@@ -1,6 +1,6 @@
 import { DocTracker } from "./DocTracker";
 import WordflowTrackerPlugin from "./main";
-import { debounce, MarkdownViewModeType, moment } from "obsidian";
+import { debounce, MarkdownViewModeType, moment, Notice } from "obsidian";
 
 export default class Timer {
     public debouncedStarter: ReturnType<typeof debounce> | null = null;
@@ -12,7 +12,7 @@ export default class Timer {
     private timeToNextUpdate: number = 0; // miliseconds until next update
 
     private startDebounceInterval: number = 1000 as const; 
-    private readonly updateInterval: number = 1000; // 60 seconds
+    private readonly updateInterval: number = (this.plugin.settings.useSecondInWidget)? 1000: 60000; // 60 seconds
     private readonly idleInterval: number = parseInt(this.plugin.settings.idleInterval)*60000; // convert to miliseconds
     private debouncedPauser: ReturnType<typeof debounce> | null = null;
 
@@ -28,6 +28,11 @@ export default class Timer {
         this.debouncedPauser = debounce(() => {
             this.tracker.updateStatusBarTracker();
             this.pause();
+            if (this.plugin.Widget && this.plugin.Widget.onFocusMode){
+                this.plugin.Widget.onFocusMode = false;
+                this.plugin.Widget.updateButtons_Pause();
+                new Notice('Focusing is paused because of idling.', 0)
+            }
         }, this.idleInterval, true); // update status bar before pausing, inaccuracy is less than 10ms
     }
 
@@ -134,6 +139,7 @@ export default class Timer {
     private updateToTracker(): void { // update prop and status bar
         this.updateTrackerProp();
         this.tracker.updateStatusBarTracker();
+        this.plugin.Widget?.updateCurrentData();
     }
 
     private clearTimers(): void { // not exposed, or the debouncer may not be dereferenced
@@ -148,11 +154,19 @@ export default class Timer {
     }
 }
 
-export function formatTime(ms: number): string {
+export function formatTime(ms: number, useSecond?: boolean): string {
     const duration = moment.duration(ms);
+
+    if (useSecond) {
+        const hours = Math.floor(duration.asHours());
+        const minutes = duration.minutes();
+        const seconds = duration.seconds();
+        
+        return (hours>0)? `${hours} h ${minutes} min ${seconds} s`: `${minutes} min ${seconds} s`;
+    }
+
     const hours = Math.floor(duration.asHours());
     const minutes = duration.minutes();
-//return `${duration.asSeconds()} s`; // for debug only
     return (hours>0)? `${hours} h ${minutes} min`: `${minutes} min`;
 }
 

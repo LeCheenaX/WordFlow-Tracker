@@ -27,6 +27,7 @@ export interface WordflowRecorderConfigs {
 
 export interface WordflowSettings extends WordflowRecorderConfigs{
     // General settings tab
+    showRecordRibbonIcon: boolean;
     noteThreshold: string;
     noteToRecord: string;
     autoRecordInterval: string;
@@ -37,6 +38,15 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
 
     // Timers setting tab
     idleInterval: string;
+    // could not add another interval for focus mode directly, nor could we use reading interval as the interval will be different in reading/editing mode. 
+    useSecondInWidget: boolean; // required to restart plugin, currently support widget only, others are technically supported but not recommended
+
+    // Widget setting tab
+    enableWidgetOnLoad: boolean;
+    showWidgetRibbonIcon: boolean;
+    switchToFieldOnFocus: string;
+    colorGroupLightness: string; // required to restart widget or plugin
+    colorGroupSaturation: number[]; // required to restart widget or plugin
 
     // Status bar setting tab
     enableMobileStatusBar: boolean;
@@ -49,6 +59,7 @@ export interface RecorderConfig extends WordflowRecorderConfigs {
 
 export const DEFAULT_SETTINGS: WordflowSettings = {
 	// General settings tab
+    showRecordRibbonIcon: true,
 	noteThreshold: 'e', // requrie edits only
     noteToRecord: 'all', // requrie edits only
 	autoRecordInterval: '0', // disable
@@ -66,9 +77,9 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     templateTimeFormat: 'HH:mm',
 	recordType: 'table',
 	insertPlace: 'bottom',
-	tableSyntax: `| Note                | Edited Words   | Last Modified Time  |\n| ------------------- | ---------------- | ------------------- |\n| [[\${modifiedNote}\\|\${noteTitle}]] | \${editedWords} | \${lastModifiedTime} |`,
-	bulletListSyntax: `- \${modifiedNote}\n    - Edits: \${editedTimes}\n    - Edited Words: \${editedWords}`,
-	metadataSyntax: `Total edits: \${totalEdits}\nTotal words: \${totalWords}`,
+	tableSyntax: `| Note                | Edited Words   | Last Modified Time  | Focused | \n| ------------------- | ---------------- | ------------------ | --------- |\n| [[\${modifiedNote}\\|\${noteTitle}]] | \${editedWords} | \${lastModifiedTime} | \${readEditTime} |`,
+	bulletListSyntax: `- \${modifiedNote}\n    - Edits: \${editedTimes}\n    - Edited Words: \${editedWords}\n    - Focused Time: \${readEditTime}`,
+	metadataSyntax: `total edits: \${totalEdits}\ntotal words: \${totalWords}\ntotal time: \${totalTime}`,
 	timeFormat: 'YYYY-MM-DD HH:mm',
 	sortBy: 'lastModifiedTime',
 	isDescend: true,
@@ -77,6 +88,15 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 
     // Timers setting tab
     idleInterval: '3',
+    useSecondInWidget: false, 
+
+    // Widget setting tab
+    enableWidgetOnLoad: true,
+    showWidgetRibbonIcon: true,
+    switchToFieldOnFocus: 'disabled',
+    colorGroupLightness: '66',
+    colorGroupSaturation: [60, 85],
+
 
     // Status bar setting tab
     enableMobileStatusBar: false,
@@ -96,6 +116,16 @@ export class GeneralTab extends WordflowSubSettingsTab {
     display() {
         this.container.empty();
         const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
+
+        new Setting(tabContent)
+            .setName('Show record button in ribbon')
+            .setDesc('Add a ribbon icon to record wordflows to periodic notes. Reload plugin to take effect.')
+            .addToggle(t => t
+                .setValue(this.plugin.settings.showRecordRibbonIcon)
+                .onChange(async (value) => {
+                    this.plugin.settings.showRecordRibbonIcon = value;
+                    await this.plugin.saveSettings();
+                }));
         
         new Setting(tabContent)
             .setName('Threshold for notes to record in edit mode')
@@ -193,7 +223,7 @@ export class GeneralTab extends WordflowSubSettingsTab {
 // 记录器管理标签页
 // ========================================
 export class RecordersTab extends WordflowSubSettingsTab {
-    private activeRecorderIndex: number = 0;
+    public activeRecorderIndex: number = 0;
     private settingsContainer: HTMLElement;
     private PeriodicFolderComponent?: TextComponent;
 	private SyntaxComponent?: TextAreaComponent;
@@ -926,6 +956,148 @@ export class TimersTab extends WordflowSubSettingsTab {
                     this.plugin.settings.idleInterval = value;
                     await this.plugin.saveSettings();
                 }));
+
+        new Setting(tabContent)
+            .setName('Show second in widget pane(beta)')
+            .setDesc(createFragment(f => {
+                f.appendText('Display seconds together with minute in the widget pane.')
+                f.createEl('br');
+                f.appendText('Will not affect existing data currently.')
+                f.createEl('br');
+                f.appendText('Required to reload the plugin once changed.')
+            }))
+            .addToggle(t => t
+                .setValue(this.plugin.settings.useSecondInWidget)
+                .onChange(async (value) => {
+                    this.plugin.settings.useSecondInWidget = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.Widget?.updateCurrentData();
+        }));
+    }
+}
+
+// ========================================
+// 侧边组件设置标签页
+// ========================================
+export class WidgetTab extends WordflowSubSettingsTab {
+    display() {
+        const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
+        
+        new Setting(tabContent)
+            .setName('Enable Widget on loading')
+            .setDesc('Enable the side pane widget when plugin loads.')
+            .addToggle(t => t
+                .setValue(this.plugin.settings.enableWidgetOnLoad)
+                .onChange(async (value) => {
+                    this.plugin.settings.enableWidgetOnLoad = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(tabContent)
+            .setName('Show widget reveal button in ribbon')
+            .setDesc('Add a ribbon icon to reveal widget and refresh the widget content. Reload plugin to take effect.')
+            .addToggle(t => t
+                .setValue(this.plugin.settings.showWidgetRibbonIcon)
+                .onChange(async (value) => {
+                    this.plugin.settings.showWidgetRibbonIcon = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        let switchToFieldOnFocusPreviewText: HTMLSpanElement
+        new Setting(tabContent)
+            .setName('Switch to this field on focus mode')
+            .setDesc(createFragment(f => {
+                f.appendText('When start focusing, this reading time field will be automatically switched in the widget.')
+                f.createEl('br')
+                f.appendText('Only the reading time field in your recording syntax is supported.')
+                f.createEl('br')
+                f.appendText('Reading time field includes: "${readTime}" and "${readEditTime}".')
+                f.createEl('br')
+
+                switchToFieldOnFocusPreviewText = f.createEl('span', {
+                    cls: 'wordflow-setting-previewText' // add custom CSS class
+                });
+
+                const hasTimeField = this.plugin.Widget?.getFieldOptions().indexOf(this.plugin.settings.switchToFieldOnFocus);
+                    if(this.plugin.settings.switchToFieldOnFocus !== 'disabled') {
+                        switchToFieldOnFocusPreviewText.setText(
+                        'Recorder in widget has ' + this.plugin.settings.switchToFieldOnFocus + ((hasTimeField && hasTimeField !== -1) ?': ✅':': ❌'));
+                    } else switchToFieldOnFocusPreviewText.empty();
+            }))
+            .addDropdown(d => {
+                d.addOption('disabled', 'disabled');
+                d.addOption('readTime', 'readTime');
+                d.addOption('readEditTime', 'readEditTime');
+                d.setValue(this.plugin.settings.switchToFieldOnFocus)
+                .onChange(async (value) => {
+                    this.plugin.settings.switchToFieldOnFocus = value;
+                    await this.plugin.saveSettings();
+
+                    const hasTimeField = this.plugin.Widget?.getFieldOptions().indexOf(this.plugin.settings.switchToFieldOnFocus);
+                    if(value !== 'disabled') {
+                        switchToFieldOnFocusPreviewText.setText(
+                        'Selected recorder in widget has ' + this.plugin.settings.switchToFieldOnFocus + ((hasTimeField && hasTimeField !== -1) ?': ✅':': ❌'));
+                    } else switchToFieldOnFocusPreviewText.empty();
+                })
+            });
+
+        new Setting(tabContent)
+            .setName('Random color group lightness')
+            .setDesc('Specify the lightness from 0-100 in hsl to generate random colors for file entries.')
+            .addText(text => text
+                .setPlaceholder('66')
+                .setValue(this.plugin.settings.colorGroupLightness)
+                .onChange(async (value) => {
+                    this.plugin.settings.colorGroupLightness = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        let colorGroupSaturationPreviewText: HTMLSpanElement
+        new Setting(tabContent)
+            .setName('Random color group saturation')
+            .setDesc('')
+            .setDesc(createFragment(f => {
+                f.appendText('Specify the saturation from 0-100 in hsl to generate random colors for file entries.')
+                f.createEl('br')
+                f.appendText('You can use space " " to separate numbers to offer multiple options.')
+                f.createEl('br')
+                f.appendText('If the current saturation options below does not change, the input should be invalid.')
+                f.createEl('br')
+
+                colorGroupSaturationPreviewText = f.createEl('span', {
+                    cls: 'wordflow-setting-previewText' // add custom CSS class
+                });
+                colorGroupSaturationPreviewText.setText('Current saturation options: ' + this.numArrayToString(this.plugin.settings.colorGroupSaturation));
+            }))
+            .addText(text => text
+                .setPlaceholder('65 80')
+                .setValue(this.numArrayToString(this.plugin.settings.colorGroupSaturation))
+                .onChange(async (value) => {
+                    this.plugin.settings.colorGroupSaturation = this.stringToNumArray(value);
+                    await this.plugin.saveSettings();
+                    colorGroupSaturationPreviewText.setText('Current saturation options: ' + this.numArrayToString(this.plugin.settings.colorGroupSaturation))
+                }));
+    }
+
+    private stringToNumArray(input: string): number[] {
+        if (!input) return this.plugin.settings.colorGroupSaturation;
+        const numbers = input
+            .split(/\s+/) // 使用正则分割空格（包括多个连续空格）
+            .map(str => parseInt(str)) // 转换为数字
+            .filter(num => !isNaN(num)) // 过滤掉无效数字
+            .filter(num => num >= 0 && num <= 100);
+        
+        return (numbers.length > 0)
+                ? numbers
+                : this.plugin.settings.colorGroupSaturation;
+    }
+
+    private numArrayToString(input: number[]): string {
+        let res = '';
+        input.forEach((n)=>{
+            res += (n.toString()+ ' ')
+        });
+        return res;
     }
 }
 
@@ -964,28 +1136,6 @@ export class StatusBarTab extends WordflowSubSettingsTab {
     }
 }
 
-/*
-export class WidgetTab extends WordflowSubSettingsTab {
-    display() {
-        const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
-        
-        new Setting(tabContent)
-            .setName('Alias for fields')
-            .setDesc(createFragment(f => {
-                f.appendText('Enforce the status bar of wordflow tracker to show up in mobile devices.')
-                f.createEl('br');
-                f.appendText('If you have other css snippets do the same, they may be overwriten.')
-            }))
-            .addToggle(t => t
-                .setValue(this.plugin.settings.enableMobileStatusBar)
-                .onChange(async (value) => {
-                    this.plugin.settings.enableMobileStatusBar = value;
-                    await this.plugin.saveSettings();
-                    updateStatusBarStyle(this.plugin.settings);
-                }));
-    }
-}
-*/
 // ========================================
 // 主设置标签页（管理所有子标签页）
 // ========================================

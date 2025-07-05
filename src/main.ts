@@ -1,6 +1,6 @@
 import { DocTracker } from './DocTracker';
 import { DataRecorder } from './DataRecorder';
-import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, updateStatusBarStyle, removeStatusBarStyle } from './settings';
+import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, updateStatusBarStyle, removeStatusBarStyle, WidgetTab } from './settings';
 import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
 import { currentPluginVersion, changelog } from './changeLog';
 import { App, Component, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
@@ -53,22 +53,25 @@ export default class WordflowTrackerPlugin extends Plugin {
 //		if (DEBUG) console.log("Following files were opened:", this.potentialEditors.map(f => f)); 
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('file-clock', 'Record wordflows from edited notes', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice(`Try recording wordflows to periodic note!`, 3000);
-			
-			for (const DocRecorder of this.DocRecorders) {
-				DocRecorder.record();
-			}
+		if (this.settings.showRecordRibbonIcon) {
+			const ribbonIconEl = this.addRibbonIcon('file-clock', 'Record wordflows from edited notes', (evt: MouseEvent) => {
+				// Called when the user clicks the icon.
+				new Notice(`Try recording wordflows to periodic note!`, 3000);
+				
+				for (const DocRecorder of this.DocRecorders) {
+					DocRecorder.record();
+				}
+			});
+		}
 
-		});
-
-		this.addRibbonIcon('chart-bar-decreasing', 'Reveal and refresh wordflow tracker widget', (evt: MouseEvent) => {
-			this.activateView();
-		});
+		if (this.settings.showWidgetRibbonIcon) {
+			this.addRibbonIcon('chart-bar-decreasing', 'Reveal and refresh wordflow tracker widget', (evt: MouseEvent) => {
+				this.activateView();
+			});
+		}
 		// Perform additional things with the ribbon
 		//ribbonIconEl.addClass('my-plugin-ribbon-class');
-
+		if (this.settings.enableWidgetOnLoad) this.activateView();
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		this.statusBarTrackerEl = this.addStatusBarItem();
 
@@ -481,6 +484,7 @@ export class WordflowSettingTab extends PluginSettingTab {
 			'General': new GeneralTab(this.app, this.plugin, this.contentContainer),
 			'Recorders': new RecordersTab(this.app, this.plugin, this.contentContainer),
 			'Timers': new TimersTab(this.app, this.plugin, this.contentContainer),
+			'Widget': new WidgetTab(this.app, this.plugin, this.contentContainer),
 			'Status Bar': new StatusBarTab(this.app, this.plugin, this.contentContainer)
 		};
 

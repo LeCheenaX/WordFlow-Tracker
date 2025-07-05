@@ -40,9 +40,9 @@ export class DocTracker{
     }
 
     public updateStatusBarTracker(){
-        if (this.prevViewMode == 'source') this.plugin.statusBarContent = `⌨ ${this.editTime/1000} · ${this.editedTimes} edits · ${this.editedWords} words`;
+        if (this.prevViewMode == 'source') this.plugin.statusBarContent = `⌨️ ${formatTime(this.editTime)} · ${this.editedTimes} edits · ${this.editedWords} words`;
         else {
-            this.plugin.statusBarContent = `reading ${this.readTime}`;
+            this.plugin.statusBarContent = `📖 ${formatTime(this.readTime)}`;
         }
 
 //if(DEBUG) this.plugin.statusBarContent += ` ${this.filePath}`;
