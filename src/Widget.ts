@@ -5,7 +5,7 @@ import { MetaDataParser } from "./MetaDataParser";
 import { DocTracker } from "./DocTracker";
 import { ConfirmationModal } from "./settings"
 import { UniqueColorGenerator } from "./Utils/UniqueColorGenerator";
-import { DropdownComponent, IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon } from "obsidian";
+import { DropdownComponent, IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon, setTooltip } from "obsidian";
 
 export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
 
@@ -13,6 +13,7 @@ export class WordflowWidgetView extends ItemView {
     plugin: WordflowTrackerPlugin;
     public colorGenerator: UniqueColorGenerator;
     public onFocusMode: boolean = false;
+    private focusPaused: boolean = true;
     private recorderDropdown: DropdownComponent;
     private fieldDropdown: DropdownComponent;
     private totalDataContainer: HTMLSpanElement;
@@ -82,13 +83,15 @@ export class WordflowWidgetView extends ItemView {
         const buttonContainer = this.currentNoteDataContainer.createDiv({ cls: 'wordflow-widget-current-note-buttons' });
 
         this.recordButton = buttonContainer.createEl('em', { cls: 'wordflow-widget-button' });
-        setIcon(this.recordButton, 'file-clock');
-
         this.focusButton = buttonContainer.createEl('em', { cls: 'wordflow-widget-button' });
         
-        this.updateButtonIcons(); // Initial icon setup
+        this.updateButtons_Quit(); // Initial icon setup
 
         this.recordButton.addEventListener('click', () => {
+            if (this.onFocusMode || (!this.onFocusMode && this.focusPaused)) {
+                this.onFocusMode = false;
+                this.updateButtons_Quit();
+            }
             for (const DocRecorder of this.plugin.DocRecorders) {
                 DocRecorder.record();
             }
@@ -104,11 +107,14 @@ export class WordflowWidgetView extends ItemView {
                         this.app, 
                         'Caution: There\'s no time property in recording syntax of the selected recorder. \n\nTo make use of this feature, it\'s recommended to click "cancel" button, and switch to a recorder that has the time peroperty. \n\nYou can also add "${readTime}", "${editTime}" or "${readEditTime}" in recording syntax of your table/bullet-list recorder. \n\nAre you sure to turn on focus mode? This will do no harm but the focused time will not be recorded.', 
                         async ()=>{
-                            this.switchFocusMode();
+                            this.startFocus();
                     });
                     tempMessage.open();
-                } else this.switchFocusMode();
-            } else this.switchFocusMode();
+                } else this.startFocus();
+            } else {
+                this.onFocusMode = false;
+                this.updateButtons_Pause();
+            }
             //if (this.onFocusMode && this.plugin.settings.focusAutoSwitch) this.selectedField = this.plugin.settings.focusAutoSwitch
         });
     }
@@ -134,7 +140,7 @@ export class WordflowWidgetView extends ItemView {
                 const existingFieldValue = this.getFieldValue(this.dataMap?.get(activeFile.path), this.selectedField);
                 const currentTotalValue = currentNoteValue + existingFieldValue;
 
-                const currentValueString = (this.selectedField == 'editTime' || 'readTime' || 'readEditTime')? formatTime(currentTotalValue): currentTotalValue.toString();
+                const currentValueString = (this.selectedField == 'editTime' || this.selectedField == 'readTime' || this.selectedField == 'readEditTime')? formatTime(currentTotalValue): currentTotalValue.toString();
                 
                 // html element creating or re-using
                 let leftContentWrapper: HTMLDivElement | null = this.currentNoteRow.querySelector('.wordflow-widget-current-note-left-content-wrapper');
@@ -149,7 +155,8 @@ export class WordflowWidgetView extends ItemView {
 
                 textContainer.createEl('span', { text: `${activeFile.basename}`, cls: 'wordflow-widget-current-note-label' });
                 const noteValueStyle = textContainer.createEl('span', { text: currentValueString, cls: 'wordflow-widget-current-note-value' });
-                noteValueStyle.style.color = this.colorMap.get(activeTracker.filePath)?? 'initial';
+                if (!this.colorMap.get(activeTracker.filePath)) this.colorMap.set(activeTracker.filePath, this.colorGenerator.generate());
+                noteValueStyle.style.color = this.colorMap.get(activeTracker.filePath)??'initial';
 
                 if (currentTotalValue > 0) {
                     let barContainer: HTMLDivElement | null = leftContentWrapper?.querySelector('.wordflow-widget-current-note-bar-container');
@@ -188,17 +195,31 @@ export class WordflowWidgetView extends ItemView {
             this.currentNoteRow.empty();
             this.currentNoteRow.createEl('span', { text: "no file opened", cls: 'wordflow-widget-current-note-faint-label' });
         }
-        this.updateButtonIcons();
     }
 
-    public updateButtonIcons() {
-        const activeFile = this.app.workspace.getActiveFile();
-        if (activeFile && this.onFocusMode) { // add empty detecting in case of reporting errors
-            setIcon(this.focusButton, 'pause');
-        } else {
-            setIcon(this.focusButton, 'play');
-        }
-    };
+    public updateButtons_Pause() {
+        setIcon(this.focusButton, 'play');
+        setTooltip(this.focusButton, 'continue focusing');
+        setIcon(this.recordButton, 'square');
+        setTooltip(this.recordButton, 'quit focusing and record');
+        this.focusPaused = true;
+    }
+
+    public updateButtons_Quit(){
+        setIcon(this.recordButton, 'file-clock');
+        setTooltip(this.recordButton, 'record wordflows to periodic notes');
+        setIcon(this.focusButton, 'play');
+        setTooltip(this.focusButton, 'start focusing');
+        this.focusPaused = false;
+    }
+
+    public updateButtons_Start(){
+        setIcon(this.focusButton, 'pause');
+        setTooltip(this.focusButton, 'pause focusing');
+        setIcon(this.recordButton, 'square');
+        setTooltip(this.recordButton, 'quit focusing and record');
+        this.focusPaused = false;
+    }
 
     public async updateAll() {
         if (!this.dataContainer) return;
@@ -294,7 +315,7 @@ export class WordflowWidgetView extends ItemView {
                 this.totalFieldValue += this.getFieldValue(rowData, field);
         });
 
-        this.totalDataContainer.textContent = (field == 'editTime' || 'readTime' || 'readEditTime')? formatTime(this.totalFieldValue): this.totalFieldValue.toString();
+        this.totalDataContainer.textContent = (field == 'editTime' || field == 'readTime' || field == 'readEditTime')? formatTime(this.totalFieldValue): this.totalFieldValue.toString();
 
         const totalProgressBarContainer = this.dataContainer.createDiv({ 
             cls: 'wordflow-widget-total-progress-bar-container' 
@@ -306,7 +327,7 @@ export class WordflowWidgetView extends ItemView {
             if (this.totalFieldValue > 0) {
                 percentage = (value / this.totalFieldValue) * 100;
             }
-            const valueString = (field == 'editTime' || 'readTime' || 'readEditTime')? formatTime(value): value.toString();
+            const valueString = (field == 'editTime' || field == 'readTime' || field == 'readEditTime')? formatTime(value): value.toString();
 
             if (!this.colorMap.has(rowData.filePath)) {
                 this.colorMap.set(rowData.filePath, this.colorGenerator.generate())
@@ -496,8 +517,8 @@ export class WordflowWidgetView extends ItemView {
         return await this.selectedRecorder.getParser().extractData(recordNote);;
     }
 
-    private async switchFocusMode():Promise<void>{
-        this.onFocusMode = !this.onFocusMode;
-        this.updateButtonIcons(); 
+    private async startFocus():Promise<void>{
+        this.onFocusMode = true;
+        this.updateButtons_Start();
     }
 }
