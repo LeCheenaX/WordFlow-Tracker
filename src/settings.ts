@@ -60,7 +60,7 @@ export interface RecorderConfig extends WordflowRecorderConfigs {
 export const DEFAULT_SETTINGS: WordflowSettings = {
 	// General settings tab
     showRecordRibbonIcon: true,
-	noteThreshold: 'e', // requrie edits only
+	noteThreshold: 'eot', // requrie edits or time
     noteToRecord: 'all', // requrie edits only
 	autoRecordInterval: '0', // disable
     currentVersion: '1.4.2',
@@ -77,8 +77,8 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     templateTimeFormat: 'HH:mm',
 	recordType: 'table',
 	insertPlace: 'bottom',
-	tableSyntax: `| Note                | Edited Words   | Last Modified Time  | Focused | \n| ------------------- | ---------------- | ------------------ | --------- |\n| [[\${modifiedNote}\\|\${noteTitle}]] | \${editedWords} | \${lastModifiedTime} | \${readEditTime} |`,
-	bulletListSyntax: `- \${modifiedNote}\n    - Edits: \${editedTimes}\n    - Edited Words: \${editedWords}\n    - Focused Time: \${readEditTime}`,
+	tableSyntax: `| Note                | Edited Words   | Last Modified Time  | Focused |\n| ------------------- | ---------------- | ------------------ | --------- |\n| [[\${modifiedNote}\\|\${noteTitle}]] | \${editedWords} | \${lastModifiedTime} | \${readEditTime} |`,
+	bulletListSyntax: `- \${modifiedNote}\|\${noteTitle}\n    - Edits: \${editedTimes}\n    - Edited Words: \${editedWords}\n    - Focused Time: \${readEditTime}`,
 	metadataSyntax: `total edits: \${totalEdits}\ntotal words: \${totalWords}\ntotal time: \${totalTime}`,
 	timeFormat: 'YYYY-MM-DD HH:mm',
 	sortBy: 'lastModifiedTime',

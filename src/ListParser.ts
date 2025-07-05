@@ -41,6 +41,7 @@ export class BulletListParser{
 
         // Find list groups by matching patterns
         for (let i = 0; i < lines.length; i++) {
+            if (!lines[i].trim()) continue; // skip empty line
             let isGroupStart = true;
             let groupData: Record<string, string> = {};
             
@@ -255,15 +256,20 @@ export class BulletListParser{
                 .replace(/\${readTime}/g, formatTime(data.readTime))
                 .replace(/\${readEditTime}/g, formatTime(data.readEditTime));
             
-            output += (line.endsWith('\n'))? line : line + '\n';
+            if (line.endsWith('\n\n')) {
+                output += line.trimEnd() + '\n';
+            } else if (line.endsWith('\n')) {
+                output += line;
+            } else {
+                output += line + '\n';
+            }
         }
-        
         return output.trimStart().replace(/[\r\n]+$/, ''); // donot trim end to allow empty comment, use replace(/[\r\n]+$/, '') instead to trim \n and \r
     }
 
     private setBulletListPatterns(){
         // Parse the list syntax to extract patterns
-        const syntaxLines = this.syntax.split('\n');
+        const syntaxLines = this.syntax.trim().split('\n');
         this.patternLineNum = syntaxLines.length;
         
         // Extract patterns from each line of syntax
@@ -305,7 +311,7 @@ export class BulletListParser{
 
     private setPatterns(){
         // Parse the list syntax to extract patterns
-        const syntaxLines = this.syntax.split('\n');
+        const syntaxLines = this.syntax.trim().split('\n');
         this.patternLineNum = syntaxLines.length;
 
         // Extract patterns from each line of syntax
