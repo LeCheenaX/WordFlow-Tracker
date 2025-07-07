@@ -47,6 +47,7 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
     switchToFieldOnFocus: string;
     colorGroupLightness: string; // required to restart widget or plugin
     colorGroupSaturation: number[]; // required to restart widget or plugin
+    fieldAlias: { key: string, value: string }[];
 
     // Status bar setting tab
     enableMobileStatusBar: boolean;
@@ -96,6 +97,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     switchToFieldOnFocus: 'disabled',
     colorGroupLightness: '66',
     colorGroupSaturation: [60, 85],
+    fieldAlias: [],
 
 
     // Status bar setting tab
@@ -981,8 +983,9 @@ export class TimersTab extends WordflowSubSettingsTab {
 // ========================================
 export class WidgetTab extends WordflowSubSettingsTab {
     display() {
+        this.container.empty(); 
         const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
-        
+
         new Setting(tabContent)
             .setName('Enable Widget on loading')
             .setDesc('Enable the side pane widget when plugin loads.')
@@ -1077,6 +1080,66 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     await this.plugin.saveSettings();
                     colorGroupSaturationPreviewText.setText('Current saturation options: ' + this.numArrayToString(this.plugin.settings.colorGroupSaturation))
                 }));
+
+        new Setting(tabContent)
+            .setName('Field alias')
+            .setDesc('Define aliases for the field. Click the plus button to add a new mapping.')
+            .setHeading();
+
+        this.renderValueMappingSetting(tabContent, this.plugin.settings.fieldAlias, this.plugin.Widget?.getFieldOptions() || []);
+    }
+
+    private renderValueMappingSetting(containerEl: HTMLElement, mappings: { key: string, value: string }[], availableOptions: string[]): void {
+
+        const mappingsContainer = containerEl.createDiv('value-mappings-container');
+
+        mappings.forEach((mapping, index) => {
+            const setting = new Setting(mappingsContainer)
+                .addDropdown(dropdown => {
+                    if (availableOptions.length === 0) {
+                        dropdown.addOption('', 'No options available');
+                        dropdown.setDisabled(true);
+                    } else {
+                        availableOptions.forEach(option => {
+                            dropdown.addOption(option, option);
+                        });
+                    }
+                    dropdown.setValue(mapping.value);
+                    dropdown.onChange(async (value) => {
+                        mappings[index].value = value;
+                        await this.plugin.saveSettings();
+                    });
+                })
+                .addText(text => {
+                    text.setPlaceholder('Enter display name');
+                    text.setValue(mapping.key);
+                    text.onChange(async (value) => {
+                        mappings[index].key = value;
+                        await this.plugin.saveSettings();
+                    });
+                })
+                .addButton(button => {
+                    button.setButtonText('Delete');
+                    button.setIcon('trash');
+                    button.onClick(async () => {
+                        mappings.splice(index, 1);
+                        await this.plugin.saveSettings();
+                        this.display(); // Re-render the settings tab to reflect changes
+                    });
+                });
+        });
+
+        new Setting(mappingsContainer)
+            .addButton(button => {
+                button.setButtonText('Add New Mapping');
+                button.setIcon('plus');
+                button.setCta();
+                button.onClick(async () => {
+                    mappings.push({ key: '', value: '' }); // Default new mapping
+                    await this.plugin.saveSettings();
+                    this.display(); // Re-render the settings tab to reflect changes
+                });
+            });
     }
 
     private stringToNumArray(input: string): number[] {
