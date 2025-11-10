@@ -27,7 +27,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		if (this.settings.currentVersion !== currentPluginVersion)
 		{
-			new ChangelogModal(this.app, '1.4.3', changelog).open();
+			new ChangelogModal(this.app, currentPluginVersion, changelog).open();
 			this.settings.currentVersion = currentPluginVersion;
 			await this.saveSettings();
 		}
