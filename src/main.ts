@@ -7,7 +7,7 @@ import { App, Component, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, 
 
 
 // Remember to rename these classes and interfaces!
-const DEBUG = true as const;
+const DEBUG = false as const;
 
 export default class WordflowTrackerPlugin extends Plugin {
 	public settings: WordflowSettings;
@@ -236,7 +236,7 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 					await this.recordTracker(tracker);
 					tracker.destroyTimers();
 					this.trackerMap.delete(filePath);
-console.log("Closed file:", filePath, " is recorded.")
+//console.log("Closed file:", filePath, " is recorded.")
 				}
 				else{
 					if (filePath !== this.lastActiveFile.path) tracker.deactivate(); // 1.5.0: no longer deactivate tracker when clicked elsewhere
@@ -257,15 +257,15 @@ console.log("Closed file:", filePath, " is recorded.")
 					await this.recordTracker(tracker);
 					tracker.destroyTimers();
 					this.trackerMap.delete(filePath);
-console.log("Closed file:", filePath, " is recorded.")
+//console.log("Closed file:", filePath, " is recorded.")
 				}
 				//else if (this.isModeSwitch && potentialEditors.get(filePath) == 'preview'){// now preview mode}
 				else if (this.isModeSwitch && filePath == this.lastActiveFile.path){ 
-console.log ('Try recording', filePath, ' current mode: ', potentialEditors.get(filePath));
+//console.log ('Try recording', filePath, ' current mode: ', potentialEditors.get(filePath));
 					await this.recordTracker(tracker);
 				}
 				else if (this.isModeSwitch && this.settings.noteToRecord == 'all' && potentialEditors.get(filePath) == 'source'){ 
-console.log ('This note is under edit mode after switching mode: ', filePath);	
+//console.log ('This note is under edit mode after switching mode: ', filePath);	
 					await this.recordTracker(tracker);		
 				} 
 				// else console.log('Layout changed but no mode switched');*/
