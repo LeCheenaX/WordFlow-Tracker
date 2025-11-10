@@ -1,7 +1,14 @@
-export const currentPluginVersion = '1.5.0';
+export const currentPluginVersion = '1.5.1';
 
 export const changelog = `
 --> Kindly see full change logs including previous versions at [releases](https://github.com/LeCheenaX/WordFlow-Tracker/releases).
+### 1.5.1 updates
+**Bug Fixed:**
+1. MetaData will not update the following properties in 1.5.0:
+    1. totalReadTime
+    2. totalTime
+2. The records on yesterday or earlier will be wrongly recorded on today's note, if Obsidian is opened up to the next day. 
+3. Console log pollution in beta version 1.5.0.
 
 ### 1.5.0 updates
 **New Features:**
@@ -21,23 +28,7 @@ export const changelog = `
 5. Display seconds for the timer in the widget. 
     note: Technically, this could be applied to status bar, existing data in periodic note. However, this is restricted to the timer in widget in this version, as this introduces multiple undefined issues otherwise. 
 
-Rebuilt: 
+**Rebuilt:** 
 - EditTimer is rebuilt into Timer, with capability of mode detecting.
-
-### 1.4.3 updates 
-**Bug Fixed:**
-1. The YAML recorder may unexpectedly add an empty line to the YAML.
-2. The empty comment may be ignored by the table parser, leading to the column after the comment be extracted instead.
-3. The noteThredhold not working when using command, ribbon button, or auto recording interval timed out.
-
-**Feature:**
-- Support core plugin "Templates" when creating periodic note. (fixes [issue 5](https://github.com/LeCheenaX/WordFlow-Tracker/issues/5))
-- Reviewing changelogs when updates the plugin. 
-
-**Enhancements:**
-- New Settings with preview feature and validation check!
-
-**Rebuilt:**
-- Settings page are rebuilt to preview user input at real time, and validate legal inputs. 
 
 `;
