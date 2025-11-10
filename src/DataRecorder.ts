@@ -103,7 +103,9 @@ this.newDataMap.forEach((NewData)=>{
 })
 */
         if (this.newDataMap.size == 0) return;
-        let trackedTime: number | undefined = this.newDataMap.values().next().value?.trackerCreatedTime;
+        let trackedTime: number | undefined = this.newDataMap.values().next().value?.trackerResetTime;
+        if (moment(trackedTime).dayOfYear() !== moment(Date.now()).dayOfYear()) { new Notice("Cross-day records detected. Try recording to correct note.", 3000); }
+//console.log("trackerResetTime: ", moment(trackedTime).dayOfYear())
         // Get the target note file
         const recordNote = await this.getOrCreateRecordNote(trackedTime);
         if (!recordNote) {

@@ -4,7 +4,7 @@ import WordflowTrackerPlugin from "./main";
 import { debounce, Editor, EventRef, MarkdownView, MarkdownViewModeType, moment, Notice } from "obsidian";
 import { historyField } from "@codemirror/commands";
 
-const DEBUG = true as const;
+const DEBUG = false as const;
 
 export class DocTracker{
     public lastDone: number = 0;
@@ -121,7 +121,7 @@ if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"
 
     public async resetEdit(){
 //console.log('DocTracker.resetEdit: called')
-        await sleep(500); // for multiple recorders to record before cleared.
+        await sleep(1000); // for multiple recorders to record before cleared.
         this.editedTimes = 0;
         this.editedWords = 0;
         this.addedWords = 0;
@@ -210,8 +210,9 @@ console.log("DocTracker.trackEditing: ", this.filePath)
     }
 
     private async trackChanges() {
-        if (moment(this.trackerResetTime).dayOfYear() !== moment().dayOfYear()) {
-            new Notice("Cross-day records detected. Try recording to correct note.", 3000);
+        //if (DEBUG) console.log("lastTrackedDate: ", moment(this.trackerResetTime).format('YYYY-MM-DD'), "\ncurrentDate: ", moment(Date.now()).format('YYYY-MM-DD'));
+
+        if (moment(this.trackerResetTime).dayOfYear() !== moment(Date.now()).dayOfYear()) {
             await (async () => {
                 for (const DocRecorder of this.plugin.DocRecorders) {
                     await DocRecorder.record();
