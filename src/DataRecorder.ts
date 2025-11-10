@@ -103,8 +103,9 @@ this.newDataMap.forEach((NewData)=>{
 })
 */
         if (this.newDataMap.size == 0) return;
+        let trackedTime: number | undefined = this.newDataMap.values().next().value?.trackerCreatedTime;
         // Get the target note file
-        const recordNote = await this.getOrCreateRecordNote();
+        const recordNote = await this.getOrCreateRecordNote(trackedTime);
         if (!recordNote) {
             new Notice ("⚠️ Failed to get or create record note!\nData backed up to console!", 0);
             console.error("⚠️ Failed to get or create record note");
@@ -148,8 +149,8 @@ this.existingDataMap.forEach((ExistingData)=>{
         }
     }
 
-    private async getOrCreateRecordNote(): Promise<TFile | null> {
-        const recordNoteName = moment().format(this.periodicNoteFormat);
+    private async getOrCreateRecordNote(targetDate?: number): Promise<TFile | null> {
+        const recordNoteName = targetDate? moment(targetDate).format(this.periodicNoteFormat): moment().format(this.periodicNoteFormat);
         const recordNoteFolder = (this.enableDynamicFolder)? moment().format(this.periodicNoteFolder): this.periodicNoteFolder;
         const isRootFolder: boolean = (recordNoteFolder.trim() == '')||(recordNoteFolder.trim() == '/');
         let recordNotePath = (isRootFolder)? '': recordNoteFolder+'/';
@@ -478,6 +479,7 @@ export class ExistingData {
 export class NewData {
     filePath: string;
     fileName: string;
+    trackerResetTime: number;
     lastModifiedTime: number;
     editedWords: number;
     editedTimes: number;
@@ -494,6 +496,7 @@ export class NewData {
     constructor(tracker: DocTracker) {
         this.filePath = tracker.filePath;
         this.fileName = tracker.fileName;
+        this.trackerResetTime = tracker.trackerResetTime;
         this.lastModifiedTime = tracker.lastModifiedTime;
         this.editedWords = tracker.editedWords;
         this.editedTimes = tracker.editedTimes;

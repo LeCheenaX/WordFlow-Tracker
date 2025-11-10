@@ -1,7 +1,7 @@
 import { wordsCounter } from "./stats";
 import Timer,  { formatTime } from "./Timer";
 import WordflowTrackerPlugin from "./main";
-import { debounce, Editor, EventRef, MarkdownView, MarkdownViewModeType, Notice } from "obsidian";
+import { debounce, Editor, EventRef, MarkdownView, MarkdownViewModeType, moment, Notice } from "obsidian";
 import { historyField } from "@codemirror/commands";
 
 const DEBUG = true as const;
@@ -15,6 +15,7 @@ export class DocTracker{
     public deletedWords: number = 0;
     public changedWords: number = 0;
     public isActive: boolean = false;
+    public trackerResetTime: number; // unix timestamp
     public lastModifiedTime: number; // unix timestamp
     public docLength: number = 0;
     public docWords: number = 0;
@@ -130,6 +131,7 @@ if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"
         this.readTimer?.reset();
         this.updateStatusBarTracker();
         this.plugin.Widget?.updateCurrentData();
+        this.trackerResetTime = Date.now();
     }
 
     public destroyTimers(){
@@ -188,7 +190,7 @@ console.log("DocTracker.trackEditing: ", this.filePath)
 
     private async trackReading(){
         this.readTimer?.start();
-console.log("DocTracker.trackReading: ", this.filePath)
+//console.log("DocTracker.trackReading: ", this.filePath)
     }
 
     private async initialize() {
@@ -198,6 +200,7 @@ console.log("DocTracker.trackReading: ", this.filePath)
         this.deleteWordsCt = wordsCounter();  
         this.editTimer = new Timer(this.plugin, this, 'source');     
         this.readTimer = new Timer(this.plugin, this, 'preview');  
+        this.trackerResetTime = Date.now();
 //        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.filePath}`); 
         await this.activate(this.activeEditor?.getMode());
         await this.countOrigin();
@@ -206,7 +209,15 @@ console.log("DocTracker.trackReading: ", this.filePath)
         this.plugin.Widget?.updateCurrentData();
     }
 
-    private trackChanges() {
+    private async trackChanges() {
+        if (moment(this.trackerResetTime).dayOfYear() !== moment().dayOfYear()) {
+            new Notice("Cross-day records detected. Try recording to correct note.", 3000);
+            await (async () => {
+                for (const DocRecorder of this.plugin.DocRecorders) {
+                    await DocRecorder.record();
+                }
+            })();
+        }
         //if (DEBUG) console.log("DocTracker.trackChanges: tracking history changes of ", this.activeEditor?.file?.path);
 
         // direct way to prove means cm destoyed, without having to find activeEditor.cm.destroyed: true.
