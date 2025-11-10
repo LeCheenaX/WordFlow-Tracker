@@ -315,16 +315,22 @@ this.existingDataMap.forEach((ExistingData)=>{
         MergedTotalData.totalEdits = ExistingData.totalEdits;
         MergedTotalData.totalWords = ExistingData.totalWords;
         MergedTotalData.totalEditTime = ExistingData.totalEditTime;
+        MergedTotalData.totalReadTime = ExistingData.totalReadTime;
+        MergedTotalData.totalTime = ExistingData.totalTime;
         } else {
             MergedTotalData.totalEdits = 0;
             MergedTotalData.totalWords = 0;
             MergedTotalData.totalEditTime = 0;
+            MergedTotalData.totalReadTime = 0;
+            MergedTotalData.totalTime = 0;
         }
 //console.log('Total Before merging:',[MergedTotalData])
         for (const [filePath, newData] of this.newDataMap.entries()) {
             MergedTotalData.totalEdits += newData.editedTimes;
             MergedTotalData.totalWords += newData.editedWords;
             MergedTotalData.totalEditTime += newData.editTime;
+            MergedTotalData.totalReadTime += newData.readTime;
+            MergedTotalData.totalTime += (newData.readTime + newData.editTime);
         }
 //console.log('Total After merging:',[MergedTotalData])
         return [MergedTotalData];
