@@ -9,6 +9,7 @@ export const changelog = `
     2. totalTime
 2. The records on yesterday or earlier will be wrongly recorded on today's note, if Obsidian is opened up to the next day. 
 3. Console log pollution in beta version 1.5.0.
+4. Changed log version display is not correct. 
 
 ### 1.5.0 updates
 **New Features:**
