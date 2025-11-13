@@ -1,7 +1,12 @@
-export const currentPluginVersion = '1.5.1';
+export const currentPluginVersion = '1.5.2';
 
 export const changelog = `
 --> Kindly see full change logs including previous versions at [releases](https://github.com/LeCheenaX/WordFlow-Tracker/releases).
+### 1.5.2 updates
+**Bug Fixed:**
+1. The \${statBar} property may be incorrect, which overrides the existing data with new data.
+2. Widget view may not initialize properly, if the plugin is set to load with delay(by 3rd party plugin manager plugin) after Obsidian load.
+
 ### 1.5.1 updates
 **Bug Fixed:**
 1. MetaData will not update the following properties in 1.5.0:

@@ -693,10 +693,10 @@ class StatBar{
             this.originPortion = originWidthMatch ? parseInt(originWidthMatch[1]) : 0;
             this.delPortion = deletedWidthMatch ? parseInt(deletedWidthMatch[1]) : 0;
             this.addPortion = addedWidthMatch ? parseInt(addedWidthMatch[1]) : 0;
-console.log('StatBar.fromNote: ', this)            
+//console.log('StatBar.fromNote: ', this)            
             return true;
         }
-console.log('StatBar.fromNote: no match found')
+//console.log('StatBar.fromNote: no match found')
         return false;
     }
 
