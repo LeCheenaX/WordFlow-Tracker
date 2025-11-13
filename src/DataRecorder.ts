@@ -5,6 +5,7 @@ import { TableParser } from './TableParser';
 import { BulletListParser } from './ListParser';
 import { MetaDataParser } from "./MetaDataParser";
 import { moment, Notice, TFile } from 'obsidian';
+import { stat } from "fs";
 
 export class DataRecorder {
     public existingDataMap: Map<string, ExistingData> = new Map();
@@ -600,8 +601,8 @@ export class MergedData {
 
         this.statBar.setEdits(
             existingData.statBar.originalWords, 
-            this.deletedWords, 
-            this.addedWords
+            this.deletedWords + existingData.statBar.deletedWords, 
+            this.addedWords + existingData.statBar.addedWords
         )
 
         this.comment = existingData.comment?? '\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost
@@ -692,10 +693,10 @@ class StatBar{
             this.originPortion = originWidthMatch ? parseInt(originWidthMatch[1]) : 0;
             this.delPortion = deletedWidthMatch ? parseInt(deletedWidthMatch[1]) : 0;
             this.addPortion = addedWidthMatch ? parseInt(addedWidthMatch[1]) : 0;
-            
+console.log('StatBar.fromNote: ', this)            
             return true;
         }
-        
+console.log('StatBar.fromNote: no match found')
         return false;
     }
 
