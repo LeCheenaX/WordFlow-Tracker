@@ -28,6 +28,8 @@ export interface WordflowRecorderConfigs {
 export interface WordflowSettings extends WordflowRecorderConfigs{
     // General settings tab
     showRecordRibbonIcon: boolean;
+    ignoredFolders: string[];
+    ignoredFileTags: string[];
     noteThreshold: string;
     noteToRecord: string;
     autoRecordInterval: string;
@@ -61,6 +63,8 @@ export interface RecorderConfig extends WordflowRecorderConfigs {
 export const DEFAULT_SETTINGS: WordflowSettings = {
 	// General settings tab
     showRecordRibbonIcon: true,
+    ignoredFolders: [],
+    ignoredFileTags: [],
 	noteThreshold: 'eot', // requrie edits or time
     noteToRecord: 'all', // requrie edits only
 	autoRecordInterval: '0', // disable
@@ -128,6 +132,74 @@ export class GeneralTab extends WordflowSubSettingsTab {
                     this.plugin.settings.showRecordRibbonIcon = value;
                     await this.plugin.saveSettings();
                 }));
+        
+        let ignoredFoldersPreviewText: HTMLSpanElement;
+        new Setting(tabContent)
+            .setName('Ignored folders')
+            .setDesc(createFragment(f => {
+                f.appendText('Files inside these folders (or subfolders) will not be tracked.');
+                f.createEl('br');
+                f.appendText("Enter the excluded folder pathes separated by comma ',' or linebreaks. ");
+                f.createEl('br');
+                f.appendText("Recommend to reload plugin after changing this setting.");
+                f.createEl('br');
+                f.appendText("Folder format validation: ");
+                ignoredFoldersPreviewText = f.createEl('span', {
+                    cls: 'wordflow-setting-previewText'
+                })
+                let invalidInputFolder: string = '';
+                this.plugin.settings.ignoredFolders.forEach(ignoredFolder => {
+                    if (!this.app.vault.getAbstractFileByPath(ignoredFolder)) invalidInputFolder = ignoredFolder
+                })
+                ignoredFoldersPreviewText.setText(
+                    (invalidInputFolder === '')? '✅' : ('⚠ Folder: ' + invalidInputFolder +' is not found in Obsidian. ')
+                );
+            }))
+            .addTextArea(text => text
+                .setPlaceholder('Private/Daily Notes\nTemplates')
+                .setValue(this.plugin.settings.ignoredFolders?.join('\n') || '')
+                .onChange(async (value) => {
+                    const folders = value.split(/[\n,]/)
+                        .map(p => p.trim())
+                        .map(p => normalizePath(p))
+                        .filter(p => p.length > 0);
+                    
+                    this.plugin.settings.ignoredFolders = folders;
+
+                    // validation check
+                    let invalidInputFolder: string = '';
+                    folders.forEach(ignoredFolder => {
+                        if (!this.app.vault.getAbstractFileByPath(ignoredFolder)) invalidInputFolder = ignoredFolder
+                    })
+                    ignoredFoldersPreviewText.setText(
+                        (invalidInputFolder === '')? '✅' : ('⚠ Folder: \"' + invalidInputFolder +'\" is not found in Obsidian. ')
+                    );
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(tabContent)
+            .setName('Ignored tags')
+            .setDesc(createFragment(f => {
+                f.appendText('Files containing any one of these tags in Frontmatter (YAML) will not be tracked.');
+                f.createEl('br');
+                f.appendText("Enter the excluded tags separated by comma ',' or linebreaks. ");
+                f.createEl('br');
+                f.appendText("Recommend to reload plugin after changing this setting.");
+            }))
+            .addTextArea(text => text
+                .setPlaceholder('#ignore\n#private')
+                .setValue(this.plugin.settings.ignoredFileTags?.join('\n') || '')
+                .onChange(async (value) => {            
+                    const tags = value.split(/[\n,]/)
+                        .map(t => t.trim())
+                        .filter(t => t.length > 0)
+                        .map(t => t.startsWith('#') ? t : '#' + t); 
+                    
+                    this.plugin.settings.ignoredFileTags = tags;
+                    await this.plugin.saveSettings();
+                })
+            );
         
         new Setting(tabContent)
             .setName('Threshold for notes to record in edit mode')

@@ -170,7 +170,7 @@ if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"
         this.editTimer?.start();
         this.activeEditor = this.plugin.app.workspace.getActiveViewOfType(MarkdownView); 
         //if (DEBUG) console.log("DocTracker.activate: editor:", this.activeEditor)
-console.log("DocTracker.trackEditing: ", this.filePath)
+//console.log("DocTracker.trackEditing: ", this.filePath)
         await sleep(20); // Warning: cm will be delayed for 3-5 ms to be bound to the updated editor.
         // @ts-expect-error
         const history = this.activeEditor?.editor.cm.state.field(historyField); // reference will be destroyed after initialization

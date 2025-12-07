@@ -3,7 +3,7 @@ import { DataRecorder } from './DataRecorder';
 import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, updateStatusBarStyle, removeStatusBarStyle, WidgetTab } from './settings';
 import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
 import { currentPluginVersion, changelog } from './changeLog';
-import { App, Component, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
+import { App, Component, getAllTags, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
 
 
 // Remember to rename these classes and interfaces!
@@ -307,8 +307,13 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 		// track active File
 //if (DEBUG) console.log("Main.activateTracker: trackerMap",this.trackerMap);
 //if (DEBUG) console.log('Main.activateTracker: file not found in trackerMap');
-		const newTracker = new DocTracker(activeFilePath, activeEditor, this);
-		this.trackerMap.set(activeFilePath, newTracker);
+			if (this.isIgnoredFile(activeEditor.file)) {
+				this.statusBarTrackerEl.setText('');
+				this.Widget?.updateCurrentData();
+				return;
+			}; // restrict tracker creation, not affecting existing created trackers in case of frequently adjustments on the plugin settings. 
+			const newTracker = new DocTracker(activeFilePath, activeEditor, this);
+			this.trackerMap.set(activeFilePath, newTracker);
 		} 
 		else{
 			const activeFileViewMode = activeEditor?.getMode();
@@ -347,6 +352,31 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 		}
 */
 
+
+	private isIgnoredFile(file: TFile): boolean { 
+        // --- Folder Check ---
+        const isIgnoredFolder = this.settings.ignoredFolders.some(folder => 
+            file.path.startsWith(folder + '/')
+        );
+        
+        if (isIgnoredFolder) return true;
+
+        // --- Tag Check ---
+        const cache = this.app.metadataCache.getFileCache(file);
+        
+        if (cache) {
+            const fileTags = getAllTags(cache);
+            
+            if (fileTags) {
+                const hasIgnoredTag = this.settings.ignoredFileTags.some(ignoredTag => 
+                    fileTags.includes(ignoredTag)
+                );
+                if (hasIgnoredTag) return true;
+            }
+        }
+//console.log(file.path, " is not ignored.")
+        return false;
+    }
 
 	// get markdown files (with path) that are in edit mode from all leaves
 	private async getAllOpenedFilesWithMode(): Promise<Map<string, 'source' | 'preview' | unknown>> {
