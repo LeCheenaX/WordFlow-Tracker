@@ -82,6 +82,11 @@ if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);
     }; 
 
     public async countActiveWords(){ 
+        if (!this.activeEditor?.file || this.activeEditor.file.path !== this.filePath) {
+// console.warn(`Tracker for ${this.filePath} misattached to another note for switching too quickly! The issues are fixed but recommend not to record immediately after note-switching.`);
+            await this.countInactiveWords(); 
+            return;
+        }
         const totalWordsCt = wordsCounter();
         //@ts-expect-error
         this.docWords = totalWordsCt(this.activeEditor?.editor.cm.state.sliceDoc(0));
