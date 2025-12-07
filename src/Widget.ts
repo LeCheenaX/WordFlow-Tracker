@@ -231,7 +231,7 @@ export class WordflowWidgetView extends ItemView {
         if (!this.dataContainer) return;
 
         this.initRecorderDropdown();
-        this.initFieldDropDown();
+        await this.initFieldDropDown();
     }
 
     public regenerateColors() {
@@ -296,7 +296,7 @@ export class WordflowWidgetView extends ItemView {
         }
 
         this.fieldDropdown.setValue(this.selectedField)
-        this.updateData();
+        await this.updateData();
 
         this.fieldDropdown.onChange(async (value) => {
             this.fieldDropdown.setValue(value);
@@ -310,6 +310,9 @@ export class WordflowWidgetView extends ItemView {
         this.dataContainer.empty();
         if (!this.dataMap || !field) {
             this.dataContainer.createEl('span', { text: 'No available data in this field', cls: 'wordflow-widget-no-data-message'});
+            this.totalDataContainer.textContent = (field === 'editTime' || field === 'readTime' || field === 'readEditTime')
+                ? formatTime(0)
+                : "0";
             return;
         }
 

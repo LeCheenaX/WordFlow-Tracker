@@ -71,10 +71,13 @@ export default class WordflowTrackerPlugin extends Plugin {
 		}
 		// Perform additional things with the ribbon
 		//ribbonIconEl.addClass('my-plugin-ribbon-class');
-		if (this.settings.enableWidgetOnLoad) {
-			await sleep(500); // add delay to allow view to check if there's existing view, when plugin is updated through Obsidian community.
-			this.activateView();
-		};
+		this.app.workspace.onLayoutReady(async () => {
+			if (this.settings.enableWidgetOnLoad) {
+				await sleep(500); // add delay to allow view to check if there's existing view, when plugin is updated through Obsidian community.
+				this.activateView();
+			};
+		});
+		
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		this.statusBarTrackerEl = this.addStatusBarItem();
 
