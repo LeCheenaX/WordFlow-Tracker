@@ -281,7 +281,7 @@ export class WordflowWidgetView extends ItemView {
 
         this.fieldDropdown.selectEl.empty();
         fieldOptions.forEach(option => {
-            this.fieldDropdown.addOption(option, option);
+            this.fieldDropdown.addOption(option, this.getFieldDisplayName(option));
         });
 
         // Set default and render
@@ -508,6 +508,11 @@ export class WordflowWidgetView extends ItemView {
         ];
 
         return availableFields.filter(field => syntax.includes(`\${${field}}`))?? this.plugin.i18n.t('widget.prompts.noFieldinSyntax');
+    }
+
+    private getFieldDisplayName(fieldName: string): string {
+        const aliasMapping = this.plugin.settings.fieldAlias.find(mapping => mapping.value === fieldName);
+        return aliasMapping ? aliasMapping.key : fieldName;
     }
 
     private async getDataMap(field: string | null): Promise<Map<string, ExistingData> | null> {

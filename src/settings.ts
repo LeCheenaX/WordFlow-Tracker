@@ -1111,7 +1111,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
     }
 
     private renderValueMappingSetting(containerEl: HTMLElement, mappings: { key: string, value: string }[], availableOptions: string[]): void {
-        const mappingsContainer = containerEl.createDiv('value-mappings-container');
+        const mappingsContainer = containerEl.createDiv('wordflow-widget-mappings-container');
 
         mappings.forEach((mapping, index) => {
             const setting = new Setting(mappingsContainer)
@@ -1136,6 +1136,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     text.onChange(async (value) => {
                         mappings[index].key = value;
                         await this.plugin.saveSettings();
+                        this.plugin.Widget?.updateAll();
                     });
                 })
                 .addButton(button => {
@@ -1144,6 +1145,8 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     button.onClick(async () => {
                         mappings.splice(index, 1);
                         await this.plugin.saveSettings();
+                        // 刷新侧栏组件以更新字段显示名称
+                        this.plugin.Widget?.updateAll();
                         this.display(); // Re-render the settings tab to reflect changes
                     });
                 });
@@ -1157,6 +1160,8 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 button.onClick(async () => {
                     mappings.push({ key: '', value: '' }); // Default new mapping
                     await this.plugin.saveSettings();
+                    // 刷新侧栏组件以更新字段显示名称
+                    this.plugin.Widget?.updateAll();
                     this.display(); // Re-render the settings tab to reflect changes
                 });
             });
