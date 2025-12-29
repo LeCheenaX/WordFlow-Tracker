@@ -1,8 +1,19 @@
-export const currentPluginVersion = '1.5.4';
+export const currentPluginVersion = '1.6.0';
 
 export const changelog = {
 'en': 
 `
+### 1.6.0 updates
+**New Features:**
+1. Custom status bar content - Add customizable status bar elements to display note information
+2. Field alias support - Add alias functionality for field names in widget to improve usability
+3. Full Chinese localization - Complete Chinese language support for settings, notifications, and commands
+4. Bilingual changelog support - Support for both English and Chinese in update logs
+
+**Interface Improvements:**
+1. Adjusted CSS classes for setting tabs to improve visual consistency
+2. Enhanced UI display effects and styling
+
 ### 1.5.3 updates
 **New Feature:**
 - Option to exclude folders or file tags from being tracked by this plugin, thanks to [@Myrte46](https://github.com/Myrte46).
@@ -28,6 +39,17 @@ export const changelog = {
 `,
 'zh-CN': 
 `
+### 1.6.0 更新
+**新功能：**
+1. 自定义状态栏内容 - 添加可自定义的状态栏元素来显示文档信息
+2. 侧栏显示属性别名 - 为侧栏中显示的属性添加自定义名称，以提高可用性
+3. 完整中文本地化 - 为设置、通知和命令提供完整的中文语言支持
+4. 双语更新日志支持 - 支持中英文双语更新日志
+
+**界面改进：**
+1. 调整设置标签页的CSS样式类以提高视觉一致性
+2. 增强UI显示效果和样式
+
 ### 1.5.3 更新
 **新功能：**
 - 新增选项可以排除文件夹或文件标签不被此插件追踪，感谢 [@Myrte46](https://github.com/Myrte46)。
