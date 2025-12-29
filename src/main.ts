@@ -29,7 +29,9 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		if (this.settings.currentVersion !== currentPluginVersion)
 		{
-			new ChangelogModal(this.app, currentPluginVersion, changelog).open();
+			const currentLocale = this.settings.locale || 'en';
+			const localizedChangelog = changelog[currentLocale as keyof typeof changelog] || changelog['en'];
+			new ChangelogModal(this.app, this, currentPluginVersion, localizedChangelog).open();
 			this.settings.currentVersion = currentPluginVersion;
 			await this.saveSettings();
 		}
@@ -566,23 +568,26 @@ export class WordflowSettingTab extends PluginSettingTab {
 
 class ChangelogModal extends Modal {
 	private renderComponent: Component;
-    constructor(app: App, private version: string, private content: string) {
+	private i18n: I18nManager;
+    constructor(app: App, plugin: WordflowTrackerPlugin, private version: string, private content: string) {
         super(app);
 		this.renderComponent = new Component();
+		this.i18n = plugin.i18n;
     }
 
     onOpen() {
         const { contentEl } = this;
         contentEl.empty();
         
-        contentEl.createEl('h2', { text: `Wordflow Tracker Changelogs - Latest: ${this.version}` });
+        contentEl.createEl('h2', { text: this.i18n.t('changelog.title',{version: this.version})});
+		const displayContent = this.i18n.t('changelog.reference') + '\n' + this.content;
         
         const container = contentEl.createDiv('wordflow-changelog-container');
         
         // render markdown contents
         MarkdownRenderer.render(
             this.app,
-            this.content,
+            displayContent,
             container,
             '',
             this.renderComponent

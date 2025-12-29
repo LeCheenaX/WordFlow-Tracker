@@ -386,9 +386,7 @@
     }
   },
   "changelog": {
-    "title": "更新日志",
-    "seeFull": "请参阅发布页面获取包括以前版本在内的完整更新日志",
-    "newFeature": "新功能：",
-    "bugFixed": "错误修复："
+    "title": "Wordflow Tracker 更新日志 - 最新版本: {version}",
+    "reference": "--> 查看完整的历史更新日志，请转到[发布页面](https://github.com/LeCheenaX/WordFlow-Tracker/releases)。"
   }
 }

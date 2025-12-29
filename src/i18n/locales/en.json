@@ -386,9 +386,7 @@
     }
   },
   "changelog": {
-    "title": "Changelog",
-    "seeFull": "Kindly see full change logs including previous versions at releases",
-    "newFeature": "New Feature:",
-    "bugFixed": "Bug Fixed:"
+    "title": "Wordflow Tracker Changelogs - Latest: {version}",
+    "reference": "--> Kindly see full change logs including previous versions at [releases](https://github.com/LeCheenaX/WordFlow-Tracker/releases)."
   }
 }
