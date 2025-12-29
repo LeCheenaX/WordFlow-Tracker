@@ -1,0 +1,290 @@
+{
+  "language": "English",
+  "settings": {
+    "tabs": {
+      "general": "General",
+      "recorders": "Recorders",
+      "timers": "Timers",
+      "widget": "Widget",
+      "statusBar": "Status Bar"
+    },
+    "general": {
+      "showRecordRibbonIcon": {
+        "name": "Show record button in ribbon",
+        "desc": "Add a ribbon icon to record wordflows to periodic notes. Reload plugin to take effect."
+      },
+      "ignoredFolders": {
+        "name": "Ignored folders",
+        "desc": "Files inside these folders (or subfolders) will not be tracked.",
+        "placeholder": "Private/Daily Notes\nTemplates",
+        "validation": {
+          "valid": "✅",
+          "invalid": "⚠ Folder: \"{folder}\" is not found in Obsidian."
+        }
+      },
+      "ignoredTags": {
+        "name": "Ignored tags",
+        "desc": "Files containing any one of these tags in Frontmatter (YAML) will not be tracked.",
+        "placeholder": "#ignore\n#private"
+      },
+      "noteThreshold": {
+        "name": "Threshold for notes to record in edit mode",
+        "desc": "Select a requirement for notes to be recorded in live preview and source mode.",
+        "options": {
+          "e": "require edits only",
+          "t": "require focus time only",
+          "ent": "require both edits and focus time",
+          "eot": "require either edits or focus time",
+          "n": "require none"
+        }
+      },
+      "noteToRecord": {
+        "name": "Notes to record while quiting editing mode",
+        "desc": "Select the behavior when switching a note from editing mode to reading mode.",
+        "options": {
+          "all": "current and other notes in edit mode",
+          "crt": "current note only"
+        }
+      },
+      "autoRecordInterval": {
+        "name": "Automatic recording interval",
+        "desc": "Set the interval in seconds, influencing when the plugin would record all tracked notes and to periodic notes.",
+        "placeholder": "Set to 0 to disable"
+      },
+      "resetSettings": {
+        "name": "Reset all settings",
+        "desc": "Reset all settings to the default value.",
+        "button": "Reset all settings"
+      },
+      "language": {
+        "name": "Language",
+        "desc": "Select the language for the plugin interface."
+      }
+    },
+    "recorders": {
+      "currentRecorder": {
+        "name": "Current recorder",
+        "desc": "Select which recorder configuration to edit."
+      },
+      "actions": {
+        "delete": "Delete",
+        "rename": "Rename",
+        "add": "Add recorder"
+      },
+      "confirmations": {
+        "addRecorder": "Please ensure that there are no duplicate record content type per note, or undefined behavior will occur!\n\nExample allowed✅:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table;\n\tRecorder2: Periodic note format = YYYY-MM-DD; Record type = bullet list;\nExample allowed✅:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table;\n\tRecorder2: Periodic note format = YYYY-MM; Record type = table;\nExample disallowed❌:\n\tRecorder1: Periodic note format = YYYY-MM-DD; Record type = table; Insert to position = bottom;\n\tRecorder2: Periodic note format = YYYY-MM-DD; Record type = table; Insert to position = custom;",
+        "deleteRecorder": "Are you sure you want to remove \"{name}\"?"
+      },
+      "periodicNote": {
+        "heading": "Periodic note to record",
+        "folder": {
+          "name": "Periodic note folder",
+          "desc": "Toggle the button to enable dynamic folder. Disabled by default.",
+          "dynamicEnabled": "Your current periodic note folder looks like this: ",
+          "dynamicDisabled": "Your current periodic note folder looks like this: ",
+          "placeholderDynamic": "[MonthlyLogs/]MM-YYYY",
+          "placeholderStatic": "Example: \"Monthly logs\"",
+          "confirmToggle": "Please make sure that: \n\t1. You will adjust the periodic note folder after toggling dynamic folder. Example formats are as followed: \n\t\tIf dynamic folder is enabled, the moment format must be used: \n\t\t\t[MonthlyLogs\/]MM-YYYY\n\t\tIf dynamic folder is disabled, a folder path must be used: \n\t\t\tLogs\/MonthlyLogs \n\t2. Do not forget to do the same changes to other recorders if you want them to record in the same folder!"
+        },
+        "format": {
+          "name": "Periodic note format",
+          "desc": "Set the file name (in moment format) for newly created daily notes or weekly note.",
+          "preview": "Your current periodic note looks like this: "
+        }
+      },
+      "templatePlugin": {
+        "name": "Template plugin",
+        "desc": "Set the template plugin you use to apply template to new created periodic notes.",
+        "options": {
+          "none": "default (Templater folder template)",
+          "templates": "Templates (core plugin)"
+        },
+        "validation": {
+          "templaterEnabled": "Templater plugin enabled: "
+        },
+        "filePath": {
+          "name": "Template file path",
+          "desc": "Set the file path for the template file to be applied.",
+          "placeholder": "set template file",
+          "validation": {
+            "found": "✅",
+            "notFound": "❌"
+          }
+        },
+        "dateFormat": {
+          "name": "Template file date format",
+          "desc": "{{date}} in the template file will be replaced with this value.",
+          "preview": "Your current syntax looks like this: "
+        },
+        "timeFormat": {
+          "name": "Template file time format",
+          "desc": "{{time}} in the template file will be replaced with this value.",
+          "preview": "Your current syntax looks like this: "
+        }
+      },
+      "recordingContents": {
+        "heading": "Recording contents",
+        "recordType": {
+          "name": "Record content type",
+          "desc": "Select a type of content to record on specified notes.",
+          "options": {
+            "table": "table",
+            "bulletList": "bullet list",
+            "metadata": "metadata"
+          }
+        },
+        "syntax": {
+          "name": "Wordflow recording syntax",
+          "desc": "Modified the syntax with '${}' syntax, see document for supported string interpolation expressions."
+        },
+        "insertPlace": {
+          "name": "Insert to position",
+          "desc": "Insert to this position if no previous record exist.",
+          "options": {
+            "bottom": "bottom",
+            "custom": "custom position",
+            "yaml": "yaml(frontmatter)"
+          },
+          "startPosition": {
+            "name": "Start position",
+            "desc": "The records should be inserted after this content. Content between start position and end position would be replaced during recording."
+          },
+          "endPosition": {
+            "name": "End position",
+            "desc": "The records should be inserted before this content. Content between start position and end position would be replaced during recording."
+          }
+        },
+        "sortBy": {
+          "name": "Sort by",
+          "desc": "Select a type of variables to add recording items in a sequence.",
+          "options": {
+            "lastModifiedTime": "lastModifiedTime",
+            "editedWords": "editedWords",
+            "editedTimes": "editedTimes",
+            "editedPercentage": "editedPercentage",
+            "modifiedNote": "modifiedNote",
+            "editTime": "editTime"
+          },
+          "order": {
+            "descend": "Descend",
+            "ascend": "Ascend"
+          }
+        },
+        "timeFormat": {
+          "name": "Last modified time format",
+          "desc": "Set the format of '${lastModifiedTime}' to be recorded on notes.",
+          "preview": "Your current syntax looks like this: "
+        }
+      }
+    },
+    "timers": {
+      "idleInterval": {
+        "name": "Idle interval",
+        "desc": "Interval in minutes when the timer in status bar will pause when idled for a period of time.",
+        "placeholder": "Set idle time in minute"
+      },
+      "useSecondInWidget": {
+        "name": "Show second in widget pane (beta)",
+        "desc": "Display seconds together with minute in the widget pane."
+      }
+    },
+    "widget": {
+      "enableOnLoad": {
+        "name": "Enable Widget on loading",
+        "desc": "Enable the side pane widget when plugin loads."
+      },
+      "showRibbonIcon": {
+        "name": "Show widget reveal button in ribbon",
+        "desc": "Add a ribbon icon to reveal widget and refresh the widget content."
+      },
+      "switchToFieldOnFocus": {
+        "name": "Switch to this field on focus mode",
+        "desc": "When start focusing, this reading time field will be automatically switched in the widget.",
+        "options": {
+          "disabled": "disabled",
+          "readTime": "readTime",
+          "readEditTime": "readEditTime"
+        },
+        "validation": {
+          "hasField": "Recorder in widget has {field}: ✅",
+          "noField": "Recorder in widget has {field}: ❌"
+        }
+      },
+      "colorGroupLightness": {
+        "name": "Random color group lightness",
+        "desc": "Specify the lightness from 0-100 in hsl to generate random colors for file entries.",
+        "placeholder": "66"
+      },
+      "colorGroupSaturation": {
+        "name": "Random color group saturation",
+        "desc": "Specify the saturation from 0-100 in hsl to generate random colors for file entries.",
+        "preview": "Current saturation options: "
+      },
+      "fieldAlias": {
+        "name": "Field alias",
+        "desc": "Define aliases for the field.",
+        "addButton": "Add New Mapping",
+        "deleteButton": "Delete",
+        "placeholder": "Enter display name",
+        "noOptions": "No options available"
+      }
+    },
+    "statusBar": {
+      "enableMobile": {
+        "name": "Enforce status bar display in mobile",
+        "desc": "Enforce the status bar of wordflow tracker to show up in mobile devices."
+      }
+    }
+  },
+  "commands": {
+    "recordWordflows": {
+      "name": "Record wordflows from edited notes to periodic note"
+    },
+    "revealWidget": {
+      "name": "Reveal and refresh wordflow tracker widget"
+    }
+  },
+  "notices": {
+    "recordSuccess": "Try recording wordflows to periodic note!",
+    "settingsReset": "✅ Settings are reset to default!",
+    "settingsResetFailed": "❌ Could not reset settings! Check console!",
+    "recordTypeUndefined": "❌Record type is not defined in this recorder!",
+    "focusPaused": "Focusing is paused because of idling.",
+    "languageChanged": "Language changed. Please reload the plugin to apply changes."
+  },
+  "widget": {
+    "title": "Wordflow Tracker",
+    "tooltips": {
+      "switchRecorder": "Switch the recorder",
+      "switchField": "switch data to display from recording syntax"
+    },
+    "buttons": {
+      "record": "Record",
+      "focus": "Focus",
+      "pause": "Pause",
+      "quit": "Quit"
+    }
+  },
+  "statusBar": {
+    "editing": "⌨️ {time} · {edits} edits · {words} words",
+    "reading": "📖 {time}"
+  },
+  "modals": {
+    "confirmation": {
+      "title": "⚠️ Confirmation",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+    "renameRecorder": {
+      "title": "Rename recorder",
+      "save": "Save",
+      "cancel": "Cancel"
+    }
+  },
+  "changelog": {
+    "title": "Changelog",
+    "seeFull": "Kindly see full change logs including previous versions at releases",
+    "newFeature": "New Feature:",
+    "bugFixed": "Bug Fixed:"
+  }
+}
