@@ -508,7 +508,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
     private createRecorderSettingsUI(settings: any, recorderInstance: DataRecorder, index: number) {
         const container = this.settingsContainer; // do not use containerEl, instead, use container to pass the new container element
 
-        container.classList.add('wordflow-setting-tab'); // for styles.css
+        //container.classList.add('wordflow-setting-tab'); // for styles.css
 
         let periodicFolderPreviewText: HTMLSpanElement;
         new Setting(container).setName(this.i18n.t('settings.recorders.periodicNote.heading')).setHeading();
