@@ -31,7 +31,7 @@ export default class Timer {
             if (this.plugin.Widget && this.plugin.Widget.onFocusMode){
                 this.plugin.Widget.onFocusMode = false;
                 this.plugin.Widget.updateButtons_Pause();
-                new Notice('Focusing is paused because of idling.', 0)
+                new Notice(this.plugin.i18n.t('notices.focusPaused'), 0)
             }
         }, this.idleInterval, true); // update status bar before pausing, inaccuracy is less than 10ms
     }

@@ -323,10 +323,29 @@
     },
     "revealWidget": {
       "name": "Reveal and refresh wordflow tracker widget"
+    },
+    "refreshWidget": {
+      "name": "Refresh widget with random colors"
     }
   },
   "notices": {
     "recordSuccess": "Try recording wordflows to periodic note!",
+    "autoRecordSuccess": "Auto try recording wordflows to periodic note!",
+    "editsRecorded": "Edits from {filePath} are recorded.",
+    "crossDayRecords": "Cross-day records detected. Try recording to correct note.",
+    "recordNoteFailed": "⚠️ Failed to get or create record note!\nData backed up to console!",
+    "folderCreated": "Periodic folder {folder} doesn't exist!\n Auto created.",
+    "folderCreateFailed": "⚠️ Failed to create record note folder: {error}\nData backed up to console!",
+    "noteCreated": "Periodic note {notePath} doesn't exist!\n Auto created under {folder}.",
+    "noteCreateFailed": "❌ Failed to create record note: {error}\nData backed up to console!",
+    "templateNotFound": "Error: Template file not found in wordflow recorders!",
+    "insertPlaceError": "❌ Could not replace content without setting start place and end place!\nData backed up to console!",
+    "updateNoteError": "⚠️ ERROR updating note: {notePath}! Please check console error.\nData backed up to console!",
+    "tableSyntaxWarning": "⚠️ The table syntax may lack \"\\\" in the alias.",
+    "aliasNotMatched": "❌Var template with note alias is not matched!",
+    "patternNotRecognized": "❌A name of ${} is not recognized, please examine the syntax in settings!",
+    "modifiedNoteNotRecognized": "❌${modifiedNote} is not recognized in the table syntax, which is necessary!",
+    "noAvailableField": "No available time field to switch in current recorder. \nStay on current field.",
     "settingsReset": "✅ Settings are reset to default!",
     "settingsResetFailed": "❌ Could not reset settings! Check console!",
     "recordTypeUndefined": "❌Record type is not defined in this recorder!",
@@ -344,6 +363,14 @@
       "focus": "Focus",
       "pause": "Pause",
       "quit": "Quit"
+    },
+    "prompts":{
+      "noFile": "this file has no tracker",
+      "noOpenedFile": "no file opened",
+      "noRecorder": "No available recorder",
+      "noField": "No available field for this recorder",
+      "noData": "No available data in this field",
+      "noFieldinSyntax": "No available field in wordflow recording syntax to display."
     }
   },
   "modals": {

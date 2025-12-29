@@ -3,7 +3,7 @@ import { DataRecorder } from './DataRecorder';
 import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, updateStatusBarStyle, removeStatusBarStyle, WidgetTab } from './settings';
 import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
 import { currentPluginVersion, changelog } from './changeLog';
-import { initI18n, SupportedLocale, getI18n } from './i18n';
+import { initI18n, SupportedLocale, I18nManager } from './i18n';
 import { App, Component, getAllTags, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
 
 
@@ -12,6 +12,7 @@ const DEBUG = false as const;
 
 export default class WordflowTrackerPlugin extends Plugin {
 	public settings: WordflowSettings;
+	public i18n: I18nManager;
 	public trackerMap: Map<string, DocTracker> = new Map<string, DocTracker>(); // give up nested map
 	public statusBarTrackerEl: HTMLElement; // for status bar tracking
 	public statusBarContent: string; // for status bar content editing
@@ -57,7 +58,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		if (this.settings.showRecordRibbonIcon) {
 			const ribbonIconEl = this.addRibbonIcon('file-clock', 'Record wordflows from edited notes', (evt: MouseEvent) => {
 				// Called when the user clicks the icon.
-				new Notice(`Try recording wordflows to periodic note!`, 3000);
+				new Notice(this.i18n.t('notices.recordSuccess'), 3000);
 				
 				for (const DocRecorder of this.DocRecorders) {
 					DocRecorder.record();
@@ -85,18 +86,18 @@ export default class WordflowTrackerPlugin extends Plugin {
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
 			id: 'record-wordflows-from-edited-notes-to-periodic-note',
-			name: 'Record wordflows from edited notes to periodic note',
+			name: this.i18n.t('commands.recordWordflows.name'),
 			callback: () => {
 				for (const DocRecorder of this.DocRecorders) {
                     DocRecorder.record();
                 }
-				new Notice(`Try recording wordflows to periodic note!`, 3000);
+				new Notice(this.i18n.t('notices.recordSuccess'), 3000);
 			}
 		});
 		
 		this.addCommand({
 			id: 'reveal-and-refresh-wordflow-tracker-widget',
-			name: 'Reveal and refresh wordflow tracker widget',
+			name: this.i18n.t('commands.revealWidget.name'),
 			callback: () => {
 				this.activateView();
 			}
@@ -104,7 +105,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'refresh-widget-with-random-colors',
-			name: 'Refresh widget with random colors',
+			name: this.i18n.t('commands.refreshWidget.name'),
 			callback: () => {
 				this.Widget?.regenerateColors();
 				this.activateView();
@@ -210,7 +211,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				for (const DocRecorder of this.DocRecorders) {
                     DocRecorder.record();
                 }
-				new Notice(`Auto try recording wordflows to periodic note!`, 3000);
+				new Notice(this.i18n.t('notices.autoRecordSuccess'), 3000);
 			}, Number(this.settings.autoRecordInterval) * 1000));
 		}
 	}
@@ -288,7 +289,7 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 			for (const DocRecorder of this.DocRecorders) {
 				DocRecorder.record(tracker);
 			}
-			new Notice(`Edits from ${tracker.filePath} are recorded.`, 1000)
+			new Notice(this.i18n.t('notices.editsRecorded', { filePath: tracker.filePath }), 1000)
 			//if (DEBUG) console.log (`Edits from ${tracker.filePath} are recorded.`);	
 		}
 	};
@@ -491,7 +492,7 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		// Initialize i18n with the loaded locale setting
-		initI18n(this.settings.locale);
+		this.i18n = initI18n(this.settings.locale);
 		updateStatusBarStyle(this.settings);
 	}
 
@@ -519,7 +520,7 @@ export class WordflowSettingTab extends PluginSettingTab {
 		this.contentContainer = containerEl.createDiv('wordflow-tab-content');
 
 		// Get i18n instance for tab labels
-		const i18n = getI18n();
+		const i18n = this.plugin.i18n;
 
 		// intialization setting tabs
 		this.tabs = {

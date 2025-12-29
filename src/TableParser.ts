@@ -224,7 +224,7 @@ export class TableParser{
 
         if (rowColumns.length > 1 && rowColumns[0].includes('[[') && !rowColumns[0].includes(']]')) {
             // combine 2 columns with alias [[filePath\|alias]]
-            if (!rowColumns[0].endsWith('\\')) new Notice('⚠️ The table syntax may lack "\\" in the alias.', 0)
+            if (!rowColumns[0].endsWith('\\')) new Notice(this.plugin.i18n.t('notices.tableSyntaxWarning'), 0)
             rowColumns[0] = rowColumns[0] + '\|' + rowColumns[1];
             rowColumns.splice(1, 1);
         }
@@ -268,7 +268,7 @@ export class TableParser{
                     entry.fileName = match[2];
                 } else {
                     console.error('The captured value: ', value, ' could not match the regex:', "/^\[\[([^\]]+)\\\|([^\]]+)\]\]$/")
-                    new Notice ('❌Var template with note alias is not matched!', 0)
+                    new Notice(this.plugin.i18n.t('notices.aliasNotMatched'), 0)
                     throw new Error ('❌Var template with note alias is not matched!\nConsider checking if table syntax contains "\\|" in the first coloumn, or if table in periodic note is mixed with notes with alias and notes without alias')
                 }
             } else {
@@ -330,14 +330,14 @@ export class TableParser{
                     entry.readEditTime = restoreTimeString(value);
                     break;
                 default:
-                    new Notice ('❌A name of ${} is not recognized, please examine the syntax in settings!', 0);
+                    new Notice(this.plugin.i18n.t('notices.patternNotRecognized'), 0);
                     console.error("❌This pattern is not recognized:", varName);
                 }
             }
         }
         
         if (!entry.filePath) {
-            new Notice ('❌${modifiedNote} is not recognized in the table syntax, which is necessary!', 0);
+            new Notice(this.plugin.i18n.t('notices.modifiedNoteNotRecognized'), 0);
             throw new Error ('${modifiedNote} is not recognized in the table syntax, which is necessary!');
         }
         return entry;

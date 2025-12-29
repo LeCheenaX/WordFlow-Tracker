@@ -323,10 +323,29 @@
     },
     "revealWidget": {
       "name": "显示并刷新 Wordflow Tracker 的侧边栏组件"
+    },
+    "refreshWidget": {
+      "name": "刷新侧边栏组件并重新生成随机颜色"
     }
   },
   "notices": {
     "recordSuccess": "尝试将笔记数据记录到周期笔记！",
+    "autoRecordSuccess": "自动尝试将笔记数据记录到周期笔记！",
+    "editsRecorded": "来自 {filePath} 的编辑已记录。",
+    "crossDayRecords": "检测到跨日记录。尝试记录到正确的笔记。",
+    "recordNoteFailed": "⚠️ 获取或创建记录笔记失败！\n数据已备份到控制台！",
+    "folderCreated": "周期文件夹 {folder} 不存在！\n已自动创建。",
+    "folderCreateFailed": "⚠️ 创建记录笔记文件夹失败：{error}\n数据已备份到控制台！",
+    "noteCreated": "周期笔记 {notePath} 不存在！\n已在 {folder} 下自动创建。",
+    "noteCreateFailed": "❌ 创建记录笔记失败：{error}\n数据已备份到控制台！",
+    "templateNotFound": "错误：在 wordflow 记录器中未找到模板文件！",
+    "insertPlaceError": "❌ 未设置起始位置和结束位置，无法替换内容！\n数据已备份到控制台！",
+    "updateNoteError": "⚠️ 更新笔记错误：{notePath}！请检查控制台错误。\n数据已备份到控制台！",
+    "tableSyntaxWarning": "⚠️ 表格语法可能缺少别名中的 \"\\\"。",
+    "aliasNotMatched": "❌带有笔记别名的变量模板不匹配！",
+    "patternNotRecognized": "❌未识别 ${} 的名称，请检查设置中的语法！",
+    "modifiedNoteNotRecognized": "❌表格语法中未识别 ${modifiedNote}，这是必需的！",
+    "noAvailableField": "当前记录器中没有可切换的时间字段。\n保持当前字段。",
     "settingsReset": "✅ 设置已重置为默认值！",
     "settingsResetFailed": "❌ 无法重置设置！请检查控制台！",
     "recordTypeUndefined": "❌此记录器中未定义记录类型！",
@@ -344,6 +363,14 @@
       "focus": "专注",
       "pause": "暂停专注",
       "quit": "退出专注"
+    },
+    "prompts":{
+      "noFile": "该文件未被追踪或暂不支持",
+      "noOpenedFile": "未打开文件",
+      "noRecorder": "无可用的记录器",
+      "noField": "该记录器没有配置需要记录的属性",
+      "noData": "未在周期笔记中找到该属性的数据",
+      "noFieldinSyntax": "Wordflow 记录语法中没有支持的属性."
     }
   },
   "modals": {

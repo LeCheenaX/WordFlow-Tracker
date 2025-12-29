@@ -2,7 +2,7 @@ import WordflowTrackerPlugin from './main';
 import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent } from 'obsidian';
 import { DataRecorder } from './DataRecorder';
 import { moment, normalizePath } from 'obsidian';
-import { getI18n, SupportedLocale } from './i18n';
+import { SupportedLocale, I18nManager, getI18n } from './i18n';
 
 // Obsidian supports only string and boolean for settings. numbers are not supported. 
 export interface WordflowRecorderConfigs {
@@ -114,9 +114,11 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 
 // 抽象基类用于所有设置标签页
 export abstract class WordflowSubSettingsTab {
-    protected i18n = getI18n();
+    protected i18n: I18nManager;
     
-    constructor(protected app: App, protected plugin: WordflowTrackerPlugin, protected container: HTMLElement) {}
+    constructor(protected app: App, protected plugin: WordflowTrackerPlugin, protected container: HTMLElement) {
+        this.i18n = plugin.i18n;
+    }
     abstract display(): void;
 
     /**
