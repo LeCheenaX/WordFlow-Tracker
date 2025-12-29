@@ -314,6 +314,35 @@
           "Enforce the status bar of wordflow tracker to show up in mobile devices.",
           "If you have other css snippets do the same, they may be overwriten."
         ]
+      },
+      "customContent": {
+        "name": "Custom status bar content",
+        "desc": {
+          "segments": [
+          "Customize the content displayed in the status bar for different modes.",
+          "Use ${} syntax to insert dynamic values like ${editedWords}, ${editTime}, ${readTime}, etc.",
+          "See {link0} for all supported variables."
+          ],
+          "links": [{
+            "id": "link0",
+            "text": "documentation",
+            "href": "https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations"
+          }]
+        },
+        "readingMode": {
+          "name": "Content in reading mode",
+          "desc": [
+            "Content to display when in reading/preview mode.",
+            "Supported variables: ${readTime}, ${docWords}, etc."
+          ]
+        },
+        "editMode": {
+          "name": "Content in editing mode", 
+          "desc": [
+            "Content to display when in live preview or source mode.",
+            "Supported variables: ${editTime}, ${editedWords}, ${editedTimes}, etc."
+          ]
+        }
       }
     }
   },

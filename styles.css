@@ -508,7 +508,7 @@
 
 .wordflow-setting-tab .wordflow-textarea {
     min-width: -webkit-fill-available;
-    min-height: 80px;
+    height: 80px;
 }
 
 /* =========================================== */

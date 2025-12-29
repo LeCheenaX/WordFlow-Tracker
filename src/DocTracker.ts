@@ -41,14 +41,46 @@ export class DocTracker{
     }
 
     public updateStatusBarTracker(){
-        if (this.prevViewMode == 'source') this.plugin.statusBarContent = `⌨️ ${formatTime(this.editTime)} · ${this.editedTimes} edits · ${this.editedWords} words`;
-        else {
-            this.plugin.statusBarContent = `📖 ${formatTime(this.readTime)}`;
-        }
+        const template = this.prevViewMode == 'source' 
+            ? this.plugin.settings.customStatusBarEditMode 
+            : this.plugin.settings.customStatusBarReadingMode;
+        
+        this.plugin.statusBarContent = this.parseStatusBarTemplate(template);
 
 //if(DEBUG) this.plugin.statusBarContent += ` ${this.filePath}`;
         this.plugin.statusBarTrackerEl.setText(this.plugin.statusBarContent);
 //if (DEBUG) console.log(`UpdateStatusBar: ${this.plugin.statusBarContent}`);
+    }
+
+    private parseStatusBarTemplate(template: string): string {
+        return template.replace(/\$\{([^}]+)\}/g, (match, varName) => {
+            switch (varName.trim()) {
+                case 'editTime':
+                    return formatTime(this.editTime);
+                case 'readTime':
+                    return formatTime(this.readTime);
+                case 'readEditTime':
+                    return formatTime(this.editTime + this.readTime);
+                case 'editedTimes':
+                    return this.editedTimes.toString();
+                case 'editedWords':
+                    return this.editedWords.toString();
+                case 'addedWords':
+                    return this.addedWords.toString();
+                case 'deletedWords':
+                    return this.deletedWords.toString();
+                case 'changedWords':
+                    return this.changedWords.toString();
+                case 'docWords':
+                    return this.docWords.toString();
+                case 'fileName':
+                    return this.fileName;
+                case 'filePath':
+                    return this.filePath;
+                default:
+                    return match; // 如果变量不被识别，保持原样
+            }
+        });
     }
 
 

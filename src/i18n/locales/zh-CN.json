@@ -314,6 +314,35 @@
           "强制此插件的状态栏在移动设备上显示。",
           "如果您有其他 css 片段执行相同操作，它们可能会被覆盖。"
         ]
+      },
+      "customContent": {
+        "name": "自定义状态栏内容",
+        "desc": {
+          "segments": [
+          "为不同模式自定义状态栏中显示的内容。",
+          "使用 ${} 语法插入动态值，如 ${editedWords}、${editTime}、${readTime} 等。",
+          "查看{link0}了解所有支持的变量。"
+          ],
+          "links": [{
+            "id": "link0",
+            "text": "文档",
+            "href": "https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations"
+          }]
+        },
+        "readingMode": {
+          "name": "阅读模式内容",
+          "desc": [
+            "在阅读/预览模式下显示的内容。",
+            "支持的变量：${readTime}、${docWords} 等。"
+          ]
+        },
+        "editMode": {
+          "name": "编辑模式内容",
+          "desc": [
+            "在编辑/源码模式下显示的内容。",
+            "支持的变量：${editTime}、${editedWords}、${editedTimes} 等。"
+          ]
+        }
       }
     }
   },

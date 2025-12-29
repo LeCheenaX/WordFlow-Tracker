@@ -1,5 +1,5 @@
 import WordflowTrackerPlugin from './main';
-import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent } from 'obsidian';
+import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, MarkdownView } from 'obsidian';
 import { DataRecorder } from './DataRecorder';
 import { moment, normalizePath } from 'obsidian';
 import { SupportedLocale, I18nManager, getI18n } from './i18n';
@@ -55,6 +55,8 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
 
     // Status bar setting tab
     enableMobileStatusBar: boolean;
+    customStatusBarReadingMode: string;
+    customStatusBarEditMode: string;
 }
 
 export interface RecorderConfig extends WordflowRecorderConfigs {
@@ -109,6 +111,8 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 
     // Status bar setting tab
     enableMobileStatusBar: false,
+    customStatusBarReadingMode: '📖 ${readTime}',
+    customStatusBarEditMode: '⌨️ ${editTime} · ${editedTimes} edits · ${editedWords} words',
 }
 
 
@@ -1218,6 +1222,50 @@ export class StatusBarTab extends WordflowSubSettingsTab {
                     await this.plugin.saveSettings();
                     updateStatusBarStyle(this.plugin.settings);
                 }));
+
+        new Setting(tabContent)
+            .setName(this.i18n.t('settings.statusBar.customContent.name'))
+            .setDesc(this.createMultiLineDesc('settings.statusBar.customContent.desc'))
+            .setHeading();
+
+        const readingModeSetting = new Setting(tabContent)
+            .setName(this.i18n.t('settings.statusBar.customContent.readingMode.name'))
+            .setDesc(this.createMultiLineDesc('settings.statusBar.customContent.readingMode.desc'))
+            .addTextArea(text => text
+                .setPlaceholder('📖 ${readTime}')
+                .setValue(this.plugin.settings.customStatusBarReadingMode)
+                .onChange(async (value) => {
+                    this.plugin.settings.customStatusBarReadingMode = value;
+                    await this.plugin.saveSettings();
+                    this.refreshStatusBar();
+                }));
+
+        makeMultilineTextSetting(readingModeSetting);
+
+        const editModeSetting = new Setting(tabContent)
+            .setName(this.i18n.t('settings.statusBar.customContent.editMode.name'))
+            .setDesc(this.createMultiLineDesc('settings.statusBar.customContent.editMode.desc'))
+            .addTextArea(text => text
+                .setPlaceholder('⌨️ ${editTime} · ${editedTimes} edits · ${editedWords} words')
+                .setValue(this.plugin.settings.customStatusBarEditMode)
+                .onChange(async (value) => {
+                    this.plugin.settings.customStatusBarEditMode = value;
+                    await this.plugin.saveSettings();
+                    this.refreshStatusBar();
+                }));
+
+        makeMultilineTextSetting(editModeSetting);
+    }
+
+    private refreshStatusBar() {
+        // fetch active DocTracker and refresh the status bar
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView?.file?.path) {
+            const tracker = this.plugin.trackerMap.get(activeView.file.path);
+            if (tracker && tracker.isActive) {
+                tracker.updateStatusBarTracker();
+            }
+        }
     }
 }
 

@@ -266,6 +266,18 @@ export interface StatusBarSettingsResources {
         name: string;
         desc: DescriptionType;
     };
+    customContent: {
+        name: string;
+        desc: DescriptionType;
+        readingMode: {
+            name: string;
+            desc: DescriptionType;
+        };
+        editMode: {
+            name: string;
+            desc: DescriptionType;
+        };
+    };
 }
 
 export interface CommandsResources {
@@ -315,7 +327,5 @@ export interface ModalsResources {
 
 export interface ChangelogResources {
     title: string;
-    seeFull: string;
-    newFeature: string;
-    bugFixed: string;
+    reference: string;
 }
