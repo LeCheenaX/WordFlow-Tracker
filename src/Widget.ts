@@ -100,7 +100,7 @@ export class WordflowWidgetView extends ItemView {
             for (const DocRecorder of this.plugin.DocRecorders) {
                 DocRecorder.record();
             }
-            new Notice(`Try recording wordflows to periodic note!`, 3000);
+            new Notice(this.plugin.i18n.t('notices.recordSuccess'), 3000);
         });
 
         this.focusButton.addEventListener('click', () => {           
@@ -195,11 +195,11 @@ export class WordflowWidgetView extends ItemView {
                 }
             } else {
                 this.currentNoteRow.empty();
-                this.currentNoteRow.createEl('span', { text: "this file has no tracker", cls: 'wordflow-widget-current-note-faint-label' });
+                this.currentNoteRow.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noFile'), cls: 'wordflow-widget-current-note-faint-label' });
             }
         } else {
             this.currentNoteRow.empty();
-            this.currentNoteRow.createEl('span', { text: "no file opened", cls: 'wordflow-widget-current-note-faint-label' });
+            this.currentNoteRow.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noOpenedFile'), cls: 'wordflow-widget-current-note-faint-label' });
         }
     }
 
@@ -258,7 +258,7 @@ export class WordflowWidgetView extends ItemView {
 
         if (!availableRecorders) {
             this.selectedRecorder = null;
-            this.recorderDropdown.addOption('tempError', 'No available recorder');
+            this.recorderDropdown.addOption('tempError', this.plugin.i18n.t('widget.prompts.noRecorder'));
             return;
         }
 
@@ -281,13 +281,13 @@ export class WordflowWidgetView extends ItemView {
 
         this.fieldDropdown.selectEl.empty();
         fieldOptions.forEach(option => {
-            this.fieldDropdown.addOption(option, option);
+            this.fieldDropdown.addOption(option, this.getFieldDisplayName(option));
         });
 
         // Set default and render
         if (fieldOptions.length === 0) {
             this.dataContainer.empty();
-            this.dataContainer.createEl("p", { text: "No available field for this recorder" });
+            this.dataContainer.createEl("p", { text: this.plugin.i18n.t('widget.prompts.noField') });
         }
 
         if(!this.selectedField || !fieldOptions.contains(this.selectedField)) {
@@ -309,7 +309,7 @@ export class WordflowWidgetView extends ItemView {
     private async renderData(field: string | null) {
         this.dataContainer.empty();
         if (!this.dataMap || !field) {
-            this.dataContainer.createEl('span', { text: 'No available data in this field', cls: 'wordflow-widget-no-data-message'});
+            this.dataContainer.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noData'), cls: 'wordflow-widget-no-data-message'});
             this.totalDataContainer.textContent = (field === 'editTime' || field === 'readTime' || field === 'readEditTime')
                 ? formatTime(0)
                 : "0";
@@ -491,7 +491,7 @@ export class WordflowWidgetView extends ItemView {
 
     public getFieldOptions(): string[] {
         if (!this.selectedRecorder) {
-            return ['No available field in wordflow recording syntax to display.'];
+            return [this.plugin.i18n.t('widget.prompts.noFieldinSyntax')];
         }
 
         const syntax = this.selectedRecorder.getParser().getSyntax();
@@ -507,7 +507,12 @@ export class WordflowWidgetView extends ItemView {
             'readEditTime',
         ];
 
-        return availableFields.filter(field => syntax.includes(`\${${field}}`))?? 'No available field in wordflow recording syntax to display.';
+        return availableFields.filter(field => syntax.includes(`\${${field}}`))?? this.plugin.i18n.t('widget.prompts.noFieldinSyntax');
+    }
+
+    private getFieldDisplayName(fieldName: string): string {
+        const aliasMapping = this.plugin.settings.fieldAlias.find(mapping => mapping.value === fieldName);
+        return aliasMapping ? aliasMapping.key : fieldName;
     }
 
     private async getDataMap(field: string | null): Promise<Map<string, ExistingData> | null> {
@@ -536,7 +541,7 @@ export class WordflowWidgetView extends ItemView {
         if (this.plugin.settings.switchToFieldOnFocus !== 'disabled') {
             const newField = this.plugin.settings.switchToFieldOnFocus;
             if (this.getFieldOptions().indexOf(newField) == -1) {
-                new Notice('No available time field to switch in current recorder. \nStay on current field. ', 3000);
+                new Notice(this.plugin.i18n.t('notices.noAvailableField'), 3000);
                 return;
             }
             this.fieldDropdown.setValue(newField);

@@ -86,7 +86,7 @@ export class DataRecorder {
             this.Parser = new MetaDataParser(this, this.plugin);
             break;
         default: 
-            new Notice('❌Record type is not defined in this recorder!', 0);
+            new Notice(this.plugin.i18n.t('notices.recordTypeUndefined'), 0);
             throw new Error('❌Record type is not defined in this recorder!');
         }
 
@@ -105,12 +105,14 @@ this.newDataMap.forEach((NewData)=>{
 */
         if (this.newDataMap.size == 0) return;
         let trackedTime: number | undefined = this.newDataMap.values().next().value?.trackerResetTime;
-        if (moment(trackedTime).dayOfYear() !== moment(Date.now()).dayOfYear()) { new Notice("Cross-day records detected. Try recording to correct note.", 3000); }
+        if (moment(trackedTime).dayOfYear() !== moment(Date.now()).dayOfYear()) { 
+            new Notice(this.plugin.i18n.t('notices.crossDayRecords'), 3000); 
+        }
 //console.log("trackerResetTime: ", moment(trackedTime).dayOfYear())
         // Get the target note file
         const recordNote = await this.getOrCreateRecordNote(trackedTime);
         if (!recordNote) {
-            new Notice ("⚠️ Failed to get or create record note!\nData backed up to console!", 0);
+            new Notice(this.plugin.i18n.t('notices.recordNoteFailed'), 0);
             console.error("⚠️ Failed to get or create record note");
             await this.backUpData();
             return;
@@ -165,9 +167,9 @@ this.existingDataMap.forEach((ExistingData)=>{
                 if (!isRootFolder && !this.plugin.app.vault.getFolderByPath(recordNoteFolder.trim())) {
                     try{
                         await this.plugin.app.vault.createFolder(recordNoteFolder.trim())
-                        new Notice(`Periodic folder ${recordNoteFolder.trim()} doesn't exist!\n Auto created. `, 3000)
+                        new Notice(this.plugin.i18n.t('notices.folderCreated', { folder: recordNoteFolder.trim() }), 3000)
                     } catch (error) {
-                        new Notice(`⚠️ Failed to create record note folder: ${error}\nData backed up to console!`, 0);
+                        new Notice(this.plugin.i18n.t('notices.folderCreateFailed', { error: error }), 0);
                         console.error("⚠️ Failed to create record note folder:", error);
                         await this.backUpData();
                         return null;
@@ -177,9 +179,12 @@ this.existingDataMap.forEach((ExistingData)=>{
                 // Wait for file creation to complete
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
-                new Notice(`Periodic note ${recordNotePath} doesn't exist!\n Auto created under ${this.periodicNoteFolder}. `, 3000)
+                new Notice(this.plugin.i18n.t('notices.noteCreated', { 
+                    notePath: recordNotePath, 
+                    folder: this.periodicNoteFolder 
+                }), 3000)
             } catch (error) {
-                new Notice(`❌ Failed to create record note: ${error}\nData backed up to console!`, 0)
+                new Notice(this.plugin.i18n.t('notices.noteCreateFailed', { error: error }), 0)
                 console.error("❌ Failed to create record note:", error);
                 await this.backUpData();
                 return null;
@@ -198,7 +203,7 @@ this.existingDataMap.forEach((ExistingData)=>{
             const templateFilePath = this.plugin.settings.templateFilePath;
             const templateFile = this.plugin.app.vault.getAbstractFileByPath(templateFilePath) as TFile;
             if (!templateFile) {
-                new Notice ("Error: Template file not found in wordflow recorders!")
+                new Notice(this.plugin.i18n.t('notices.templateNotFound'))
                 console.error("Error: Tempalte file not found in creating periodic note! Please check each of your recorder setting")
             }
             let content = await this.plugin.app.vault.read(templateFile);
@@ -383,7 +388,7 @@ this.existingDataMap.forEach((ExistingData)=>{
         
         if ((this.insertPlaceStart == '') || (this.insertPlaceEnd == '')){
             await this.backUpData();
-            new Notice(`❌ Could not replace content without setting start place and end place!\nData backed up to console!`, 0);
+            new Notice(this.plugin.i18n.t('notices.insertPlaceError'), 0);
             throw new Error (`❌ Could not replace content without setting start place and end place!`);
         }
 
@@ -399,7 +404,7 @@ this.existingDataMap.forEach((ExistingData)=>{
                 return data.replace(regex, `$1\n${newContent}\n$3`);
               });
         } else {
-            new Notice("⚠️ ERROR updating note: " + recordNote.path + "! Please check console error.\n" + "Data backed up to console!", 0);
+            new Notice(this.plugin.i18n.t('notices.updateNoteError', { notePath: recordNote.path }), 0);
             console.error(`⚠️ ERROR: The given pattern "${this.insertPlaceStart} ... ${this.insertPlaceEnd}" is not found in ${recordNote.path}!`);
             await this.backUpData();
         }

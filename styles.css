@@ -2,6 +2,13 @@
 /*  Wordflow Setting Tabs  */
 /* ======================= */
 
+.wordflow-setting-tab {
+    height: 100%;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+}
+
 .wordflow-tab-bar.tab-labels-container {
     display: flex;
     flex-direction: row;
@@ -53,7 +60,6 @@
 
 .wordflow-tab-content-scroll {
     overflow-y: auto;
-    max-height: 60vh;
     padding: 0 4px; /* 减少内边距 */
 }
 
@@ -128,6 +134,42 @@
 /* ======================== */
 /*  Widget Setting Tab  */
 /* ======================== */
+
+/* Field Alias 设置的全宽样式 */
+.wordflow-widget-mappings-container .setting-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+}
+
+.wordflow-widget-mappings-container .setting-item .setting-item-info {
+    display: none; /* 隐藏名称和描述部分 */
+}
+
+.wordflow-widget-mappings-container .setting-item .setting-item-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    flex: 1;
+    margin-left: 0;
+}
+
+.wordflow-widget-mappings-container .setting-item .setting-item-control .dropdown {
+    flex: 1;
+    min-width: 120px;
+}
+
+.wordflow-widget-mappings-container .setting-item .setting-item-control input[type="text"] {
+    flex: 1;
+    min-width: 120px;
+}
+
+.wordflow-widget-mappings-container .setting-item .setting-item-control .clickable-icon {
+    flex-shrink: 0;
+    margin-left: 8px;
+}
 
 .wordflow-widget-current-note-data {
     display: flex;
@@ -466,7 +508,7 @@
 
 .wordflow-setting-tab .wordflow-textarea {
     min-width: -webkit-fill-available;
-    min-height: 80px;
+    height: 80px;
 }
 
 /* =========================================== */
