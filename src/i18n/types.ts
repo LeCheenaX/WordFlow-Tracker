@@ -1,10 +1,22 @@
+export interface MultiLineContent {
+    segments: string[];
+    links?: Array<{
+        id: string;  // Link identifier to be used in segment text as {linkId}
+        text: string;
+        href: string;
+    }>;
+    params?: Record<string, any>;
+}
+
+// Type for description that can be string, array, or complex object
+export type DescriptionType = string | string[] | MultiLineContent;
+
 export interface LocaleResources {
     language: string;
     settings: SettingsResources;
     commands: CommandsResources;
     notices: NoticesResources;
     widget: WidgetResources;
-    statusBar: StatusBarResources;
     modals: ModalsResources;
     changelog: ChangelogResources;
 }
@@ -31,7 +43,7 @@ export interface GeneralSettingsResources {
     };
     ignoredFolders: {
         name: string;
-        desc: string;
+        desc: DescriptionType;
         placeholder: string;
         validation: {
             valid: string;
@@ -40,12 +52,12 @@ export interface GeneralSettingsResources {
     };
     ignoredTags: {
         name: string;
-        desc: string;
+        desc: DescriptionType;
         placeholder: string;
     };
     noteThreshold: {
         name: string;
-        desc: string;
+        desc: DescriptionType;
         options: {
             e: string;
             t: string;
@@ -56,7 +68,7 @@ export interface GeneralSettingsResources {
     };
     noteToRecord: {
         name: string;
-        desc: string;
+        desc: DescriptionType;
         options: {
             all: string;
             crt: string;
@@ -64,7 +76,7 @@ export interface GeneralSettingsResources {
     };
     autoRecordInterval: {
         name: string;
-        desc: string;
+        desc: DescriptionType;
         placeholder: string;
     };
     resetSettings: {
@@ -81,7 +93,7 @@ export interface GeneralSettingsResources {
 export interface RecordersSettingsResources {
     currentRecorder: {
         name: string;
-        desc: string;
+        desc: DescriptionType;
     };
     actions: {
         delete: string;
@@ -96,7 +108,7 @@ export interface RecordersSettingsResources {
         heading: string;
         folder: {
             name: string;
-            desc: string;
+            desc: DescriptionType;
             dynamicEnabled: string;
             dynamicDisabled: string;
             placeholderDynamic: string;
@@ -105,13 +117,13 @@ export interface RecordersSettingsResources {
         };
         format: {
             name: string;
-            desc: string;
+            desc: DescriptionType;
             preview: string;
         };
     };
     templatePlugin: {
         name: string;
-        desc: string;
+        desc: DescriptionType;
         options: {
             none: string;
             templates: string;
@@ -121,7 +133,7 @@ export interface RecordersSettingsResources {
         };
         filePath: {
             name: string;
-            desc: string;
+            desc: DescriptionType;
             placeholder: string;
             validation: {
                 found: string;
@@ -152,11 +164,11 @@ export interface RecordersSettingsResources {
         };
         syntax: {
             name: string;
-            desc: string;
+            desc: DescriptionType;
         };
         insertPlace: {
             name: string;
-            desc: string;
+            desc: DescriptionType;
             options: {
                 bottom: string;
                 custom: string;
@@ -198,12 +210,12 @@ export interface RecordersSettingsResources {
 export interface TimersSettingsResources {
     idleInterval: {
         name: string;
-        desc: string;
+        desc: DescriptionType;
         placeholder: string;
     };
     useSecondInWidget: {
         name: string;
-        desc: string;
+        desc: DescriptionType;
     };
 }
 
@@ -218,7 +230,7 @@ export interface WidgetSettingsResources {
     };
     switchToFieldOnFocus: {
         name: string;
-        desc: string;
+        desc: DescriptionType;
         options: {
             disabled: string;
             readTime: string;
@@ -236,7 +248,7 @@ export interface WidgetSettingsResources {
     };
     colorGroupSaturation: {
         name: string;
-        desc: string;
+        desc: DescriptionType;
         preview: string;
     };
     fieldAlias: {
@@ -252,7 +264,7 @@ export interface WidgetSettingsResources {
 export interface StatusBarSettingsResources {
     enableMobile: {
         name: string;
-        desc: string;
+        desc: DescriptionType;
     };
 }
 
@@ -286,11 +298,6 @@ export interface WidgetResources {
         pause: string;
         quit: string;
     };
-}
-
-export interface StatusBarResources {
-    editing: string;
-    reading: string;
 }
 
 export interface ModalsResources {

@@ -28,6 +28,7 @@ export interface WordflowRecorderConfigs {
 
 export interface WordflowSettings extends WordflowRecorderConfigs{
     // General settings tab
+    locale: string; // 'en' | 'zh-CN'
     showRecordRibbonIcon: boolean;
     ignoredFolders: string[];
     ignoredFileTags: string[];
@@ -54,9 +55,6 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
 
     // Status bar setting tab
     enableMobileStatusBar: boolean;
-
-    // i18n setting
-    locale: string; // 'en' | 'zh-CN'
 }
 
 export interface RecorderConfig extends WordflowRecorderConfigs {
@@ -66,6 +64,7 @@ export interface RecorderConfig extends WordflowRecorderConfigs {
 
 export const DEFAULT_SETTINGS: WordflowSettings = {
 	// General settings tab
+    locale: 'en',
     showRecordRibbonIcon: true,
     ignoredFolders: [],
     ignoredFileTags: [],
@@ -110,16 +109,22 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 
     // Status bar setting tab
     enableMobileStatusBar: false,
-
-    // i18n setting
-    locale: 'en',
 }
 
 
 // 抽象基类用于所有设置标签页
 export abstract class WordflowSubSettingsTab {
+    protected i18n = getI18n();
+    
     constructor(protected app: App, protected plugin: WordflowTrackerPlugin, protected container: HTMLElement) {}
     abstract display(): void;
+
+    /**
+     * Create a multi-line description using i18n
+     */
+    protected createMultiLineDesc(key: string, params?: Record<string, any>): DocumentFragment {
+        return this.i18n.buildFragment(key, params);
+    }
 }
 
 // ========================================
@@ -127,13 +132,31 @@ export abstract class WordflowSubSettingsTab {
 // ========================================
 export class GeneralTab extends WordflowSubSettingsTab {
     display() {
-        const i18n = getI18n();
         this.container.empty();
         const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
 
         new Setting(tabContent)
-            .setName(i18n.t('settings.general.showRecordRibbonIcon.name'))
-            .setDesc(i18n.t('settings.general.showRecordRibbonIcon.desc'))
+            .setName(this.i18n.t('settings.general.language.name'))
+            .setDesc(this.i18n.t('settings.general.language.desc'))
+            .addDropdown(d => {
+                const locales = this.i18n.getAvailableLocales();
+                locales.forEach(locale => {
+                    d.addOption(locale, this.i18n.getLocaleName(locale));
+                });
+                d.setValue(this.plugin.settings.locale)
+                .onChange(async (value) => {
+                    this.plugin.settings.locale = value;
+                    this.i18n.setLocale(value as SupportedLocale);
+                    await this.plugin.saveSettings();
+                    new Notice(this.i18n.t('notices.languageChanged'), 5000);
+                    // Refresh the UI to show the new language
+                    this.display();
+                });
+            });
+
+        new Setting(tabContent)
+            .setName(this.i18n.t('settings.general.showRecordRibbonIcon.name'))
+            .setDesc(this.i18n.t('settings.general.showRecordRibbonIcon.desc'))
             .addToggle(t => t
                 .setValue(this.plugin.settings.showRecordRibbonIcon)
                 .onChange(async (value) => {
@@ -143,15 +166,11 @@ export class GeneralTab extends WordflowSubSettingsTab {
 
         let ignoredFoldersPreviewText: HTMLSpanElement;
         new Setting(tabContent)
-            .setName(i18n.t('settings.general.ignoredFolders.name'))
+            .setName(this.i18n.t('settings.general.ignoredFolders.name'))
             .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.general.ignoredFolders.desc'));
-                f.createEl('br');
-                f.appendText("Enter the excluded folder pathes separated by comma ',' or linebreaks. ");
-                f.createEl('br');
-                f.appendText("Recommend to reload plugin after changing this setting.");
-                f.createEl('br');
-                f.appendText("Folder format validation: ");
+                // Use multi-line content for the main description
+                const fragment = this.createMultiLineDesc('settings.general.ignoredFolders.desc');
+                f.appendChild(fragment);
                 ignoredFoldersPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText'
                 })
@@ -160,11 +179,11 @@ export class GeneralTab extends WordflowSubSettingsTab {
                     if (!this.app.vault.getAbstractFileByPath(ignoredFolder)) invalidInputFolder = ignoredFolder
                 })
                 ignoredFoldersPreviewText.setText(
-                    (invalidInputFolder === '')? i18n.t('settings.general.ignoredFolders.validation.valid') : i18n.t('settings.general.ignoredFolders.validation.invalid', { folder: invalidInputFolder })
+                    (invalidInputFolder === '')? this.i18n.t('settings.general.ignoredFolders.validation.valid') : this.i18n.t('settings.general.ignoredFolders.validation.invalid', { folder: invalidInputFolder })
                 );
             }))
             .addTextArea(text => text
-                .setPlaceholder(i18n.t('settings.general.ignoredFolders.placeholder'))
+                .setPlaceholder(this.i18n.t('settings.general.ignoredFolders.placeholder'))
                 .setValue(this.plugin.settings.ignoredFolders?.join('\n') || '')
                 .onChange(async (value) => {
                     const folders = value.split(/[\n,]/)
@@ -180,23 +199,17 @@ export class GeneralTab extends WordflowSubSettingsTab {
                         if (!this.app.vault.getAbstractFileByPath(ignoredFolder)) invalidInputFolder = ignoredFolder
                     })
                     ignoredFoldersPreviewText.setText(
-                        (invalidInputFolder === '')? i18n.t('settings.general.ignoredFolders.validation.valid') : i18n.t('settings.general.ignoredFolders.validation.invalid', { folder: invalidInputFolder })
+                        (invalidInputFolder === '')? this.i18n.t('settings.general.ignoredFolders.validation.valid') : this.i18n.t('settings.general.ignoredFolders.validation.invalid', { folder: invalidInputFolder })
                     );
                     await this.plugin.saveSettings();
                 })
             );
 
         new Setting(tabContent)
-            .setName(i18n.t('settings.general.ignoredTags.name'))
-            .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.general.ignoredTags.desc'));
-                f.createEl('br');
-                f.appendText("Enter the excluded tags separated by comma ',' or linebreaks. ");
-                f.createEl('br');
-                f.appendText("Recommend to reload plugin after changing this setting.");
-            }))
+            .setName(this.i18n.t('settings.general.ignoredTags.name'))
+            .setDesc(this.createMultiLineDesc('settings.general.ignoredTags.desc'))
             .addTextArea(text => text
-                .setPlaceholder(i18n.t('settings.general.ignoredTags.placeholder'))
+                .setPlaceholder(this.i18n.t('settings.general.ignoredTags.placeholder'))
                 .setValue(this.plugin.settings.ignoredFileTags?.join('\n') || '')
                 .onChange(async (value) => {
                     const tags = value.split(/[\n,]/)
@@ -210,22 +223,14 @@ export class GeneralTab extends WordflowSubSettingsTab {
             );
 
         new Setting(tabContent)
-            .setName(i18n.t('settings.general.noteThreshold.name'))
-            .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.general.noteThreshold.desc'));
-                f.createEl('br');
-                f.appendText('Require edits means you should at least type anything or delete anything, even just a space.');
-                f.createEl('br');
-                f.appendText('Require focus time means you should leave the note under edit mode over 1 minute.');
-                f.createEl('br');
-                f.appendText('If require none above, the recorder will track all files you opened under edit mode.')
-            }))
+            .setName(this.i18n.t('settings.general.noteThreshold.name'))
+            .setDesc(this.createMultiLineDesc('settings.general.noteThreshold.desc'))
             .addDropdown(d => d
-                .addOption('e', i18n.t('settings.general.noteThreshold.options.e'))
-                .addOption('t', i18n.t('settings.general.noteThreshold.options.t'))
-                .addOption('ent', i18n.t('settings.general.noteThreshold.options.ent'))
-                .addOption('eot', i18n.t('settings.general.noteThreshold.options.eot'))
-                .addOption('n', i18n.t('settings.general.noteThreshold.options.n'))
+                .addOption('e', this.i18n.t('settings.general.noteThreshold.options.e'))
+                .addOption('t', this.i18n.t('settings.general.noteThreshold.options.t'))
+                .addOption('ent', this.i18n.t('settings.general.noteThreshold.options.ent'))
+                .addOption('eot', this.i18n.t('settings.general.noteThreshold.options.eot'))
+                .addOption('n', this.i18n.t('settings.general.noteThreshold.options.n'))
                 .setValue(this.plugin.settings.noteThreshold)
                 .onChange(async (value) => {
                     this.plugin.settings.noteThreshold = value;
@@ -234,17 +239,11 @@ export class GeneralTab extends WordflowSubSettingsTab {
             );
 
         new Setting(tabContent)
-            .setName(i18n.t('settings.general.noteToRecord.name'))
-            .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.general.noteToRecord.desc'))
-                f.createEl('br')
-                f.appendText('Editing mode includes live preview and source mode.')
-                f.createEl('br')
-                f.appendText('If recording current note only, other notes may not be automactically recorded if you don\'t manually record.')
-            }))
+            .setName(this.i18n.t('settings.general.noteToRecord.name'))
+            .setDesc(this.createMultiLineDesc('settings.general.noteToRecord.desc'))
             .addDropdown(d => d
-                .addOption('all', i18n.t('settings.general.noteToRecord.options.all'))
-                .addOption('crt', i18n.t('settings.general.noteToRecord.options.crt'))
+                .addOption('all', this.i18n.t('settings.general.noteToRecord.options.all'))
+                .addOption('crt', this.i18n.t('settings.general.noteToRecord.options.crt'))
                 .setValue(this.plugin.settings.noteToRecord)
                 .onChange(async (value) => {
                     this.plugin.settings.noteToRecord = value;
@@ -253,14 +252,10 @@ export class GeneralTab extends WordflowSubSettingsTab {
             );
 
         new Setting(tabContent)
-            .setName(i18n.t('settings.general.autoRecordInterval.name'))
-            .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.general.autoRecordInterval.desc'))
-                f.createEl('br')
-                f.appendText('Set to 0 to disable.')
-            }))
+            .setName(this.i18n.t('settings.general.autoRecordInterval.name'))
+            .setDesc(this.createMultiLineDesc('settings.general.autoRecordInterval.desc'))
             .addText(text => text
-                .setPlaceholder(i18n.t('settings.general.autoRecordInterval.placeholder'))
+                .setPlaceholder(this.i18n.t('settings.general.autoRecordInterval.placeholder'))
                 .setValue(this.plugin.settings.autoRecordInterval)
                 .onChange(async (value) => {
                     this.plugin.settings.autoRecordInterval = value;
@@ -269,27 +264,10 @@ export class GeneralTab extends WordflowSubSettingsTab {
             );
 
         new Setting(tabContent)
-            .setName(i18n.t('settings.general.language.name'))
-            .setDesc(i18n.t('settings.general.language.desc'))
-            .addDropdown(d => {
-                const locales = getI18n().getAvailableLocales();
-                locales.forEach(locale => {
-                    d.addOption(locale, getI18n().getLocaleName(locale));
-                });
-                d.setValue(this.plugin.settings.locale)
-                .onChange(async (value) => {
-                    this.plugin.settings.locale = value;
-                    getI18n().setLocale(value as SupportedLocale);
-                    await this.plugin.saveSettings();
-                    new Notice(i18n.t('notices.languageChanged'), 5000);
-                });
-            });
-
-        new Setting(tabContent)
-        .setName(i18n.t('settings.general.resetSettings.name'))
-        .setDesc(i18n.t('settings.general.resetSettings.desc'))
+        .setName(this.i18n.t('settings.general.resetSettings.name'))
+        .setDesc(this.i18n.t('settings.general.resetSettings.desc'))
         .addButton(btn => btn
-                .setButtonText(i18n.t('settings.general.resetSettings.button'))
+                .setButtonText(this.i18n.t('settings.general.resetSettings.button'))
                 .setWarning()
                 //.setIcon('alert-triangle')
                 .onClick(() => this.confirmReset())
@@ -305,16 +283,15 @@ export class GeneralTab extends WordflowSubSettingsTab {
     }
     
     private async resetSettings() {
-        const i18n = getI18n();
         try {
             this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS)
             await this.plugin.saveSettings();
-            new Notice(i18n.t('notices.settingsReset'), 3000);
+            new Notice(this.i18n.t('notices.settingsReset'), 3000);
             await sleep(100);
             this.display();
         } catch (error) {
             console.error("Could not reset settings:", error);
-            new Notice(i18n.t('notices.settingsResetFailed'), 0);
+            new Notice(this.i18n.t('notices.settingsResetFailed'), 0);
         }
     }
 }
@@ -330,7 +307,6 @@ export class RecordersTab extends WordflowSubSettingsTab {
     private InsertPlaceComponent?: DropdownComponent;
 
     display() {
-        const i18n = getI18n();
         this.container.empty();
         // Create recorder selection
         const recorderSelectionContainer = this.container.createDiv('recorder-selection-container');
@@ -341,18 +317,14 @@ export class RecordersTab extends WordflowSubSettingsTab {
         }
 
         const recorderActions = new Setting(recorderSelectionContainer)
-            .setName(i18n.t('settings.recorders.currentRecorder.name'))
-            .setDesc(createFragment(f=>{
-                f.appendText(i18n.t('settings.recorders.currentRecorder.desc'))
-                f.createEl('br')
-                f.appendText('You can add new recorders to save different sets of statistics to different locations.')
-            }));
+            .setName(this.i18n.t('settings.recorders.currentRecorder.name'))
+            .setDesc(this.createMultiLineDesc('settings.recorders.currentRecorder.desc'));
             // Only show rename/delete for additional recorders
         if (this.activeRecorderIndex > 0) {
             recorderActions
                 .addButton(btn => btn
-                    .setButtonText(i18n.t('settings.recorders.actions.delete'))
-                    .setTooltip(i18n.t('settings.recorders.actions.delete'))
+                    .setButtonText(this.i18n.t('settings.recorders.actions.delete'))
+                    .setTooltip(this.i18n.t('settings.recorders.actions.delete'))
                     .setIcon('trash')
                     .setWarning()
                     .onClick(() => {
@@ -380,22 +352,22 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 });
             })
             .addButton(btn => btn
-                .setButtonText(i18n.t('settings.recorders.actions.rename'))
+                .setButtonText(this.i18n.t('settings.recorders.actions.rename'))
                 .setIcon('pencil')
-                .setTooltip(i18n.t('settings.recorders.actions.rename'))
+                .setTooltip(this.i18n.t('settings.recorders.actions.rename'))
                 .onClick(() => {
                     this.renameRecorder(this.activeRecorderIndex -1);
                 })
             )
             .addButton(btn => btn
-                .setButtonText(i18n.t('settings.recorders.actions.add'))
+                .setButtonText(this.i18n.t('settings.recorders.actions.add'))
                 .setIcon('plus')
-                .setTooltip(i18n.t('settings.recorders.actions.add'))
+                .setTooltip(this.i18n.t('settings.recorders.actions.add'))
                 //.setCta()
                 .onClick( () => {
                     new ConfirmationModal(
                         this.app,
-                        i18n.t('settings.recorders.confirmations.addRecorder'),
+                        this.i18n.t('settings.recorders.confirmations.addRecorder'),
                         async () => {this.createNewRecorder();}
                     ).open()
                 })
@@ -411,7 +383,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         */
         // Another container that contains the specific settings per recorder 
         new Setting(this.container)
-            .setName(`⚙️${activeRecorderName} configurations`)
+            .setName(`⚙️${activeRecorderName}`+ this.i18n.t('settings.recorders.recoderName'))
             .setHeading()
             .setClass('recorder-settings-heading')
         
@@ -484,10 +456,9 @@ export class RecordersTab extends WordflowSubSettingsTab {
     }
     
     private async removeRecorder(index: number) {
-        const i18n = getI18n();
         const modal = new ConfirmationModal(
             this.app,
-            i18n.t('settings.recorders.confirmations.deleteRecorder', { name: this.plugin.settings.Recorders[index].name }),
+            this.i18n.t('settings.recorders.confirmations.deleteRecorder', { name: this.plugin.settings.Recorders[index].name }),
             async () => {
                 // Remove recorder config
                 this.plugin.settings.Recorders.splice(index, 1);
@@ -529,21 +500,20 @@ export class RecordersTab extends WordflowSubSettingsTab {
     }
     
     private createRecorderSettingsUI(settings: any, recorderInstance: DataRecorder, index: number) {
-        const i18n = getI18n();
         const container = this.settingsContainer; // do not use containerEl, instead, use container to pass the new container element
 
         container.classList.add('wordflow-setting-tab'); // for styles.css
 
         let periodicFolderPreviewText: HTMLSpanElement;
-        new Setting(container).setName(i18n.t('settings.recorders.periodicNote.heading')).setHeading();
+        new Setting(container).setName(this.i18n.t('settings.recorders.periodicNote.heading')).setHeading();
         const periodicFolder = new Setting(container)
-            .setName(i18n.t('settings.recorders.periodicNote.folder.name'))
+            .setName(this.i18n.t('settings.recorders.periodicNote.folder.name'))
             .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.recorders.periodicNote.folder.desc'))
-                f.createEl('br')
-                f.appendText('Specify the block for the folder of daily notes or weekly note.')
-                f.createEl('br')
-                f.appendText(settings.enableDynamicFolder ? i18n.t('settings.recorders.periodicNote.folder.dynamicEnabled') : i18n.t('settings.recorders.periodicNote.folder.dynamicDisabled'))
+                // Use multi-line content for the main description
+                const fragment = this.createMultiLineDesc('settings.recorders.periodicNote.folder.desc');
+                f.appendChild(fragment);
+                f.createEl('br');
+                f.appendText(settings.enableDynamicFolder ? this.i18n.t('settings.recorders.periodicNote.folder.dynamicEnabled') : this.i18n.t('settings.recorders.periodicNote.folder.dynamicDisabled'));
 
                 periodicFolderPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // add custom CSS class
@@ -566,7 +536,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
                         new ConfirmationModal(
                             this.app,
-                            i18n.t('settings.recorders.periodicNote.folder.confirmToggle'),
+                            this.i18n.t('settings.recorders.periodicNote.folder.confirmToggle'),
                             async () => {
                                 settings.enableDynamicFolder = value;
                                 periodicFolderPreviewText.setText(
@@ -575,7 +545,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                                 await this.plugin.saveSettings();			
                                 recorderInstance.loadSettings();
                                 // now update placeholder based on the setting. 
-                                const placeholder = (value)? '[MonthlyLogs\/]MM-YYYY': 'Example: "Monthly logs"';
+                                const placeholder = (value)? this.i18n.t('settings.recorders.periodicNote.folder.placeholderDynamic'): this.i18n.t('settings.recorders.periodicNote.folder.placeholderStatic');
                                 this.PeriodicFolderComponent?.setPlaceholder(placeholder);
                                 toggle.setValue(value);	// change display value to the new value
                             }
@@ -587,7 +557,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 this.PeriodicFolderComponent = text;
                 text
                 .setValue(settings.periodicNoteFolder)
-                .setPlaceholder(settings.enableDynamicFolder ? i18n.t('settings.recorders.periodicNote.folder.placeholderDynamic') : i18n.t('settings.recorders.periodicNote.folder.placeholderStatic'))
+                .setPlaceholder(settings.enableDynamicFolder ? this.i18n.t('settings.recorders.periodicNote.folder.placeholderDynamic') : this.i18n.t('settings.recorders.periodicNote.folder.placeholderStatic'))
                 .onChange(async (value) => {
                     settings.periodicNoteFolder = (value == '')? value: normalizePath(value);
                     periodicFolderPreviewText.setText(
@@ -600,18 +570,13 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
         let periodicNoteFormatPreviewText: HTMLSpanElement;
         new Setting(container)
-            .setName(i18n.t('settings.recorders.periodicNote.format.name'))
+            .setName(this.i18n.t('settings.recorders.periodicNote.format.name'))
             .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.recorders.periodicNote.format.desc'))
-                f.createEl('br')
-                f.appendText('Set the file name (in ')
-                f.createEl('a', {
-                    text: 'moment format',
-                    href: 'https://momentjs.com/docs/#/displaying/'
-                    });
-                f.appendText(') for newly created daily notes or weekly note.');
-                f.createEl('br')
-                f.appendText(i18n.t('settings.recorders.periodicNote.format.preview'))
+                // Use the new multi-line format with inline links
+                const fragment = this.createMultiLineDesc('settings.recorders.periodicNote.format.desc');
+                f.appendChild(fragment);
+                f.createEl('br');
+                f.appendText(this.i18n.t('settings.recorders.periodicNote.format.preview'));
 
                 periodicNoteFormatPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // add custom CSS class
@@ -631,16 +596,12 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
         let templatePluginPreviewText: HTMLSpanElement
         new Setting(container)
-            .setName(i18n.t('settings.recorders.templatePlugin.name'))
+            .setName(this.i18n.t('settings.recorders.templatePlugin.name'))
             .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.recorders.templatePlugin.desc'))
-                f.createEl('br')
-                f.appendText('Currently, only support the templates of core plugin "Templates".')
-                f.createEl('br')
-                f.appendText('If you are using community plugin "Templater", please use the folder template feature of "Templater".')
-                f.createEl('br')
-                f.appendText('If you do not need to apply template, kindly use the "default" option.')
-                f.createEl('br')
+                // Use multi-line content for the main description
+                const fragment = this.createMultiLineDesc('settings.recorders.templatePlugin.desc');
+                f.appendChild(fragment);
+                f.createEl('br');
 
                 templatePluginPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // add custom CSS class
@@ -653,15 +614,15 @@ export class RecordersTab extends WordflowSubSettingsTab {
                         templaterPluginEnabled = this.app.plugins.getPlugin("templater-obsidian")._loaded;
                     }
                     templatePluginPreviewText.setText(
-                    i18n.t('settings.recorders.templatePlugin.validation.templaterEnabled') + (templaterPluginEnabled ?'✅':'❌'));
+                    this.i18n.t('settings.recorders.templatePlugin.validation.templaterEnabled') + (templaterPluginEnabled ?'✅':'❌'));
                 } else {
                     templatePluginPreviewText.setText('');
                 }
             }))
             .addDropdown(d => {
                 this.InsertPlaceComponent = d;
-                d.addOption('none', i18n.t('settings.recorders.templatePlugin.options.none'));
-                d.addOption('Templates', i18n.t('settings.recorders.templatePlugin.options.templates'));
+                d.addOption('none', this.i18n.t('settings.recorders.templatePlugin.options.none'));
+                d.addOption('Templates', this.i18n.t('settings.recorders.templatePlugin.options.templates'));
                 d.setValue(settings.templatePlugin)
                 .onChange(async (value) => {
                     settings.templatePlugin = value;
@@ -675,7 +636,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                             templaterPluginEnabled = this.app.plugins.getPlugin("templater-obsidian")._loaded;
                         }
                         templatePluginPreviewText.setText(
-                        i18n.t('settings.recorders.templatePlugin.validation.templaterEnabled') + (templaterPluginEnabled ?'✅':'❌'));
+                        this.i18n.t('settings.recorders.templatePlugin.validation.templaterEnabled') + (templaterPluginEnabled ?'✅':'❌'));
                     } else {
                         templatePluginPreviewText.setText('');
                     }
@@ -694,29 +655,27 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
         let templateFilePathPreviewText: HTMLSpanElement;
         new Setting(templatePluginSettingsContainer)
-            .setName(i18n.t('settings.recorders.templatePlugin.filePath.name'))
+            .setName(this.i18n.t('settings.recorders.templatePlugin.filePath.name'))
             .setDesc(createFragment((f) => {
-                f.appendText(i18n.t('settings.recorders.templatePlugin.filePath.desc'))
-                f.createEl('br')
-                f.appendText('Currently, only support the templates of core plugin "Templates".')
-                f.createEl('br')
-                f.appendText('Example: Templates/daily note template.md')
-                f.createEl('br')
-                f.appendText('Input template file founded: ')
+                // Use multi-line content for the main description
+                const fragment = this.createMultiLineDesc('settings.recorders.templatePlugin.filePath.desc');
+                f.appendChild(fragment);
+                f.createEl('br');
+                f.appendText('Input template file founded: ');
 
                 templateFilePathPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // add custom CSS class
                 });
                 templateFilePathPreviewText.setText(
-                    this.app.vault.getAbstractFileByPath(settings.templateFilePath) ?'✅':'❌');
+                    this.app.vault.getAbstractFileByPath(settings.templateFilePath) ? this.i18n.t('settings.recorders.templatePlugin.filePath.validation.found') : this.i18n.t('settings.recorders.templatePlugin.filePath.validation.notFound'));
             }))
             .addText(text => text
-                .setPlaceholder('set template file')
+                .setPlaceholder(this.i18n.t('settings.recorders.templatePlugin.filePath.placeholder'))
                 .setValue(settings.templateFilePath)
                 .onChange(async (value) => {
                     settings.templateFilePath = normalizePath(value);
                     templateFilePathPreviewText.setText(
-                        this.app.vault.getAbstractFileByPath(settings.templateFilePath) ?'✅':'❌');
+                        this.app.vault.getAbstractFileByPath(settings.templateFilePath) ? this.i18n.t('settings.recorders.templatePlugin.filePath.validation.found') : this.i18n.t('settings.recorders.templatePlugin.filePath.validation.notFound'));
                     await this.plugin.saveSettings();
                     recorderInstance.loadSettings();
                 })
@@ -724,19 +683,11 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
         let templateDateFormatPreviewText: HTMLSpanElement;
         new Setting(templatePluginSettingsContainer)
-            .setName('Template file date format')
+            .setName(this.i18n.t('settings.recorders.templatePlugin.dateFormat.name'))
             .setDesc(createFragment((f) => {
-                f.appendText('{{date}} in the template file will be replaced with this value.');
+                f.appendText(this.i18n.t('settings.recorders.templatePlugin.dateFormat.desc'));
                 f.createEl('br');
-                f.appendText('You can also use {{date:YYYY-MM-DD}} to override the format once.');
-                f.createEl('br');
-                f.appendText('For more syntax, refer to ')
-                f.createEl('a', {
-                    text: 'format reference',
-                    href: 'https://momentjs.com/docs/#/displaying/'
-                  });
-                f.createEl('br');
-                f.appendText('Your current syntax looks like this: ');
+                f.appendText(this.i18n.t('settings.recorders.templatePlugin.dateFormat.preview'));
 
                 templateDateFormatPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // add custom CSS class
@@ -756,19 +707,11 @@ export class RecordersTab extends WordflowSubSettingsTab {
         
         let templateTimeFormatPreviewText: HTMLSpanElement;
         new Setting(templatePluginSettingsContainer)
-            .setName('Template file time format')
+            .setName(this.i18n.t('settings.recorders.templatePlugin.timeFormat.name'))
             .setDesc(createFragment((f) => {
-                f.appendText('{{time}} in the template file will be replaced with this value.');
+                f.appendText(this.i18n.t('settings.recorders.templatePlugin.timeFormat.desc'));
                 f.createEl('br');
-                f.appendText('You can also use {{time:HH:mm}} to override the format once.');
-                f.createEl('br');
-                f.appendText('For more syntax, refer to ')
-                f.createEl('a', {
-                    text: 'format reference',
-                    href: 'https://momentjs.com/docs/#/displaying/'
-                  });
-                f.createEl('br');
-                f.appendText('Your current syntax looks like this: ');
+                f.appendText(this.i18n.t('settings.recorders.templatePlugin.timeFormat.preview'));
 
                 templateTimeFormatPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // 添加自定义CSS类
@@ -786,15 +729,15 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 })
             );
 
-        new Setting(container).setName('Recording contents').setHeading();
+        new Setting(container).setName(this.i18n.t('settings.recorders.recordingContents.heading')).setHeading();
         
         new Setting(container)
-            .setName('Record content type')
-            .setDesc('Select a type of content to record on specified notes.')
+            .setName(this.i18n.t('settings.recorders.recordingContents.recordType.name'))
+            .setDesc(this.i18n.t('settings.recorders.recordingContents.recordType.desc'))
             .addDropdown(d => d
-                .addOption('table', 'table')
-                .addOption('bulletList', 'bullet list')
-                .addOption('metadata', 'metadata')
+                .addOption('table', this.i18n.t('settings.recorders.recordingContents.recordType.options.table'))
+                .addOption('bulletList', this.i18n.t('settings.recorders.recordingContents.recordType.options.bulletList'))
+                .addOption('metadata', this.i18n.t('settings.recorders.recordingContents.recordType.options.metadata'))
                 .setValue(settings.recordType) // need to show the modified value when next loading
                 .onChange(async (value) => {
                     settings.recordType = value;
@@ -810,15 +753,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
         makeMultilineTextSetting(
             new Setting(container)
-                .setName('Wordflow recording syntax')
-                .setDesc(createFragment(f => {
-                    f.appendText('Modified the syntax with \'${}\' syntax, see ')
-                    f.createEl('a', {
-                        text: 'document',
-                        href: 'https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations'
-                      });
-                    f.appendText(' for supported string interpolation expressions.')
-                }))
+                .setName(this.i18n.t('settings.recorders.recordingContents.syntax.name'))
+                .setDesc(this.createMultiLineDesc('settings.recorders.recordingContents.syntax.desc'))
                 .addTextArea(text => {
                     this.SyntaxComponent = text;
                     if (settings.recordType == 'table'){
@@ -849,21 +785,15 @@ export class RecordersTab extends WordflowSubSettingsTab {
         );
 
         new Setting(container)
-            .setName(i18n.t('settings.recorders.recordingContents.insertPlace.name'))
-            .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.recorders.recordingContents.insertPlace.desc'))
-                f.createEl('br')
-                f.appendText('If using a custom position, the start position and end position must exist and be unique in periodic note!')
-                f.createEl('br')
-                f.appendText('Make sure your template is correctly applied while creating new periodic note.')
-            }))
+            .setName(this.i18n.t('settings.recorders.recordingContents.insertPlace.name'))
+            .setDesc(this.createMultiLineDesc('settings.recorders.recordingContents.insertPlace.desc'))
             .addDropdown(d => {
                 this.InsertPlaceComponent = d;
                 if (settings.recordType === 'metadata') {
-                    d.addOption('yaml', i18n.t('settings.recorders.recordingContents.insertPlace.options.yaml'));
+                    d.addOption('yaml', this.i18n.t('settings.recorders.recordingContents.insertPlace.options.yaml'));
                 } else {
-                    d.addOption('bottom', i18n.t('settings.recorders.recordingContents.insertPlace.options.bottom'));
-                    d.addOption('custom', i18n.t('settings.recorders.recordingContents.insertPlace.options.custom'));
+                    d.addOption('bottom', this.i18n.t('settings.recorders.recordingContents.insertPlace.options.bottom'));
+                    d.addOption('custom', this.i18n.t('settings.recorders.recordingContents.insertPlace.options.custom'));
                 }
                 d.setValue(settings.insertPlace)
                 .onChange(async (value) => {
@@ -883,8 +813,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
         this.toggleCustomPositionSettings(settings.insertPlace === 'custom');
 
         const insertPlaceStart = new Setting(customSettingsContainer)
-            .setName(i18n.t('settings.recorders.recordingContents.insertPlace.startPosition.name'))
-            .setDesc(i18n.t('settings.recorders.recordingContents.insertPlace.startPosition.desc'))
+            .setName(this.i18n.t('settings.recorders.recordingContents.insertPlace.startPosition.name'))
+            .setDesc(this.i18n.t('settings.recorders.recordingContents.insertPlace.startPosition.desc'))
             .addTextArea(text => text
                 .setValue(settings.insertPlaceStart || '')
                 .setPlaceholder('Replace with your periodic note content that exist in the periodic note template.\nFor example: ## Modified Note')
@@ -894,8 +824,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     recorderInstance.loadSettings();
                 }));
         const insertPlaceEnd = new Setting(customSettingsContainer)
-            .setName(i18n.t('settings.recorders.recordingContents.insertPlace.endPosition.name'))
-            .setDesc(i18n.t('settings.recorders.recordingContents.insertPlace.endPosition.desc'))
+            .setName(this.i18n.t('settings.recorders.recordingContents.insertPlace.endPosition.name'))
+            .setDesc(this.i18n.t('settings.recorders.recordingContents.insertPlace.endPosition.desc'))
             .addTextArea(text => text
                 .setValue(settings.insertPlaceEnd || '')
                 .setPlaceholder('Replace with your periodic note content that exist in the periodic note template.\nFor example: ## The next title after \'## Modified Note\'. ')
@@ -916,15 +846,15 @@ export class RecordersTab extends WordflowSubSettingsTab {
         this.toggleSortByVisibility(settings.recordType !== 'metadata');
 
         const sortBySetting = new Setting(sortBySettingsContainer)
-            .setName(i18n.t('settings.recorders.recordingContents.sortBy.name'))
-            .setDesc(i18n.t('settings.recorders.recordingContents.sortBy.desc'))
+            .setName(this.i18n.t('settings.recorders.recordingContents.sortBy.name'))
+            .setDesc(this.i18n.t('settings.recorders.recordingContents.sortBy.desc'))
             .addDropdown(d => d
-                .addOption('lastModifiedTime', i18n.t('settings.recorders.recordingContents.sortBy.options.lastModifiedTime'))
-                .addOption('editedWords', i18n.t('settings.recorders.recordingContents.sortBy.options.editedWords'))
-                .addOption('editedTimes', i18n.t('settings.recorders.recordingContents.sortBy.options.editedTimes'))
-                .addOption('editedPercentage', i18n.t('settings.recorders.recordingContents.sortBy.options.editedPercentage'))
-                .addOption('modifiedNote', i18n.t('settings.recorders.recordingContents.sortBy.options.modifiedNote'))
-                .addOption('editTime', i18n.t('settings.recorders.recordingContents.sortBy.options.editTime'))
+                .addOption('lastModifiedTime', this.i18n.t('settings.recorders.recordingContents.sortBy.options.lastModifiedTime'))
+                .addOption('editedWords', this.i18n.t('settings.recorders.recordingContents.sortBy.options.editedWords'))
+                .addOption('editedTimes', this.i18n.t('settings.recorders.recordingContents.sortBy.options.editedTimes'))
+                .addOption('editedPercentage', this.i18n.t('settings.recorders.recordingContents.sortBy.options.editedPercentage'))
+                .addOption('modifiedNote', this.i18n.t('settings.recorders.recordingContents.sortBy.options.modifiedNote'))
+                .addOption('editTime', this.i18n.t('settings.recorders.recordingContents.sortBy.options.editTime'))
                 .setValue(settings.sortBy)
                 .onChange(async (value) => {
                     settings.sortBy = value;
@@ -933,8 +863,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 })
             )
             .addDropdown(d => d
-                .addOption('true', i18n.t('settings.recorders.recordingContents.sortBy.order.descend'))
-                .addOption('false', i18n.t('settings.recorders.recordingContents.sortBy.order.ascend'))
+                .addOption('true', this.i18n.t('settings.recorders.recordingContents.sortBy.order.descend'))
+                .addOption('false', this.i18n.t('settings.recorders.recordingContents.sortBy.order.ascend'))
                 .setValue((settings.isDescend).toString())
                 .onChange(async (value) => {
                     settings.isDescend = (value === 'true')?true:false;
@@ -952,11 +882,11 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
         let mTimeFormatPreviewText: HTMLSpanElement;
         const mTimeFormatSetting = new Setting(mTimeFormatSettingsContainer)
-            .setName(i18n.t('settings.recorders.recordingContents.timeFormat.name'))
+            .setName(this.i18n.t('settings.recorders.recordingContents.timeFormat.name'))
             .setDesc(createFragment((f) => {
-                f.appendText(i18n.t('settings.recorders.recordingContents.timeFormat.desc'))
-                f.createEl('br')
-                f.appendText(i18n.t('settings.recorders.recordingContents.timeFormat.preview'));
+                f.appendText(this.i18n.t('settings.recorders.recordingContents.timeFormat.desc'));
+                f.createEl('br');
+                f.appendText(this.i18n.t('settings.recorders.recordingContents.timeFormat.preview'));
 
                 mTimeFormatPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // add custom CSS class
@@ -1035,7 +965,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 // ========================================
 export class TimersTab extends WordflowSubSettingsTab {
     display() {
-        const i18n = getI18n();
+        this.container.empty();
         const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
 /*
         new Setting(tabContent)
@@ -1049,14 +979,10 @@ export class TimersTab extends WordflowSubSettingsTab {
                 }));
 */
         new Setting(tabContent)
-            .setName(i18n.t('settings.timers.idleInterval.name'))
-            .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.timers.idleInterval.desc'))
-                f.createEl('br')
-                f.appendText('Any document clicking, outline clicking or editing behavior will refresh the timer from idling.')
-            }))
+            .setName(this.i18n.t('settings.timers.idleInterval.name'))
+            .setDesc(this.createMultiLineDesc('settings.timers.idleInterval.desc'))
             .addText(text => text
-                .setPlaceholder(i18n.t('settings.timers.idleInterval.placeholder'))
+                .setPlaceholder(this.i18n.t('settings.timers.idleInterval.placeholder'))
                 .setValue(this.plugin.settings.idleInterval)
                 .onChange(async (value) => {
                     this.plugin.settings.idleInterval = value;
@@ -1064,14 +990,8 @@ export class TimersTab extends WordflowSubSettingsTab {
                 }));
 
         new Setting(tabContent)
-            .setName(i18n.t('settings.timers.useSecondInWidget.name'))
-            .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.timers.useSecondInWidget.desc'))
-                f.createEl('br');
-                f.appendText('Will not affect existing data currently.')
-                f.createEl('br');
-                f.appendText('Required to reload the plugin once changed.')
-            }))
+            .setName(this.i18n.t('settings.timers.useSecondInWidget.name'))
+            .setDesc(this.createMultiLineDesc('settings.timers.useSecondInWidget.desc'))
             .addToggle(t => t
                 .setValue(this.plugin.settings.useSecondInWidget)
                 .onChange(async (value) => {
@@ -1087,13 +1007,12 @@ export class TimersTab extends WordflowSubSettingsTab {
 // ========================================
 export class WidgetTab extends WordflowSubSettingsTab {
     display() {
-        const i18n = getI18n();
         this.container.empty();
         const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
 
         new Setting(tabContent)
-            .setName(i18n.t('settings.widget.enableOnLoad.name'))
-            .setDesc(i18n.t('settings.widget.enableOnLoad.desc'))
+            .setName(this.i18n.t('settings.widget.enableOnLoad.name'))
+            .setDesc(this.i18n.t('settings.widget.enableOnLoad.desc'))
             .addToggle(t => t
                 .setValue(this.plugin.settings.enableWidgetOnLoad)
                 .onChange(async (value) => {
@@ -1102,8 +1021,8 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 }));
 
         new Setting(tabContent)
-            .setName(i18n.t('settings.widget.showRibbonIcon.name'))
-            .setDesc(i18n.t('settings.widget.showRibbonIcon.desc'))
+            .setName(this.i18n.t('settings.widget.showRibbonIcon.name'))
+            .setDesc(this.i18n.t('settings.widget.showRibbonIcon.desc'))
             .addToggle(t => t
                 .setValue(this.plugin.settings.showWidgetRibbonIcon)
                 .onChange(async (value) => {
@@ -1113,14 +1032,12 @@ export class WidgetTab extends WordflowSubSettingsTab {
 
         let switchToFieldOnFocusPreviewText: HTMLSpanElement
         new Setting(tabContent)
-            .setName(i18n.t('settings.widget.switchToFieldOnFocus.name'))
+            .setName(this.i18n.t('settings.widget.switchToFieldOnFocus.name'))
             .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.widget.switchToFieldOnFocus.desc'))
-                f.createEl('br')
-                f.appendText('Only the reading time field in your recording syntax is supported.')
-                f.createEl('br')
-                f.appendText('Reading time field includes: "${readTime}" and "${readEditTime}".')
-                f.createEl('br')
+                // Use multi-line content for the main description
+                const fragment = this.createMultiLineDesc('settings.widget.switchToFieldOnFocus.desc');
+                f.appendChild(fragment);
+                f.createEl('br');
 
                 switchToFieldOnFocusPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // add custom CSS class
@@ -1129,13 +1046,13 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 const hasTimeField = this.plugin.Widget?.getFieldOptions().indexOf(this.plugin.settings.switchToFieldOnFocus);
                     if(this.plugin.settings.switchToFieldOnFocus !== 'disabled') {
                         switchToFieldOnFocusPreviewText.setText(
-                        i18n.t('settings.widget.switchToFieldOnFocus.validation.hasField', { field: this.plugin.settings.switchToFieldOnFocus }) + ((hasTimeField && hasTimeField !== -1) ?': ✅':': ❌'));
+                        this.i18n.t('settings.widget.switchToFieldOnFocus.validation.hasField', { field: this.plugin.settings.switchToFieldOnFocus }) + ((hasTimeField && hasTimeField !== -1) ?': ✅':': ❌'));
                     } else switchToFieldOnFocusPreviewText.empty();
             }))
             .addDropdown(d => {
-                d.addOption('disabled', i18n.t('settings.widget.switchToFieldOnFocus.options.disabled'));
-                d.addOption('readTime', i18n.t('settings.widget.switchToFieldOnFocus.options.readTime'));
-                d.addOption('readEditTime', i18n.t('settings.widget.switchToFieldOnFocus.options.readEditTime'));
+                d.addOption('disabled', this.i18n.t('settings.widget.switchToFieldOnFocus.options.disabled'));
+                d.addOption('readTime', this.i18n.t('settings.widget.switchToFieldOnFocus.options.readTime'));
+                d.addOption('readEditTime', this.i18n.t('settings.widget.switchToFieldOnFocus.options.readEditTime'));
                 d.setValue(this.plugin.settings.switchToFieldOnFocus)
                 .onChange(async (value) => {
                     this.plugin.settings.switchToFieldOnFocus = value;
@@ -1144,16 +1061,16 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     const hasTimeField = this.plugin.Widget?.getFieldOptions().indexOf(this.plugin.settings.switchToFieldOnFocus);
                     if(value !== 'disabled') {
                         switchToFieldOnFocusPreviewText.setText(
-                        i18n.t('settings.widget.switchToFieldOnFocus.validation.hasField', { field: this.plugin.settings.switchToFieldOnFocus }) + ((hasTimeField && hasTimeField !== -1) ?': ✅':': ❌'));
+                        this.i18n.t('settings.widget.switchToFieldOnFocus.validation.hasField', { field: this.plugin.settings.switchToFieldOnFocus }) + ((hasTimeField && hasTimeField !== -1) ?': ✅':': ❌'));
                     } else switchToFieldOnFocusPreviewText.empty();
                 })
             });
 
         new Setting(tabContent)
-            .setName(i18n.t('settings.widget.colorGroupLightness.name'))
-            .setDesc(i18n.t('settings.widget.colorGroupLightness.desc'))
+            .setName(this.i18n.t('settings.widget.colorGroupLightness.name'))
+            .setDesc(this.i18n.t('settings.widget.colorGroupLightness.desc'))
             .addText(text => text
-                .setPlaceholder(i18n.t('settings.widget.colorGroupLightness.placeholder'))
+                .setPlaceholder(this.i18n.t('settings.widget.colorGroupLightness.placeholder'))
                 .setValue(this.plugin.settings.colorGroupLightness)
                 .onChange(async (value) => {
                     this.plugin.settings.colorGroupLightness = value;
@@ -1162,20 +1079,17 @@ export class WidgetTab extends WordflowSubSettingsTab {
 
         let colorGroupSaturationPreviewText: HTMLSpanElement
         new Setting(tabContent)
-            .setName(i18n.t('settings.widget.colorGroupSaturation.name'))
-            .setDesc('')
+            .setName(this.i18n.t('settings.widget.colorGroupSaturation.name'))
             .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.widget.colorGroupSaturation.desc'))
-                f.createEl('br')
-                f.appendText('You can use space " " to separate numbers to offer multiple options.')
-                f.createEl('br')
-                f.appendText('If the current saturation options below does not change, the input should be invalid.')
-                f.createEl('br')
+                // Use multi-line content for the main description
+                const fragment = this.createMultiLineDesc('settings.widget.colorGroupSaturation.desc');
+                f.appendChild(fragment);
+                f.createEl('br');
 
                 colorGroupSaturationPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // add custom CSS class
                 });
-                colorGroupSaturationPreviewText.setText(i18n.t('settings.widget.colorGroupSaturation.preview') + this.numArrayToString(this.plugin.settings.colorGroupSaturation));
+                colorGroupSaturationPreviewText.setText(this.i18n.t('settings.widget.colorGroupSaturation.preview') + this.numArrayToString(this.plugin.settings.colorGroupSaturation));
             }))
             .addText(text => text
                 .setPlaceholder('65 80')
@@ -1183,26 +1097,25 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 .onChange(async (value) => {
                     this.plugin.settings.colorGroupSaturation = this.stringToNumArray(value);
                     await this.plugin.saveSettings();
-                    colorGroupSaturationPreviewText.setText(i18n.t('settings.widget.colorGroupSaturation.preview') + this.numArrayToString(this.plugin.settings.colorGroupSaturation))
+                    colorGroupSaturationPreviewText.setText(this.i18n.t('settings.widget.colorGroupSaturation.preview') + this.numArrayToString(this.plugin.settings.colorGroupSaturation))
                 }));
 
         new Setting(tabContent)
-            .setName(i18n.t('settings.widget.fieldAlias.name'))
-            .setDesc(i18n.t('settings.widget.fieldAlias.desc'))
+            .setName(this.i18n.t('settings.widget.fieldAlias.name'))
+            .setDesc(this.i18n.t('settings.widget.fieldAlias.desc'))
             .setHeading();
 
         this.renderValueMappingSetting(tabContent, this.plugin.settings.fieldAlias, this.plugin.Widget?.getFieldOptions() || []);
     }
 
     private renderValueMappingSetting(containerEl: HTMLElement, mappings: { key: string, value: string }[], availableOptions: string[]): void {
-        const i18n = getI18n();
         const mappingsContainer = containerEl.createDiv('value-mappings-container');
 
         mappings.forEach((mapping, index) => {
             const setting = new Setting(mappingsContainer)
                 .addDropdown(dropdown => {
                     if (availableOptions.length === 0) {
-                        dropdown.addOption('', i18n.t('settings.widget.fieldAlias.noOptions'));
+                        dropdown.addOption('', this.i18n.t('settings.widget.fieldAlias.noOptions'));
                         dropdown.setDisabled(true);
                     } else {
                         availableOptions.forEach(option => {
@@ -1216,7 +1129,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     });
                 })
                 .addText(text => {
-                    text.setPlaceholder(i18n.t('settings.widget.fieldAlias.placeholder'));
+                    text.setPlaceholder(this.i18n.t('settings.widget.fieldAlias.placeholder'));
                     text.setValue(mapping.key);
                     text.onChange(async (value) => {
                         mappings[index].key = value;
@@ -1224,7 +1137,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     });
                 })
                 .addButton(button => {
-                    button.setButtonText(i18n.t('settings.widget.fieldAlias.deleteButton'));
+                    button.setButtonText(this.i18n.t('settings.widget.fieldAlias.deleteButton'));
                     button.setIcon('trash');
                     button.onClick(async () => {
                         mappings.splice(index, 1);
@@ -1236,7 +1149,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
 
         new Setting(mappingsContainer)
             .addButton(button => {
-                button.setButtonText(i18n.t('settings.widget.fieldAlias.addButton'));
+                button.setButtonText(this.i18n.t('settings.widget.fieldAlias.addButton'));
                 button.setIcon('plus');
                 button.setCta();
                 button.onClick(async () => {
@@ -1274,7 +1187,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
 // ========================================
 export class StatusBarTab extends WordflowSubSettingsTab {
     display() {
-        const i18n = getI18n();
+        this.container.empty();
         const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
 
         /*
@@ -1289,12 +1202,8 @@ export class StatusBarTab extends WordflowSubSettingsTab {
                 }));
         */
         new Setting(tabContent)
-            .setName(i18n.t('settings.statusBar.enableMobile.name'))
-            .setDesc(createFragment(f => {
-                f.appendText(i18n.t('settings.statusBar.enableMobile.desc'))
-                f.createEl('br');
-                f.appendText('If you have other css snippets do the same, they may be overwriten.')
-            }))
+            .setName(this.i18n.t('settings.statusBar.enableMobile.name'))
+            .setDesc(this.createMultiLineDesc('settings.statusBar.enableMobile.desc'))
             .addToggle(t => t
                 .setValue(this.plugin.settings.enableMobileStatusBar)
                 .onChange(async (value) => {

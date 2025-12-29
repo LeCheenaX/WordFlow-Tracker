@@ -3,6 +3,7 @@ import { DataRecorder } from './DataRecorder';
 import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, updateStatusBarStyle, removeStatusBarStyle, WidgetTab } from './settings';
 import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
 import { currentPluginVersion, changelog } from './changeLog';
+import { initI18n, SupportedLocale, getI18n } from './i18n';
 import { App, Component, getAllTags, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
 
 
@@ -489,6 +490,8 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		// Initialize i18n with the loaded locale setting
+		initI18n(this.settings.locale);
 		updateStatusBarStyle(this.settings);
 	}
 
@@ -515,13 +518,16 @@ export class WordflowSettingTab extends PluginSettingTab {
 		const tabContainer = containerEl.createDiv('wordflow-tab-bar tab-labels-container');
 		this.contentContainer = containerEl.createDiv('wordflow-tab-content');
 
+		// Get i18n instance for tab labels
+		const i18n = getI18n();
+
 		// intialization setting tabs
 		this.tabs = {
-			'General': new GeneralTab(this.app, this.plugin, this.contentContainer),
-			'Recorders': new RecordersTab(this.app, this.plugin, this.contentContainer),
-			'Timers': new TimersTab(this.app, this.plugin, this.contentContainer),
-			'Widget': new WidgetTab(this.app, this.plugin, this.contentContainer),
-			'Status Bar': new StatusBarTab(this.app, this.plugin, this.contentContainer)
+			[i18n.t('settings.tabs.general')]: new GeneralTab(this.app, this.plugin, this.contentContainer),
+			[i18n.t('settings.tabs.recorders')]: new RecordersTab(this.app, this.plugin, this.contentContainer),
+			[i18n.t('settings.tabs.timers')]: new TimersTab(this.app, this.plugin, this.contentContainer),
+			[i18n.t('settings.tabs.widget')]: new WidgetTab(this.app, this.plugin, this.contentContainer),
+			[i18n.t('settings.tabs.statusBar')]: new StatusBarTab(this.app, this.plugin, this.contentContainer)
 		};
 
 		// tab buttons

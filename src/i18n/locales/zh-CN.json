@@ -9,62 +9,86 @@
       "statusBar": "状态栏"
     },
     "general": {
+      "language": {
+        "name": "语言",
+        "desc": "选择插件界面的语言。"
+      },
       "showRecordRibbonIcon": {
         "name": "在功能区显示记录按钮",
-        "desc": "添加一个功能区图标，用于将字流记录到周期笔记中。重新加载插件后生效。"
+        "desc": "添加一个功能区图标，用于将更改数据记录到周期笔记中。重新加载插件后生效。"
       },
       "ignoredFolders": {
         "name": "忽略的文件夹",
-        "desc": "这些文件夹（或子文件夹）中的文件将不会被追踪。",
+        "desc": [
+          "这些文件夹（及其子文件夹）中的文件将不会被追踪。",
+          "输入要排除的文件夹路径，用英文逗号 ',' 或回车分隔。",
+          "建议更改此设置后重新加载插件。",
+          "排除文件夹格式验证："
+        ],
         "placeholder": "Private/Daily Notes\nTemplates",
         "validation": {
           "valid": "✅",
-          "invalid": "⚠ 文件夹：\"{folder}\" 在 Obsidian 中未找到。"
+          "invalid": "⚠ 未在 Obsidian 中未找到文件夹：\"{folder}\" 。"
         }
       },
       "ignoredTags": {
         "name": "忽略的标签",
-        "desc": "包含 Frontmatter (YAML) 中任一标签的文件将不会被追踪。",
+        "desc": [
+          "包含 Frontmatter (YAML) 中任一标签的文件将不会被追踪。",
+          "输入要排除的标签，用英文逗号 ',' 或回车分隔。",
+          "建议更改此设置后重新加载插件。"
+        ],
         "placeholder": "#ignore\n#private"
       },
       "noteThreshold": {
-        "name": "编辑模式下记录笔记的阈值",
-        "desc": "选择在实时预览和源码模式下记录笔记的要求。",
+        "name": "编辑模式下记录笔记的门槛",
+        "desc": [
+          "选择在实时预览和源码模式下记录笔记的最低要求。",
+          "满足编辑次数：至少输入或删除任意内容才会被记录，哪怕只是一个空格。",
+          "满足专注时长：在编辑模式下打开笔记超过1分钟。",
+          "如果以上都不要求，记录器将追踪您在编辑模式下打开的所有文件。"
+        ],
         "options": {
-          "e": "仅要求编辑",
-          "t": "仅要求专注时间",
-          "ent": "同时要求编辑和专注时间",
-          "eot": "要求编辑或专注时间之一",
+          "e": "仅满足编辑次数",
+          "t": "仅满足专注时间",
+          "ent": "同时满足编辑次数和专注时长",
+          "eot": "满足编辑次数或专注时长",
           "n": "无要求"
         }
       },
       "noteToRecord": {
-        "name": "退出编辑模式时记录的笔记",
-        "desc": "选择从编辑模式切换到阅读模式时的行为。",
+        "name": "退出编辑模式时记录以下笔记",
+        "desc": [
+          "选择从编辑模式切换到阅读模式时的行为。",
+          "编辑模式包括实时预览和源码模式。",
+          "如果仅记录当前笔记，其他笔记可能不会自动记录，除非您手动记录。"
+        ],
         "options": {
-          "all": "当前笔记和编辑模式下的其他笔记",
+          "all": "当前笔记和其他处于编辑模式下的笔记",
           "crt": "仅当前笔记"
         }
       },
       "autoRecordInterval": {
         "name": "自动记录间隔",
-        "desc": "设置间隔（秒），影响插件何时将所有追踪的笔记记录到周期笔记中。",
+        "desc": [
+          "设置间隔（秒），插件每隔所设间隔将会记录自动所有数据到日记。",
+          "设置为 0 以禁用。"
+        ],
         "placeholder": "设置为 0 以禁用"
       },
       "resetSettings": {
         "name": "重置所有设置",
         "desc": "将所有设置重置为默认值。",
         "button": "重置所有设置"
-      },
-      "language": {
-        "name": "语言",
-        "desc": "选择插件界面的语言。"
       }
     },
     "recorders": {
       "currentRecorder": {
         "name": "当前记录器",
-        "desc": "选择要编辑的记录器配置。"
+        "desc": [
+          "选择要编辑的记录器配置。",
+          "您可以添加新的记录器以将不同的统计数据集保存到不同的位置。"
+        ]
       },
       "actions": {
         "delete": "删除",
@@ -72,14 +96,18 @@
         "add": "添加记录器"
       },
       "confirmations": {
-        "addRecorder": "请确保每个笔记没有重复的记录内容类型，否则会出现未定义的行为！\n\n允许的示例✅：\n\t记录器1：周期笔记格式 = YYYY-MM-DD；记录类型 = 表格；\n\t记录器2：周期笔记格式 = YYYY-MM-DD；记录类型 = 列表；\n允许的示例✅：\n\t记录器1：周期笔记格式 = YYYY-MM-DD；记录类型 = 表格；\n\t记录器2：周期笔记格式 = YYYY-MM；记录类型 = 表格；\n不允许的示例❌：\n\t记录器1：周期笔记格式 = YYYY-MM-DD；记录类型 = 表格；插入位置 = 底部；\n\t记录器2：周期笔记格式 = YYYY-MM-DD；记录类型 = 表格；插入位置 = 自定义；",
+        "addRecorder": "请确保每个笔记没有重复的记录内容类型，否则会出现未定义的行为！\n\n允许的示例✅：\n\t记录器1：周期笔记格式 = YYYY-MM-DD；记录类型 = 表格；\n\t记录器2：周期笔记格式 = YYYY-MM-DD；记录类型 = 子弹列表；\n允许的示例✅：\n\t记录器1：周期笔记格式 = YYYY-MM-DD；记录类型 = 表格；\n\t记录器2：周期笔记格式 = YYYY-MM；记录类型 = 表格；\n不允许的示例❌：\n\t记录器1：周期笔记格式 = YYYY-MM-DD；记录类型 = 表格；插入位置 = 底部；\n\t记录器2：周期笔记格式 = YYYY-MM-DD；记录类型 = 表格；插入位置 = 自定义；",
         "deleteRecorder": "确定要删除 \"{name}\" 吗？"
       },
+      "recoderName": " 的配置",
       "periodicNote": {
         "heading": "记录到的周期笔记",
         "folder": {
           "name": "周期笔记文件夹",
-          "desc": "切换按钮以启用动态文件夹。默认禁用。",
+          "desc": [
+            "打开按钮以启用动态文件夹。默认禁用。",
+            "在空栏中指定每日笔记或每周笔记文件夹格式。"
+          ],
           "dynamicEnabled": "您当前的周期笔记文件夹如下：",
           "dynamicDisabled": "您当前的周期笔记文件夹如下：",
           "placeholderDynamic": "[MonthlyLogs/]MM-YYYY",
@@ -87,14 +115,30 @@
           "confirmToggle": "请确保：\n\t1. 切换动态文件夹后，您将调整周期笔记文件夹。示例格式如下：\n\t\t如果启用动态文件夹，必须使用 moment 格式：\n\t\t\t[MonthlyLogs\/]MM-YYYY\n\t\t如果禁用动态文件夹，必须使用文件夹路径：\n\t\t\tLogs\/MonthlyLogs \n\t2. 如果希望其他记录器记录到同一文件夹，请不要忘记对它们进行相同的更改！"
         },
         "format": {
-          "name": "周期笔记格式",
-          "desc": "设置新创建的每日笔记或每周笔记的文件名（moment 格式）。",
+          "name": "周期笔记名格式",
+          "desc": {
+            "segments": [
+              "设置新创建的每日笔记或每周笔记的笔记名（{link0} 格式）。"
+            ],
+            "links": [
+              {
+                "id": "link0",
+                "text": "moment",
+                "href": "https://momentjs.com/docs/#/displaying/"
+              }
+            ]
+          },
           "preview": "您当前的周期笔记如下："
         }
       },
       "templatePlugin": {
         "name": "模板插件",
-        "desc": "设置您使用的模板插件，以将模板应用于新创建的周期笔记。",
+        "desc": [
+          "设置您使用的模板插件，以将模板应用于新创建的周期笔记。",
+          "目前仅支持核心插件 \"Templates\" 的模板。",
+          "如果您使用社区插件 \"Templater\"，请使用 \"Templater\" 的文件夹模板功能。",
+          "如果您不需要应用模板，请使用 \"默认\" 选项。"
+        ],
         "options": {
           "none": "默认（Templater 文件夹模板）",
           "templates": "Templates（核心插件）"
@@ -104,7 +148,11 @@
         },
         "filePath": {
           "name": "模板文件路径",
-          "desc": "设置要应用的模板文件的文件路径。",
+          "desc": [
+            "设置要应用的模板文件的文件路径。",
+            "目前仅支持核心插件 \"Templates\" 的模板。",
+            "如果您使用社区插件 \"Templater\"，请使用 \"Templater\" 的文件夹模板功能。"
+          ],
           "placeholder": "设置模板文件",
           "validation": {
             "found": "✅",
@@ -129,41 +177,56 @@
           "desc": "选择要在指定笔记上记录的内容类型。",
           "options": {
             "table": "表格",
-            "bulletList": "列表",
-            "metadata": "元数据"
+            "bulletList": "子弹列表",
+            "metadata": "元数据 (frontmatter)"
           }
         },
         "syntax": {
-          "name": "字流记录语法",
-          "desc": "使用 '${}' 语法修改语法，请参阅文档以了解支持的字符串插值表达式。"
+          "name": "Wordflow 记录语法",
+          "desc": {
+            "segments": [
+              "使用 '${}' 语法修改语法，请参阅{link0}以了解支持的字符串插值表达式。"
+            ],
+            "links": [
+              {
+                "id": "link0",
+                "text": "文档",
+                "href": "https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations"
+              }
+            ]
+          }
         },
         "insertPlace": {
           "name": "插入位置",
-          "desc": "如果不存在先前的记录，则插入到此位置。",
+          "desc": [
+            "如果不存在先前的记录，则插入到此位置。",
+            "如果使用自定义位置，起始位置和结束位置必须存在且在周期笔记中唯一！",
+            "如果使用元数据位置，记录将插入到周期笔记的 frontmatter 中。"
+          ],
           "options": {
             "bottom": "底部",
             "custom": "自定义位置",
-            "yaml": "yaml（frontmatter）"
+            "yaml": "元数据（frontmatter）"
           },
           "startPosition": {
             "name": "起始位置",
-            "desc": "记录应在此内容之后插入。起始位置和结束位置之间的内容将在记录期间被替换。"
+            "desc": "记录应在此内容之后插入。起始位置和结束位置之间的内容将在触发记录时被替换。"
           },
           "endPosition": {
             "name": "结束位置",
-            "desc": "记录应在此内容之前插入。起始位置和结束位置之间的内容将在记录期间被替换。"
+            "desc": "记录应在此内容之前插入。起始位置和结束位置之间的内容将在触发记录时被替换。"
           }
         },
         "sortBy": {
           "name": "排序方式",
-          "desc": "选择一种变量类型，按顺序添加记录项。",
+          "desc": "按选定的顺序展示被记录的笔记。",
           "options": {
             "lastModifiedTime": "最后修改时间",
             "editedWords": "编辑字数",
             "editedTimes": "编辑次数",
             "editedPercentage": "编辑百分比",
-            "modifiedNote": "修改的笔记",
-            "editTime": "编辑时间"
+            "modifiedNote": "笔记名称",
+            "editTime": "编辑模式专注时长"
           },
           "order": {
             "descend": "降序",
@@ -179,13 +242,20 @@
     },
     "timers": {
       "idleInterval": {
-        "name": "空闲间隔",
-        "desc": "状态栏中的计时器在空闲一段时间后暂停的间隔（分钟）。",
-        "placeholder": "设置空闲时间（分钟）"
+        "name": "闲置时自动暂停",
+        "desc": [
+          "状态栏中的计时器在空闲多久时间（分钟）后自动暂停。",
+          "任何文档点击、大纲点击或编辑操作都会刷新计时器，使其继续计时。"
+        ],
+        "placeholder": "设置闲置暂停阈值（分钟）"
       },
       "useSecondInWidget": {
-        "name": "在侧边栏组件中显示秒（测试版）",
-        "desc": "在侧边栏组件中与分钟一起显示秒。"
+        "name": "在侧边栏组件中显示秒（测试功能）",
+        "desc": [
+          "在侧边栏的计时组件的最小单位是秒，而不是分钟。",
+          "目前不会影响记录到笔记中的单位。",
+          "更改后需要重新加载插件。"
+        ]
       }
     },
     "widget": {
@@ -195,29 +265,37 @@
       },
       "showRibbonIcon": {
         "name": "在功能区显示侧边栏组件按钮",
-        "desc": "添加一个功能区图标以显示侧边栏组件并刷新组件内容。"
+        "desc": "添加一个功能区按钮来启用侧边栏组件或刷新组件内容。"
       },
       "switchToFieldOnFocus": {
-        "name": "专注模式下切换到此字段",
-        "desc": "开始专注时，此阅读时间字段将在侧边栏组件中自动切换。",
+        "name": "专注模式下自动切换到此时间属性",
+        "desc": [
+          "开始专注时，此时间属性将在侧边栏组件中自动切换。",
+          "仅支持记录语法中的时间属性。",
+          "时间属性包括：\"${readTime}\" 和 \"${readEditTime}\"。"
+        ],
         "options": {
           "disabled": "禁用",
           "readTime": "阅读时间",
-          "readEditTime": "阅读编辑时间"
+          "readEditTime": "总时间（阅读+编辑）"
         },
         "validation": {
-          "hasField": "侧边栏组件中的记录器有 {field}：✅",
-          "noField": "侧边栏组件中的记录器有 {field}：❌"
+          "hasField": "侧边栏组件中的记录器已配置该时间属性：✅",
+          "noField": "侧边栏组件中的记录器已配置该时间属性：❌"
         }
       },
       "colorGroupLightness": {
-        "name": "随机颜色组亮度",
+        "name": "随机笔记颜色的亮度",
         "desc": "指定 hsl 中的亮度（0-100）以为文件条目生成随机颜色。",
         "placeholder": "66"
       },
       "colorGroupSaturation": {
-        "name": "随机颜色组饱和度",
-        "desc": "指定 hsl 中的饱和度（0-100）以为文件条目生成随机颜色。",
+        "name": "随机笔记颜色的饱和度",
+        "desc": [
+          "指定 hsl 中的饱和度（0-100）以为文件条目生成随机颜色。",
+          "您可以使用空格 \" \" 分隔数字以提供多个选项。",
+          "如果下面的当前饱和度选项没有变化，则输入应该是无效的。"
+        ],
         "preview": "当前饱和度选项："
       },
       "fieldAlias": {
@@ -232,42 +310,41 @@
     "statusBar": {
       "enableMobile": {
         "name": "在移动设备上强制显示状态栏",
-        "desc": "强制字流追踪器的状态栏在移动设备上显示。"
+        "desc": [
+          "强制此插件的状态栏在移动设备上显示。",
+          "如果您有其他 css 片段执行相同操作，它们可能会被覆盖。"
+        ]
       }
     }
   },
   "commands": {
     "recordWordflows": {
-      "name": "将字流从编辑的笔记记录到周期笔记"
+      "name": "记录所有编辑过的笔记数据到周期笔记中"
     },
     "revealWidget": {
-      "name": "显示并刷新字流追踪器侧边栏组件"
+      "name": "显示并刷新 Wordflow Tracker 的侧边栏组件"
     }
   },
   "notices": {
-    "recordSuccess": "尝试将字流记录到周期笔记！",
+    "recordSuccess": "尝试将笔记数据记录到周期笔记！",
     "settingsReset": "✅ 设置已重置为默认值！",
     "settingsResetFailed": "❌ 无法重置设置！请检查控制台！",
     "recordTypeUndefined": "❌此记录器中未定义记录类型！",
-    "focusPaused": "由于空闲，专注已暂停。",
-    "languageChanged": "语言已更改。请重新加载插件以应用更改。"
+    "focusPaused": "由于空闲太久，专注已暂停。",
+    "languageChanged": "插件语言已更改。"
   },
   "widget": {
-    "title": "字流追踪器",
+    "title": "Wordflow Tracker",
     "tooltips": {
       "switchRecorder": "切换记录器",
-      "switchField": "从记录语法切换要显示的数据"
+      "switchField": "从记录语法中切换要显示的数据"
     },
     "buttons": {
-      "record": "记录",
+      "record": "记录所有数据",
       "focus": "专注",
-      "pause": "暂停",
-      "quit": "退出"
+      "pause": "暂停专注",
+      "quit": "退出专注"
     }
-  },
-  "statusBar": {
-    "editing": "⌨️ {time} · {edits} 次编辑 · {words} 字",
-    "reading": "📖 {time}"
   },
   "modals": {
     "confirmation": {
