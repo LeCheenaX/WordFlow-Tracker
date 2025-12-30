@@ -1,8 +1,18 @@
-export const currentPluginVersion = '1.6.0';
+export const currentPluginVersion = '1.6.1';
 
 export const changelog = {
 'en': 
 `
+### 1.6.1 updates
+**Bug Fixed:**
+1. Fixed \${docWords} not working properly for status bar tracker
+
+**Enhancements:**
+1. Faster plugin reaction and performance improvements
+2. Word counting is now identical with Obsidian's native word counting
+3. Rebuilt word counting functions for better readability, stability and performance
+4. Module rebuilds for de-coupling and compatibility
+
 ### 1.6.0 updates
 **New Features:**
 1. Custom status bar content - Add customizable status bar elements to display note information
@@ -23,22 +33,19 @@ export const changelog = {
 2. The totalValue in the sidebar widget may not update, if the widget is not updated on today but on the next day.
 3. The false positive console error by Obsidian due to the async initialization. This does not affect the usage but just pollute the console logs
 
-### 1.5.2 updates
-**Bug Fixed:**
-1. The \${statBar} property may be incorrect, which overrides the existing data with new data.
-2. Widget view may not initialize properly, if the plugin is set to load with delay(by 3rd party plugin manager plugin) after Obsidian load.
-
-### 1.5.1 updates
-**Bug Fixed:**
-1. MetaData will not update the following properties in 1.5.0:
-    1. totalReadTime
-    2. totalTime
-2. The records on yesterday or earlier will be wrongly recorded on today's note, if Obsidian is opened up to the next day. 
-3. Console log pollution in beta version 1.5.0.
-4. Changed log version display is not correct. 
 `,
 'zh-CN': 
 `
+### 1.6.1 更新
+**错误修复：**
+1. 修复了状态栏追踪器中 \${docWords} 无法正常工作的问题
+
+**功能增强：**
+1. 更快的插件响应速度和性能改进
+2. 单词计数现在与 Obsidian 原生单词计数保持一致
+3. 重构了单词计数功能，提高了可读性、稳定性和性能
+4. 模块重构以提高兼容性
+
 ### 1.6.0 更新
 **新功能：**
 1. 自定义状态栏内容 - 添加可自定义的状态栏元素来显示文档信息
@@ -59,18 +66,5 @@ export const changelog = {
 2. 如果侧边栏组件不是在今天更新而是在第二天更新，侧边栏组件中的 totalValue 可能不会更新。
 3. 由于异步初始化导致的 Obsidian 误报控制台错误。这不会影响使用，但会污染控制台日志。
 
-### 1.5.2 更新
-**错误修复：**
-1. \${statBar} 属性可能不正确，会用新数据覆盖现有数据。
-2. 如果插件设置为在 Obsidian 加载后延迟加载（通过第三方插件管理器插件），组件视图可能无法正确初始化。
-
-### 1.5.1 更新
-**错误修复：**
-1. 在 1.5.0 版本中，元数据不会更新以下属性：
-    1. totalReadTime
-    2. totalTime
-2. 如果 Obsidian 开启到第二天，昨天或更早的记录会被错误地记录在今天的笔记上。
-3. 1.5.0 测试版本中的控制台日志污染。
-4. 更改日志版本显示不正确。
 `
 };
