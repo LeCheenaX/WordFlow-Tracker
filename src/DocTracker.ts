@@ -113,18 +113,26 @@ if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);
         this.readTimer?.pause();
     }; 
 
-    public async countActiveWords(){ 
+    public async countWordsFullScan(){ 
         if (!this.activeEditor?.file || this.activeEditor.file.path !== this.filePath) {
 // console.warn(`Tracker for ${this.filePath} misattached to another note for switching too quickly! The issues are fixed but recommend not to record immediately after note-switching.`);
-            await this.countInactiveWords(); 
+            this.countWordsByChanges(); // no editor attached to this tracker, using the conservative method
             return;
         }
+
         const totalWordsCt = wordsCounter();
+        
         //@ts-expect-error
-        this.docWords = totalWordsCt(this.activeEditor?.editor.cm.state.sliceDoc(0));
+        if (this.activeEditor?.editor?.cm) {
+            //@ts-expect-error
+            this.docWords = totalWordsCt(this.activeEditor?.editor.cm.state.sliceDoc(0));
+        } else {
+            const content = await this.plugin.app.vault.read(this.activeEditor.file);
+            this.docWords = totalWordsCt(content);
+        }
     }
 
-    public async countInactiveWords(){ 
+    public countWordsByChanges(){ 
         this.docWords = this.originalWords + this.changedWords;
     }
 
@@ -191,13 +199,6 @@ if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"
     }
 */
 
-    private async countOrigin(){       
-        const totalWordsCt = wordsCounter();
-        await sleep(100); // set delay for the activeEditor to load
-        //@ts-expect-error
-        this.originalWords = totalWordsCt(this.activeEditor?.editor.cm.state.sliceDoc(0));
-    }
-
     private async trackEditing(): Promise<void>{
         this.editTimer?.start();
         this.activeEditor = this.plugin.app.workspace.getActiveViewOfType(MarkdownView); 
@@ -240,8 +241,10 @@ if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"
         this.trackerResetTime = Date.now();
 //        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.filePath}`); 
         await this.activate(this.activeEditor?.getMode());
-        await this.countOrigin();
-        await sleep(1000); // when open new notes, update with delay
+        await sleep(100) // for loading data
+        this.countWordsFullScan();
+        this.originalWords = this.docWords;
+        await sleep(900); // when open new notes, update with delay
         this.updateStatusBarTracker();
         this.plugin.Widget?.updateCurrentData();
     }
@@ -405,6 +408,7 @@ if (DEBUG){
         this.lastDone = currentDone;
         this.lastUndone = currentUndone;
         if (Number(history.prevTime) !== 0) this.lastModifiedTime = Number(history.prevTime);
+        this.countWordsByChanges();
         this.updateStatusBarTracker();
         this.plugin.Widget?.updateCurrentData();
 /*

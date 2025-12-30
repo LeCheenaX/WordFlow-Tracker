@@ -1,5 +1,5 @@
 export function wordsCounter() {
-    return function (input: string, prevCh: string, subseqCh: string): number { 
+    return function (input: string, prevCh?: string, subseqCh?: string): number { 
         //console.log("string:", input) //debug
         // Thanks to Luke Leppan's plugin(https://github.com/lukeleppan/better-word-count), we introduced spaceDelimitedChars, nonSpaceDelimitedChars, nonSpaceDelimitedWordsOther
         const spaceDelimitedChars =
@@ -23,6 +23,10 @@ export function wordsCounter() {
             "g"
         );
 
+        // default value for optional parameters
+        prevCh = prevCh || '';
+        subseqCh = subseqCh || '';
+        
         let beforeInput = (prevCh + subseqCh).toString();
         let afterInput = prevCh + input + subseqCh;
 //console.log(`Input words: ${(input.match(pattern) || []).length}`)

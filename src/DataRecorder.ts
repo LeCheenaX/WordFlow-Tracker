@@ -226,14 +226,14 @@ this.existingDataMap.forEach((ExistingData)=>{
         if (!p_tracker){
             for (const [filePath, tracker] of this.trackerMap.entries()) {
                 if (!tracker.meetThreshold()) continue;
-                await tracker.countActiveWords(); // generate accurate words for NewData by the time of recording
+                await tracker.countWordsFullScan(); // generate accurate words for NewData by the time of recording
                 this.newDataMap.set(filePath, new NewData(tracker));
                 tracker.resetEdit(); // deleted await for performance 
             }
         } else {
 //console.log('trackerClosed:',p_tracker)
             // no active editor now
-            await p_tracker.countInactiveWords(); // generate accurate words for NewData by the time of recording
+            p_tracker.countWordsByChanges(); // generate accurate words for NewData by the time of recording
             this.newDataMap.set(p_tracker.filePath, new NewData(p_tracker)); // only record given data
 //console.log('newDataMap:', this.newDataMap);
             p_tracker.resetEdit(); // deleted await for performance 
