@@ -1,4 +1,5 @@
 import { wordsCounter } from "./Utils/stats";
+import { conditionalSleep } from "./Utils/conditionalSleep";
 import Timer,  { formatTime } from "./Timer";
 import WordflowTrackerPlugin from "./main";
 import { debounce, Editor, EventRef, MarkdownView, MarkdownViewModeType, moment, Notice } from "obsidian";
@@ -204,7 +205,13 @@ if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"
         await sleep(100) // for loading data
         this.countWordsFullScan();
         this.originalWords = this.docWords;
-        await sleep(900); // when open new notes, update with delay
+        
+        // Use conditional sleep: 100ms minimum, 900ms maximum, with resource readiness checks
+        await conditionalSleep(100, 900,
+            () => !!(this.fileName && this.fileName !== 'unknown'),  // File metadata ready
+            () => !!(this.activeEditor && this.activeEditor.file?.path === this.filePath),  // Editor attached correctly
+        );
+        
         this.updateStatusBarTracker();
         this.plugin.Widget?.updateCurrentData();
     }
