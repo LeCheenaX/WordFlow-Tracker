@@ -3,6 +3,7 @@ import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaCo
 import { DataRecorder } from './DataRecorder';
 import { moment, normalizePath } from 'obsidian';
 import { SupportedLocale, I18nManager, getI18n } from './i18n';
+import { updateStatusBarStyle, removeStatusBarStyle } from './StatusBarManager';
 
 // Obsidian supports only string and boolean for settings. numbers are not supported. 
 export interface WordflowRecorderConfigs {
@@ -1237,7 +1238,7 @@ export class StatusBarTab extends WordflowSubSettingsTab {
                 .onChange(async (value) => {
                     this.plugin.settings.customStatusBarReadingMode = value;
                     await this.plugin.saveSettings();
-                    this.refreshStatusBar();
+                    this.plugin.statusBarManager.refresh();
                 }));
 
         makeMultilineTextSetting(readingModeSetting);
@@ -1251,21 +1252,10 @@ export class StatusBarTab extends WordflowSubSettingsTab {
                 .onChange(async (value) => {
                     this.plugin.settings.customStatusBarEditMode = value;
                     await this.plugin.saveSettings();
-                    this.refreshStatusBar();
+                    this.plugin.statusBarManager.refresh();
                 }));
 
         makeMultilineTextSetting(editModeSetting);
-    }
-
-    private refreshStatusBar() {
-        // fetch active DocTracker and refresh the status bar
-        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (activeView?.file?.path) {
-            const tracker = this.plugin.trackerMap.get(activeView.file.path);
-            if (tracker && tracker.isActive) {
-                tracker.updateStatusBarTracker();
-            }
-        }
     }
 }
 
@@ -1289,18 +1279,6 @@ function makeMultilineTextSetting(setting: Setting) {
     infoEl.classList.add('wordflow-info');
     textEl.classList.add('wordflow-textarea');
 };
-
-export function updateStatusBarStyle(settings: WordflowSettings){
-    if (settings.enableMobileStatusBar) {
-        document.body.classList.add('wordflow-status-bar-container');
-    } else {
-        removeStatusBarStyle();
-    }
-};
-
-export function removeStatusBarStyle(){
-    document.body.classList.remove('wordflow-status-bar-container');
-}
 
 export class ConfirmationModal extends Modal {
     constructor(

@@ -1,6 +1,7 @@
 import { DocTracker } from './DocTracker';
 import { DataRecorder } from './DataRecorder';
-import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, updateStatusBarStyle, removeStatusBarStyle, WidgetTab } from './settings';
+import { StatusBarManager, updateStatusBarStyle, removeStatusBarStyle } from './StatusBarManager';
+import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, WidgetTab } from './settings';
 import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
 import { currentPluginVersion, changelog } from './changeLog';
 import { initI18n, SupportedLocale, I18nManager } from './i18n';
@@ -14,8 +15,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 	public settings: WordflowSettings;
 	public i18n: I18nManager;
 	public trackerMap: Map<string, DocTracker> = new Map<string, DocTracker>(); // give up nested map
-	public statusBarTrackerEl: HTMLElement; // for status bar tracking
-	public statusBarContent: string; // for status bar content editing
+	public statusBarManager: StatusBarManager;
 	public DocRecorders: DataRecorder[] = [];
 	public Widget: WordflowWidgetView | null = null;
 
@@ -83,7 +83,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		});
 		
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		this.statusBarTrackerEl = this.addStatusBarItem();
+		this.statusBarManager = new StatusBarManager(this);
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
@@ -281,7 +281,7 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 				// else console.log('Layout changed but no mode switched');*/
 			});
 			this.isModeSwitch = false;
-			this.statusBarTrackerEl.setText(''); // clear status bar
+			this.statusBarManager.clear(); // clear status bar
 //if (DEBUG) console.log(`activeDocHandler: status bar cleared`);
 		}
 	};
@@ -312,7 +312,7 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 //if (DEBUG) console.log("Main.activateTracker: trackerMap",this.trackerMap);
 //if (DEBUG) console.log('Main.activateTracker: file not found in trackerMap');
 			if (this.isIgnoredFile(activeEditor.file)) {
-				this.statusBarTrackerEl.setText('');
+				this.statusBarManager.clear();
 				this.Widget?.updateCurrentData();
 				return;
 			}; // restrict tracker creation, not affecting existing created trackers in case of frequently adjustments on the plugin settings. 
