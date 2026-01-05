@@ -1,5 +1,5 @@
 import WordflowTrackerPlugin from './main';
-import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, MarkdownView } from 'obsidian';
+import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, MarkdownView, MarkdownRenderer, Component } from 'obsidian';
 import { DataRecorder } from './DataRecorder';
 import { moment, normalizePath } from 'obsidian';
 import { SupportedLocale, I18nManager, getI18n } from './i18n';
@@ -1256,6 +1256,38 @@ export class StatusBarTab extends WordflowSubSettingsTab {
                 }));
 
         makeMultilineTextSetting(editModeSetting);
+    }
+}
+
+// ========================================
+// Reference 参考文档标签页
+// ========================================
+export class ReferenceTab extends WordflowSubSettingsTab {
+    private renderComponent: Component;
+
+    constructor(app: App, plugin: WordflowTrackerPlugin, container: HTMLElement) {
+        super(app, plugin, container);
+        this.renderComponent = new Component();
+    }
+
+    display() {
+        this.container.empty();
+        const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
+        
+        // Get the markdown content from i18n (simple string)
+        const content = this.i18n.t('settings.reference.content');
+        
+        // Create a markdown renderer container
+        const markdownContainer = tabContent.createDiv('wordflow-reference-container');
+        
+        // Use Obsidian's markdown renderer (same as ChangelogModal)
+        MarkdownRenderer.render(
+            this.app,
+            content,
+            markdownContainer,
+            '',
+            this.renderComponent
+        );
     }
 }
 

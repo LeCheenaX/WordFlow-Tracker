@@ -1,7 +1,7 @@
 import { DocTracker } from './DocTracker';
 import { DataRecorder } from './DataRecorder';
 import { StatusBarManager, updateStatusBarStyle, removeStatusBarStyle } from './StatusBarManager';
-import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, WidgetTab } from './settings';
+import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, WidgetTab, ReferenceTab } from './settings';
 import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
 import { currentPluginVersion, changelog } from './changeLog';
 import { initI18n, SupportedLocale, I18nManager } from './i18n';
@@ -530,7 +530,8 @@ export class WordflowSettingTab extends PluginSettingTab {
 			[i18n.t('settings.tabs.recorders')]: new RecordersTab(this.app, this.plugin, this.contentContainer),
 			[i18n.t('settings.tabs.timers')]: new TimersTab(this.app, this.plugin, this.contentContainer),
 			[i18n.t('settings.tabs.widget')]: new WidgetTab(this.app, this.plugin, this.contentContainer),
-			[i18n.t('settings.tabs.statusBar')]: new StatusBarTab(this.app, this.plugin, this.contentContainer)
+			[i18n.t('settings.tabs.statusBar')]: new StatusBarTab(this.app, this.plugin, this.contentContainer),
+			[i18n.t('settings.tabs.reference')]: new ReferenceTab(this.app, this.plugin, this.contentContainer)
 		};
 
 		// tab buttons

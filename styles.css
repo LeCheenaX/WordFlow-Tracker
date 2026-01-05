@@ -437,6 +437,77 @@
     flex-shrink: 0;
 }
 
+/* ======================== */
+/*  Reference Tab Styles    */
+/* ======================== */
+
+.wordflow-reference-container {
+    user-select: text ;
+    -webkit-user-select: text ;
+    -moz-user-select: text ;
+    -ms-user-select: text ;
+    overflow-x: auto ;
+    overflow-y: visible;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* 表格水平滚动样式 */
+.wordflow-reference-container table {
+    width: max-content ;
+    table-layout: auto ;
+    border-collapse: collapse;
+    margin: 16px 0;
+}
+
+/* 表格单元格样式优化 */
+.wordflow-reference-container th,
+.wordflow-reference-container td {
+    padding: 8px 12px ;
+    border: 1px solid var(--background-modifier-border) ;
+    vertical-align: top ;
+    word-wrap: break-word;
+    max-width: none ;
+    white-space: nowrap;
+}
+
+/* 特定列的宽度控制 */
+.wordflow-reference-container th:nth-child(1),
+.wordflow-reference-container td:nth-child(1) {
+    min-width: 180px;
+    white-space: nowrap;
+    font-family: var(--font-monospace);
+    font-weight: bold;
+}
+
+.wordflow-reference-container th:nth-child(2),
+.wordflow-reference-container td:nth-child(2) {
+    min-width: 300px;
+    max-width: 400px;
+    white-space: normal;
+}
+
+.wordflow-reference-container th:nth-child(3),
+.wordflow-reference-container td:nth-child(3) {
+    min-width: 150px;
+    white-space: nowrap;
+}
+
+.wordflow-reference-container th:nth-child(4),
+.wordflow-reference-container td:nth-child(4) {
+    min-width: 200px;
+    white-space: nowrap;
+    font-family: var(--font-monospace);
+}
+
+.wordflow-reference-container th:nth-child(5),
+.wordflow-reference-container td:nth-child(5) {
+    min-width: 300px;
+    max-width: 500px;
+    white-space: normal;
+}
+
+
 /* ==================== */
 /*  Confirmation Modal  */
 /* ==================== */
