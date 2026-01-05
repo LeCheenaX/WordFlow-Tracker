@@ -4,7 +4,7 @@ export const changelog = {
 'en': 
 `
 ### 1.6.2 updates
-✨ **New Features (新增)**
+✨ **New Features**
 - Quick Reference: In the setting page, offer quick reference to essential plugin documentation and string interpolation reference.
 
 ### 1.6.1 updates
