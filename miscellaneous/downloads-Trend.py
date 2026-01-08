@@ -83,7 +83,7 @@ for i in range(len(dates_plot)):
 
     # 只标注大版本
     if version.endswith('.0'):
-        ax.annotate(f'v{version}', 
+        ax.annotate(f'{version}', 
                     xy=(date, cum_download), 
                     xytext=(-5, 15) if version == "1.2.0" else (-5, 0), 
                     textcoords='offset points',
