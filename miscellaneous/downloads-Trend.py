@@ -63,14 +63,21 @@ for i in range(len(downloads_raw) - 1):
     current_total += downloads_raw[i]
     cumulative_downloads_plot.append(current_total)
 
+major_dates = []
+major_cum_downloads = []
+for i, ver in enumerate(versions_plot):
+    if ver.endswith('.0'):
+        major_dates.append(dates_plot[i])
+        major_cum_downloads.append(cumulative_downloads_plot[i])
+
 # --- 2. 绘图 ---
 fig, ax = plt.subplots(figsize=(14, 8))
 
 # A. 连线 (含最新当前日期)
 # ax.plot(dates_plot, cumulative_downloads_plot, '-', linewidth=2, color='#2E86AB', label='累计下载量', zorder=1)
 ax.plot(dates_plot, cumulative_downloads_plot, '-', linewidth=2, color='#2E86AB', zorder=1)
-# B. 黑点 (排除最后一个点)
-ax.plot(dates_plot[:-1], cumulative_downloads_plot[:-1], 'o', markersize=5,
+# B. 黑点 (仅大版本)
+ax.plot(major_dates, major_cum_downloads, 'o', markersize=5,
         color='#2E86AB', markerfacecolor='black', markeredgecolor='black', zorder=2)
 
 ax.fill_between(dates_plot, cumulative_downloads_plot, alpha=0.2, color='#2E86AB')
@@ -100,7 +107,7 @@ ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
 ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
 plt.xticks(rotation=45, ha='right')
 ax.grid(True, linestyle='--', alpha=0.6)
-ax.legend(loc='upper left', fontsize=12)
+#ax.legend(loc='upper left', fontsize=12)
 
 # --- 纵坐标拓展：最大值 + 1000 ---
 max_val = cumulative_downloads_plot[-1]
