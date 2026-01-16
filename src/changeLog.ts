@@ -1,8 +1,12 @@
-export const currentPluginVersion = '1.6.2';
+export const currentPluginVersion = '1.6.3';
 
 export const changelog = {
 'en': 
 `
+### 1.6.3 updates
+🎨 **UI Enhancement**
+- Mobile status bar(if enabled) is now compatible with Obsidian 1.11.x version (Android and iOS).
+
 ### 1.6.2 updates
 ✨ **New Features**
 - Quick Reference: In the setting page, offer quick reference to essential plugin documentation and string interpolation reference.
@@ -32,8 +36,11 @@ export const changelog = {
 `,
 'zh-CN': 
 `
-### 1.6.2 更新
+### 1.6.3 更新
+🎨 **界面优化：**
+- 开启移动端的状态栏后，在 Obsidian 1.11.x 移动端大改后的界面不再崩溃。
 
+### 1.6.2 更新
 ✨ **新增功能**
 - 快速参考：可在插件设置中查看，提供快速的插件文档和字符串插值参考
 
