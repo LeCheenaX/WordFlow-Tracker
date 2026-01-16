@@ -213,6 +213,8 @@ See [Development Roadmap](https://github.com/LeCheenaX/WordFlow-Tracker/wiki/Dev
 
 What to know how this project is built? Or wanna collaborate on this plugin? See details at https://deepwiki.com/LeCheenaX/WordFlow-Tracker
 
+![Downloads trend](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/miscellaneous/cumulative_downloads_trend.png)
+
 ## Installation
 ### Install in Obsidian
 Open obsidian settings > community plugins > browse，in the pop up windows, search for Wordflow Tracker, and click the install button. 
