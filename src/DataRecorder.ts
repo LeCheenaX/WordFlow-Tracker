@@ -411,28 +411,33 @@ this.existingDataMap.forEach((ExistingData)=>{
     }
 
     private async updateNoteToYAML(recordNote: TFile, newContent: string): Promise<void> {
-        const existingContent: string | null = await this.Parser.getContent(recordNote);
-        const [YAMLStartIndex, YAMLEndIndex]: [number, number] = await this.Parser.getIndex(recordNote);
+        // Parse the newContent to extract key-value pairs
+        const contentLines = newContent.trim().split('\n');
+        const updates: Record<string, any> = {};
         
-        if (existingContent){
-//console.log('existingContent:',existingContent)
-            await this.plugin.app.vault.process(recordNote, (data) => {
-                return data.replace(existingContent, newContent.trim()); 
-            });
-        } else if(YAMLStartIndex != -1){ // no existing data in yaml
-            await this.plugin.app.vault.process(recordNote, (data) => {
-                const dataLines = data.split('\n');
-                // Insert the new content before the closing '---' line
-                dataLines.splice(YAMLEndIndex, 0, newContent.trim());
-//console.log('datalines:',dataLines)
-                return dataLines.join('\n');
-            });
-        } else { // no yaml, create one
-            await this.plugin.app.vault.process(recordNote, (data) => {
-                const yamlHeader = '---\n' + newContent.trim() + '\n---\n';
-                return yamlHeader + data;
-            });
+        for (const line of contentLines) {
+            const colonIndex = line.indexOf(':');
+            if (colonIndex > 0) {
+                const key = line.substring(0, colonIndex).trim();
+                const value = line.substring(colonIndex + 1).trim();
+                
+                // Try to parse as number first, then keep as string
+                const numValue = parseInt(value);
+                if (!isNaN(numValue) && numValue.toString() === value) {
+                    updates[key] = numValue;
+                } else {
+                    updates[key] = value;
+                }
+            }
         }
+        
+        // Use Obsidian's API to update frontmatter
+        await this.plugin.app.fileManager.processFrontMatter(recordNote, (frontmatter) => {
+            // Update all the properties from our parsed content
+            for (const [key, value] of Object.entries(updates)) {
+                frontmatter[key] = value;
+            }
+        });
     }
 
 }

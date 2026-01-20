@@ -31,11 +31,12 @@ export class MetaDataParser{
     }
 
     public async extractData(recordNote: TFile): Promise< Map<string, ExistingData>> {
-        const [startIndex, endIndex] = await this.getIndex(recordNote);
         const existingDataMap: Map<string, ExistingData> = new Map();
 
-        // Return empty map if no YAML block found
-        if (startIndex === -1 || endIndex === -1) {
+        // Use Obsidian's metadataCache to get frontmatter directly
+        const frontmatter = this.plugin.app.metadataCache.getFileCache(recordNote)?.frontmatter;
+        
+        if (!frontmatter) {
             return existingDataMap;
         }
 
@@ -44,7 +45,8 @@ export class MetaDataParser{
         }
 
         let YAMLData: Record<string, string|undefined> = {};
-        // parse syntax to fetch varName and user customized name for varName variable. Then, read and record user customized name in frontmatter 
+        
+        // Parse syntax to fetch varName and user customized name for varName variable
         for (const pattern of this.patterns) {
             // Extract the variable name from the pattern
             const syntaxLine = this.syntax.split('\n').find(line => 
@@ -59,17 +61,18 @@ export class MetaDataParser{
             const varName = syntaxLine.substring(varStart, varEnd);
             if(!varName) continue;
 
-            const customName = syntaxLine.trim().substring(0,syntaxLine.indexOf(':')); // user customized name for ${varName}, for example: 'Total Edits' is the custom name for '${totalEdits} as specified in default settings'
-//console.log(`found ${varName}: ${this.plugin.app.metadataCache.getFileCache(recordNote)?.frontmatter?.[customName]}`)
-            if (this.plugin.app.metadataCache.getFileCache(recordNote)?.frontmatter?.[customName]){
-                YAMLData[varName] = this.plugin.app.metadataCache.getFileCache(recordNote)?.frontmatter?.[customName]
+            const customName = syntaxLine.trim().substring(0,syntaxLine.indexOf(':')); // user customized name for ${varName}
+            
+            // Use frontmatter directly from metadataCache
+            if (frontmatter[customName] !== undefined){
+                YAMLData[varName] = String(frontmatter[customName]);
             } else {
                 YAMLData[varName] = undefined;
             }
         }
 
         // If no data was found, return empty map
-        if (Object.keys(YAMLData).length === 0) {
+        if (Object.keys(YAMLData).filter(key => YAMLData[key] !== undefined).length === 0) {
             return existingDataMap;
         }
 
@@ -108,50 +111,34 @@ export class MetaDataParser{
     }
 
     public async getContent(recordNote: TFile): Promise<string | null> {
-        const noteContent = await this.plugin.app.vault.read(recordNote);
-        const [startIndex, endIndex] = await this.getIndex(recordNote);
-        const lines = noteContent.split('\n');
+        // Use Obsidian's metadataCache instead of manual parsing
+        const frontmatter = this.plugin.app.metadataCache.getFileCache(recordNote)?.frontmatter;
         
-        // Return null if no YAML block found
-        if (startIndex === -1 || endIndex === -1) {
+        if (!frontmatter) {
             return null;
         }
-        
-        // Make sure patterns are set
+
         if (this.patterns.length === 0) {
             this.setPatterns();
         }
+
+        const matchedLines: string[] = [];
         
-        // Extract YAML lines (excluding the --- markers)
-        const yamlLines = lines.slice(startIndex + 1, endIndex);
-        
-        let firstVarLine = -1;
-        let lastVarLine = -1;
-        
-        // Find the line numbers of the first and last variable patterns
-        for (let i = 0; i < yamlLines.length; i++) {
-            const line = yamlLines[i];
+        // Generate content based on current frontmatter and our patterns
+        for (const pattern of this.patterns) {
+            const syntaxLine = this.syntax.split('\n').find(line => 
+                line.includes(pattern.start) && line.includes('${') && line.includes('}'));
             
-            // Check if line matches any of our patterns
-            for (const pattern of this.patterns) {
-                if (line.trim().startsWith(pattern.start.trim())) {
-                    // Found a matching line
-                    if (firstVarLine === -1) {
-                        firstVarLine = i;
-                    }
-                    lastVarLine = i;
-                }
+            if (!syntaxLine) continue;
+            
+            const customName = syntaxLine.trim().substring(0, syntaxLine.indexOf(':'));
+            
+            if (frontmatter[customName] !== undefined) {
+                matchedLines.push(`${customName}: ${frontmatter[customName]}`);
             }
         }
         
-        // If no variable patterns found, return null
-        if (firstVarLine === -1 || lastVarLine === -1) {
-            return null;
-        }
-        
-        // Extract the content between firstVarLine and lastVarLine (inclusive)
-        const extractedLines = yamlLines.slice(firstVarLine, lastVarLine + 1);
-        return extractedLines.join('\n');
+        return matchedLines.length > 0 ? matchedLines.join('\n') : null;
     }
         
     public generateContent(mergedData: MergedData[]): string {
@@ -176,18 +163,21 @@ export class MetaDataParser{
         // Parse the metadata syntax to extract patterns
         const syntaxLines = this.syntax.split('\n');
 
+        // Clear existing patterns
+        this.patterns = [];
 
         // Extract patterns from each line of syntax
         for (let i = 0; i < syntaxLines.length; i++) {
             const line = syntaxLines[i];
-            if ((!(line.contains('${') && 
-                   line.contains('}'))
+            if ((!(line.includes('${') && 
+                   line.includes('}'))
                 ) && 
                 (line.trim() != '')  
-                ) throw Error(`Invaid metadata syntax! Ensure each line contains the \${} !`); 
+                ) throw Error(`Invalid metadata syntax! Ensure each line contains the \${} !`); 
+            
+            if (line.trim() === '') continue;
             
             const varStart = line.indexOf('${');
-            
             const varEnd = line.indexOf('}', varStart);
             
             this.patterns.push({

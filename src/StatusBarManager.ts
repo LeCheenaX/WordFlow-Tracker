@@ -12,12 +12,47 @@ export class StatusBarManager {
         this.statusBarEl = this.plugin.addStatusBarItem();
     }
 
+    /**
+     * Updates the status bar content based on the current document mode and focus state.
+     * 
+     * **Mode Detection:**
+     * - Uses current active MarkdownView mode if available
+     * - Falls back to tracker.prevViewMode if no active MarkdownView (e.g., user clicked on settings/images)
+     * 
+     * **Display Logic:**
+     * - **Edit Mode (source)**: Always displays edit template (⌨️ time · edits · words)
+     * - **Reading Mode + Focus Mode**: Displays reading template (📖 time)  
+     * - **Reading Mode + Non-Focus Mode**: Displays empty content
+     * 
+     * **Supported Cases:**
+     * 1. `inactive → source`: Edit template
+     * 2. `source → source`: Edit template (no change)
+     * 3. `inactive → source (focused)`: Edit template
+     * 4. `inactive → preview (focused)`: Reading template
+     * 5. `source → preview (focused)`: Reading template
+     * 6. `preview → source (focused)`: Edit template
+     * 7. `source → source (focused)`: Edit template (no change)
+     * 8. `preview → preview (focused)`: Reading template (no change)
+     * 9. `any → non-markdown`: Preserves previous template using tracker.prevViewMode
+     * 
+     * **Non-Focus Mode Behavior:**
+     * - Reading mode without focus: Empty status bar
+     * - Edit mode: Always shows content regardless of focus state
+     * 
+     * @param tracker - The DocTracker instance containing document state and timing data
+     */
     public updateFromTracker(tracker: DocTracker): void {
-        const template = tracker.prevViewMode === 'source' 
-            ? this.plugin.settings.customStatusBarEditMode 
-            : this.plugin.settings.customStatusBarReadingMode;
-        
-        this.content = this.parseTemplate(template, tracker);
+        const currentMode = this.plugin.app.workspace.getActiveViewOfType(MarkdownView)?.getMode();
+        const modeToUse = currentMode? currentMode: tracker.prevViewMode;
+
+        if (modeToUse === 'source') {
+            this.content = this.parseTemplate(this.plugin.settings.customStatusBarEditMode, tracker);
+        } else if (this.plugin.Widget?.onFocusMode){ // file in reading mode and on focus
+            this.content = this.parseTemplate(this.plugin.settings.customStatusBarReadingMode, tracker);
+        } else {
+            this.content = '';
+        }
+
         this.statusBarEl.setText(this.content);
     }
 
