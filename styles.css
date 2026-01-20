@@ -7,6 +7,8 @@
     padding: 28px;
     display: flex;
     flex-direction: column;
+    background: transparent;
+    box-shadow: none;
 }
 
 .wordflow-tab-bar.tab-labels-container {
@@ -169,25 +171,9 @@
 /*  Widget Setting Tab  */
 /* ======================== */
 
-/* Field Alias 设置的全宽样式 */
-.wordflow-widget-mappings-container .setting-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 0;
-}
-
+/* Field Alias 设置 - 保持正常宽度，只隐藏标题 */
 .wordflow-widget-mappings-container .setting-item .setting-item-info {
     display: none; /* 隐藏名称和描述部分 */
-}
-
-.wordflow-widget-mappings-container .setting-item .setting-item-control {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    flex: 1;
-    margin-left: 0;
 }
 
 .wordflow-widget-mappings-container .setting-item .setting-item-control .dropdown {
@@ -200,9 +186,159 @@
     min-width: 120px;
 }
 
-.wordflow-widget-mappings-container .setting-item .setting-item-control .clickable-icon {
+/* Tag Colors 设置 - 让文本框占用最大可用宽度 */
+.wordflow-widget-mappings-container .setting-item .setting-item-info {
+    display: none; /* 隐藏名称和描述部分 */
+}
+
+.wordflow-widget-tag-colors-container .setting-item {
+    width: 100%;
+}
+
+.wordflow-widget-tag-colors-container .setting-item .setting-item-info {
+    display: none; /* 隐藏名称和描述部分 */
+}
+
+.wordflow-widget-tag-colors-container .setting-item .setting-item-control {
+    width: 100%;
+    max-width: none;
+    margin-left: 0; /* 移除左边距，让控制区域占满宽度 */
+}
+
+.wordflow-widget-tag-colors-container .setting-item .setting-item-control input[type="text"] {
+    flex: 1;
+    min-width: 120px;
+}
+
+/* 内联标签输入样式 - 类似 Obsidian properties */
+.tag-input-field {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+}
+
+.tag-input-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background-color: var(--background-primary);
+    min-height: 32px;
+    cursor: text;
+}
+
+.tag-input-wrapper:focus-within {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+}
+
+.inline-tag-item {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 12px;
+    gap: 4px;
     flex-shrink: 0;
-    margin-left: 8px;
+}
+
+.inline-tag-text {
+    white-space: nowrap;
+}
+
+.inline-tag-remove-btn {
+    background: none;
+    border: none;
+    color: var(--text-on-accent);
+    cursor: pointer;
+    padding: 0;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.inline-tag-remove-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.wordflow-widget-tag-colors-container .tag-inline-input {
+    border: none !important;
+    background: transparent !important;
+    outline: none !important;
+    flex: 1;
+    min-width: 60px;
+    padding: 2px 0;
+    color: var(--text-normal);
+    font-size: 14px;
+    box-shadow: none !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+}
+
+.tag-inline-input {
+    border: none !important;
+    background: transparent !important;
+    outline: none !important;
+    flex: 1;
+    min-width: 60px;
+    padding: 2px 0;
+    color: var(--text-normal);
+    font-size: 14px;
+    box-shadow: none !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+}
+
+.tag-inline-input::placeholder {
+    color: var(--text-muted);
+}
+
+.tag-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 2px;
+}
+
+.tag-suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.tag-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.tag-suggestion-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+/* 移除旧的样式 */
+.tag-input-container,
+.tags-display,
+.tag-item,
+.tag-text,
+.tag-remove-btn {
+    display: none;
 }
 
 .wordflow-widget-current-note-data {

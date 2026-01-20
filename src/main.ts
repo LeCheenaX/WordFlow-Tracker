@@ -503,6 +503,9 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 	  }
 
 	onunload() {
+		// 首先清理 Widget view
+		this.app.workspace.detachLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET);
+		
 		removeStatusBarStyle();
 		this.trackerMap.forEach((tracker, filePath)=>{
 			this.recordTracker(tracker);

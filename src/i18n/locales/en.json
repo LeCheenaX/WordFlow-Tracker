@@ -311,7 +311,8 @@
         "desc": "Assign hue values to tags. Files with the same tag will have different saturation levels (35-85%) based on file count. Files with multiple tags will have blended colors.",
         "addButton": "Add Tag Color",
         "deleteButton": "Delete",
-        "tagPlaceholder": "Enter tag name (without #)"
+        "tagPlaceholder": "Enter tag name (without #)",
+        "maxLimit": "Maximum 10 tag colors allowed"
       },
       "fieldAlias": {
         "name": "Field alias",

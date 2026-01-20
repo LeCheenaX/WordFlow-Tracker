@@ -37,7 +37,7 @@ export class WordflowWidgetView extends ItemView {
                                     parseInt(this.plugin.settings.colorGroupLightness), 
                                     this.plugin.settings.colorGroupSaturation
                                 );
-        this.tagColorManager = new TagColorManager(this.plugin.settings.tagColors);
+        this.tagColorManager = new TagColorManager(this.plugin.settings.tagColors, this.colorGenerator);
         this.colorMap = new Map<string, string>;
     }
 
@@ -243,47 +243,13 @@ export class WordflowWidgetView extends ItemView {
         await this.initFieldDropDown();
     }
 
-    public updateColorMap() {
-        // Clear existing color map
-        this.colorMap.clear();
-        
-        if (!this.dataMap) return;
-        
-        // Build files with tags map for saturation calculation
-        const allFilesWithTags = this.tagColorManager.buildFilesWithTagsMap(this.plugin.app, this.dataMap);
-        
-        // Process all files in data map
-        this.dataMap.forEach((data, filePath) => {
-            const fileTags = this.tagColorManager.getFileTags(this.plugin.app, this.plugin.app.vault.getFileByPath(filePath));
-            
-            // Check if file has any configured tags
-            const configuredTags = this.plugin.settings.tagColors.map(config => config.tag);
-            const hasConfiguredTags = fileTags.some(tag => {
-                const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
-                return configuredTags.includes(cleanTag);
-            });
-            
-            let color: string;
-            if (hasConfiguredTags) {
-                // Use tag-based color calculation
-                const fallbackColor = this.colorGenerator.generate();
-                color = this.tagColorManager.getFileColor(fileTags, filePath, allFilesWithTags, fallbackColor);
-            } else {
-                // Use random color for files without configured tags
-                color = this.colorGenerator.generate();
-            }
-            
-            this.colorMap.set(filePath, color);
-        });
-    }
-
     /**
      * Update colors only for files with configured tags
      */
     public updateTaggedColorMap() {
         if (!this.dataMap) return;
         
-        const configuredTags = this.plugin.settings.tagColors.map(config => config.tag);
+        const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
         const allFilesWithTags = this.tagColorManager.buildFilesWithTagsMap(this.plugin.app, this.dataMap);
         
         this.dataMap.forEach((data, filePath) => {
@@ -294,8 +260,7 @@ export class WordflowWidgetView extends ItemView {
             });
             
             if (hasConfiguredTags) {
-                const fallbackColor = this.colorGenerator.generate();
-                const color = this.tagColorManager.getFileColor(fileTags, filePath, allFilesWithTags, fallbackColor);
+                const color = this.tagColorManager.getFileColor(fileTags, filePath, allFilesWithTags);
                 this.colorMap.set(filePath, color);
             }
         });
@@ -307,7 +272,7 @@ export class WordflowWidgetView extends ItemView {
     public updateUntaggedColorMap() {
         if (!this.dataMap) return;
         
-        const configuredTags = this.plugin.settings.tagColors.map(config => config.tag);
+        const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
         
         this.dataMap.forEach((data, filePath) => {
             const fileTags = this.tagColorManager.getFileTags(this.plugin.app, this.plugin.app.vault.getFileByPath(filePath));
@@ -331,7 +296,7 @@ export class WordflowWidgetView extends ItemView {
         if (!this.dataMap) return;
         if (this.colorMap.has(filePath)) return; // Skip if already exists
         
-        const configuredTags = this.plugin.settings.tagColors.map(config => config.tag);
+        const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
         
         // Create extended dataMap that includes the new file for accurate saturation calculation
         const extendedDataMap = new Map(this.dataMap);
@@ -350,8 +315,7 @@ export class WordflowWidgetView extends ItemView {
         let color: string;
         if (hasConfiguredTags) {
             // Tagged file: use tag-based color calculation with extended dataMap
-            const fallbackColor = this.colorGenerator.generate();
-            color = this.tagColorManager.getFileColor(fileTags, filePath, allFilesWithTags, fallbackColor);
+            color = this.tagColorManager.getFileColor(fileTags, filePath, allFilesWithTags);
         } else {
             // Untagged file: use random color
             color = this.colorGenerator.generate();

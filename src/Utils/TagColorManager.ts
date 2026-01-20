@@ -3,8 +3,10 @@
  * Handles color assignment based on file tags with HSL color blending
  */
 
+import { UniqueColorGenerator } from "./UniqueColorGenerator";
+
 export interface TagColorConfig {
-    tag: string;
+    tags: string[]; // 支持多个标签共享同一颜色
     hue: number; // 0-360, only hue value
 }
 
@@ -26,8 +28,11 @@ export class TagColorManager {
     private readonly minSaturation: number = 35;
     private readonly maxSaturation: number = 85;
 
-    constructor(tagColorConfigs: TagColorConfig[]) {
-        this.updateTagColors(tagColorConfigs);
+    constructor(
+        private tagColorConfigs: TagColorConfig[], 
+        private uniqueColorGenerator: UniqueColorGenerator
+    ) {
+        this.updateTagColors(this.tagColorConfigs);
     }
 
     /**
@@ -35,9 +40,26 @@ export class TagColorManager {
      */
     public updateTagColors(tagColorConfigs: TagColorConfig[]): void {
         this.tagHues.clear();
+        if (!tagColorConfigs || !Array.isArray(tagColorConfigs)) {
+            return;
+        }
+        
         tagColorConfigs.forEach(config => {
-            if (config.tag && config.hue !== undefined) {
-                this.tagHues.set(config.tag, config.hue);
+            // 检查 config 是否存在，tags 是否为有效数组，hue 是否为有效数字
+            if (config && 
+                config.tags && 
+                Array.isArray(config.tags) &&
+                config.hue !== undefined && 
+                config.hue !== null && 
+                typeof config.hue === 'number' && 
+                !isNaN(config.hue)) {
+                
+                // 为每个标签设置相同的色相值
+                config.tags.forEach(tag => {
+                    if (tag && typeof tag === 'string' && tag.trim() !== '') {
+                        this.tagHues.set(tag.trim(), config.hue);
+                    }
+                });
             }
         });
     }
@@ -53,21 +75,31 @@ export class TagColorManager {
     public getFileColor(
         fileTags: string[], 
         filePath: string, 
-        allFilesWithTags: Map<string, string[]>, 
-        fallbackColor: string
+        allFilesWithTags: Map<string, string[]>
     ): string {
         const matchingTagColors = this.getMatchingTagColors(fileTags, filePath, allFilesWithTags);
         
         if (matchingTagColors.length === 0) {
-            return fallbackColor;
+            return this.uniqueColorGenerator.generate();
         }
+        
+        let resultColor: string;
         
         if (matchingTagColors.length === 1) {
-            return this.hslToHex(matchingTagColors[0]);
+            resultColor = this.hslToHex(matchingTagColors[0]);
+        } else {
+            // Blend multiple colors
+            resultColor = this.blendColors(matchingTagColors);
         }
         
-        // Blend multiple colors
-        return this.blendColors(matchingTagColors);
+        // 将生成的标签颜色直接添加到 UniqueColorGenerator 的 generatedColors 中
+        // 避免随机颜色生成器生成相同的颜色
+        if (this.uniqueColorGenerator && resultColor) {
+            // 直接添加到 generatedColors 集合中
+            (this.uniqueColorGenerator as any).generatedColors.add(resultColor);
+        }
+        
+        return resultColor;
     }
 
     /**

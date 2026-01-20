@@ -111,7 +111,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     switchToFieldOnFocus: 'disabled',
     colorGroupLightness: '66',
     colorGroupSaturation: [60, 85],
-    tagColors: [],
+    tagColors: [], // 修改为支持多标签的数组结构
     fieldAlias: [],
 
 
@@ -1198,43 +1198,54 @@ export class WidgetTab extends WordflowSubSettingsTab {
         const tagColorsContainer = containerEl.createDiv('wordflow-widget-tag-colors-container');
 
         tagColors.forEach((tagColor, index) => {
-            const setting = new Setting(tagColorsContainer)
-                .addText(text => {
-                    text.setPlaceholder(this.i18n.t('settings.widget.tagColors.tagPlaceholder'));
-                    text.setValue(tagColor.tag);
-                    text.onChange(async (value) => {
-                        // Remove # prefix if user adds it
-                        const cleanTag = value.startsWith('#') ? value.slice(1) : value;
-                        tagColors[index].tag = cleanTag;
-                        await this.plugin.saveSettings();
-                        // Update tag color manager
-                        this.plugin.Widget?.updateTagColors();
-                    });
-                })
-                .addColorPicker(colorPicker => {
-                    // Convert hue to hex for color picker (using standard S=70%, L=50% for display)
-                    const displayHex = this.plugin.Widget?.tagColorManager.hueToHex(tagColor.hue || 200) || '#3366cc';
-                    colorPicker.setValue(displayHex);
-                    colorPicker.onChange(async (value) => {
-                        // Extract hue from hex color
-                        const hue = this.plugin.Widget?.tagColorManager.hexToHue(value) || 200;
-                        tagColors[index].hue = hue;
-                        await this.plugin.saveSettings();
-                        // Update tag color manager
-                        this.plugin.Widget?.updateTagColors();
-                    });
-                })
-                .addButton(button => {
-                    button.setButtonText(this.i18n.t('settings.widget.tagColors.deleteButton'));
-                    button.setIcon('trash');
-                    button.onClick(async () => {
-                        tagColors.splice(index, 1);
-                        await this.plugin.saveSettings();
-                        // Update tag color manager and regenerate colors
-                        this.plugin.Widget?.updateTagColors();
-                        this.display(); // Re-render the settings tab
-                    });
+            const setting = new Setting(tagColorsContainer);
+            
+            // 创建标签输入容器（类似 Obsidian properties 的样式）
+            const tagInputContainer = setting.controlEl.createDiv('tag-input-field');
+            
+            // 创建内联标签和输入框的容器
+            const inputWrapper = tagInputContainer.createDiv('tag-input-wrapper');
+            
+            // 渲染已有标签（内联显示）
+            this.renderInlineTags(inputWrapper, tagColor.tags || [], index, tagColors);
+            
+            // 创建输入框
+            const input = inputWrapper.createEl('input', {
+                type: 'text',
+                placeholder: (tagColor.tags && tagColor.tags.length > 0) ? '' : this.i18n.t('settings.widget.tagColors.tagPlaceholder'),
+                cls: 'tag-inline-input'
+            });
+            
+            // 创建建议列表容器
+            const suggestionsContainer = tagInputContainer.createDiv('tag-suggestions');
+            suggestionsContainer.style.display = 'none';
+            
+            // 设置输入框事件
+            this.setupInlineTagInput(input, suggestionsContainer, tagColor, index, tagColors, inputWrapper);
+            
+            // 添加颜色选择器
+            setting.addColorPicker(colorPicker => {
+                const displayHex = this.plugin.Widget?.tagColorManager.hueToHex(tagColor.hue || 200) || '#3366cc';
+                colorPicker.setValue(displayHex);
+                colorPicker.onChange(async (value) => {
+                    const hue = this.plugin.Widget?.tagColorManager.hexToHue(value) || 200;
+                    tagColors[index].hue = hue;
+                    await this.plugin.saveSettings();
+                    this.plugin.Widget?.updateTagColors();
                 });
+            });
+            
+            // 添加删除按钮
+            setting.addButton(button => {
+                button.setButtonText(this.i18n.t('settings.widget.tagColors.deleteButton'));
+                button.setIcon('trash');
+                button.onClick(async () => {
+                    tagColors.splice(index, 1);
+                    await this.plugin.saveSettings();
+                    this.plugin.Widget?.updateTagColors();
+                    this.display();
+                });
+            });
         });
 
         new Setting(tagColorsContainer)
@@ -1242,14 +1253,218 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 button.setButtonText(this.i18n.t('settings.widget.tagColors.addButton'));
                 button.setIcon('plus');
                 button.setCta();
-                button.onClick(async () => {
-                    tagColors.push({ tag: '', hue: 200 }); // Default blue hue
-                    await this.plugin.saveSettings();
-                    // Update tag color manager
-                    this.plugin.Widget?.updateTagColors();
-                    this.display(); // Re-render the settings tab
-                });
+                
+                if (tagColors.length >= 10) {
+                    button.setDisabled(true);
+                    button.setTooltip(this.i18n.t('settings.widget.tagColors.maxLimit') || 'Maximum 10 tag colors allowed');
+                } else {
+                    button.onClick(async () => {
+                        tagColors.push({ tags: [], hue: 200 });
+                        await this.plugin.saveSettings();
+                        this.plugin.Widget?.updateTagColors();
+                        this.display();
+                    });
+                }
             });
+    }
+
+    private renderInlineTags(container: HTMLElement, tags: string[], configIndex: number, tagColors: TagColorConfig[]): void {
+        // 清除现有的标签，但保留输入框
+        const existingTags = container.querySelectorAll('.inline-tag-item');
+        existingTags.forEach(tag => tag.remove());
+        
+        // 在输入框前插入标签
+        const input = container.querySelector('.tag-inline-input');
+        
+        tags.forEach((tag, tagIndex) => {
+            const tagEl = container.createDiv('inline-tag-item');
+            if (input) {
+                container.insertBefore(tagEl, input);
+            } else {
+                container.appendChild(tagEl);
+            }
+            
+            tagEl.createSpan('inline-tag-text').textContent = tag;
+            
+            const removeBtn = tagEl.createEl('button', { cls: 'inline-tag-remove-btn' });
+            removeBtn.innerHTML = '×';
+            removeBtn.onclick = async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                tagColors[configIndex].tags.splice(tagIndex, 1);
+                await this.plugin.saveSettings();
+                this.plugin.Widget?.updateTagColors();
+                this.renderInlineTags(container, tagColors[configIndex].tags, configIndex, tagColors);
+                // 更新输入框占位符
+                const inputEl = container.querySelector('.tag-inline-input') as HTMLInputElement;
+                if (inputEl) {
+                    inputEl.placeholder = tagColors[configIndex].tags.length === 0 ? 
+                        this.i18n.t('settings.widget.tagColors.tagPlaceholder') : '';
+                }
+            };
+        });
+    }
+
+    private setupInlineTagInput(
+        input: HTMLInputElement, 
+        suggestionsContainer: HTMLElement, 
+        tagColor: TagColorConfig, 
+        configIndex: number, 
+        tagColors: TagColorConfig[],
+        inputWrapper: HTMLElement
+    ): void {
+        let currentSuggestions: string[] = [];
+        
+        // 获取所有可用标签
+        const getAllTags = (): string[] => {
+            const allTags = new Set<string>();
+            const metadataCache = this.app.metadataCache;
+            const allFiles = this.app.vault.getMarkdownFiles();
+            
+            allFiles.forEach(file => {
+                const cache = metadataCache.getFileCache(file);
+                if (cache?.tags) {
+                    cache.tags.forEach(tagRef => {
+                        allTags.add(tagRef.tag.replace('#', ''));
+                    });
+                }
+                if (cache?.frontmatter?.tags) {
+                    const frontmatterTags = cache.frontmatter.tags;
+                    if (Array.isArray(frontmatterTags)) {
+                        frontmatterTags.forEach(tag => allTags.add(tag.replace('#', '')));
+                    } else if (typeof frontmatterTags === 'string') {
+                        allTags.add(frontmatterTags.replace('#', ''));
+                    }
+                }
+            });
+            
+            return Array.from(allTags);
+        };
+        
+        // 获取已使用的标签
+        const getUsedTags = (): Set<string> => {
+            const usedTags = new Set<string>();
+            tagColors.forEach(config => {
+                config.tags?.forEach(tag => usedTags.add(tag));
+            });
+            return usedTags;
+        };
+        
+        // 输入事件处理
+        input.addEventListener('input', () => {
+            const value = input.value.trim();
+            if (value.length === 0) {
+                suggestionsContainer.style.display = 'none';
+                return;
+            }
+            
+            const allTags = getAllTags();
+            const usedTags = getUsedTags();
+            const currentTags = new Set(tagColor.tags || []);
+            
+            currentSuggestions = allTags.filter(tag => 
+                tag.toLowerCase().includes(value.toLowerCase()) &&
+                !usedTags.has(tag) &&
+                !currentTags.has(tag)
+            ).slice(0, 10);
+            
+            this.renderSuggestions(suggestionsContainer, currentSuggestions, input, tagColor, configIndex, tagColors, inputWrapper);
+        });
+        
+        // 键盘事件处理
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.addInlineTag(input.value.trim(), tagColor, configIndex, tagColors, inputWrapper);
+                input.value = '';
+                suggestionsContainer.style.display = 'none';
+            } else if (e.key === 'Escape') {
+                suggestionsContainer.style.display = 'none';
+            } else if (e.key === 'Backspace' && input.value === '' && tagColor.tags && tagColor.tags.length > 0) {
+                // 当输入框为空且按退格键时，删除最后一个标签
+                e.preventDefault();
+                tagColor.tags.pop();
+                this.plugin.saveSettings();
+                this.plugin.Widget?.updateTagColors();
+                this.renderInlineTags(inputWrapper, tagColor.tags, configIndex, tagColors);
+                input.placeholder = tagColor.tags.length === 0 ? 
+                    this.i18n.t('settings.widget.tagColors.tagPlaceholder') : '';
+            }
+        });
+        
+        // 失去焦点时隐藏建议
+        input.addEventListener('blur', () => {
+            setTimeout(() => {
+                suggestionsContainer.style.display = 'none';
+            }, 200);
+        });
+        
+        // 点击输入框时聚焦
+        input.addEventListener('focus', () => {
+            if (input.value.trim().length > 0) {
+                input.dispatchEvent(new Event('input'));
+            }
+        });
+    }
+    
+    private renderSuggestions(
+        container: HTMLElement, 
+        suggestions: string[], 
+        input: HTMLInputElement,
+        tagColor: TagColorConfig,
+        configIndex: number,
+        tagColors: TagColorConfig[],
+        inputWrapper: HTMLElement
+    ): void {
+        container.empty();
+        
+        if (suggestions.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+        
+        container.style.display = 'block';
+        
+        suggestions.forEach(suggestion => {
+            const suggestionEl = container.createDiv('tag-suggestion-item');
+            suggestionEl.textContent = suggestion;
+            suggestionEl.onclick = () => {
+                this.addInlineTag(suggestion, tagColor, configIndex, tagColors, inputWrapper);
+                input.value = '';
+                container.style.display = 'none';
+            };
+        });
+    }
+    
+    private async addInlineTag(
+        tag: string, 
+        tagColor: TagColorConfig, 
+        configIndex: number, 
+        tagColors: TagColorConfig[],
+        inputWrapper: HTMLElement
+    ): Promise<void> {
+        const cleanTag = tag.replace('#', '').trim();
+        if (!cleanTag) return;
+        
+        if (!tagColor.tags) tagColor.tags = [];
+        if (tagColor.tags.includes(cleanTag)) return;
+        
+        // 检查是否已被其他配置使用
+        const isUsed = tagColors.some((config, index) => 
+            index !== configIndex && config.tags?.includes(cleanTag)
+        );
+        if (isUsed) return;
+        
+        tagColor.tags.push(cleanTag);
+        await this.plugin.saveSettings();
+        this.plugin.Widget?.updateTagColors();
+        this.renderInlineTags(inputWrapper, tagColor.tags, configIndex, tagColors);
+        
+        // 更新输入框占位符
+        const inputEl = inputWrapper.querySelector('.tag-inline-input') as HTMLInputElement;
+        if (inputEl) {
+            inputEl.placeholder = '';
+        }
     }
 
     private stringToNumArray(input: string): number[] {

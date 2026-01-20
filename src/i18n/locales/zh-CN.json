@@ -311,7 +311,8 @@
         "desc": "为标签分配色相值。具有相同标签的文件将根据文件数量获得不同的饱和度级别（35-85%）。具有多个标签的文件将使用混合颜色。",
         "addButton": "添加标签颜色",
         "deleteButton": "删除",
-        "tagPlaceholder": "输入标签名称（不含#）"
+        "tagPlaceholder": "输入标签名称（不含#）",
+        "maxLimit": "最多允许10个标签颜色"
       },
       "fieldAlias": {
         "name": "属性别名",
