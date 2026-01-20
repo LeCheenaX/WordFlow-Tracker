@@ -1,8 +1,16 @@
-export const currentPluginVersion = '1.6.3';
+export const currentPluginVersion = '1.6.4';
 
 export const changelog = {
 'en': 
 `
+### 1.6.4 updates
+🐛 **Bug Fixed:**
+- Metadata of the notes may sometimes be duplicated in YAML frontmatter
+- Status bar occasionally displaying incorrect content in reading mode
+
+⚡️ **Enhancements:**
+- Improved YAML frontmatter handling using Obsidian's metadataCache API for more reliable metadata operations
+
 ### 1.6.3 updates
 🎨 **UI Enhancement**
 - Mobile status bar(if enabled) is now compatible with Obsidian 1.11.x version (Android and iOS).
@@ -15,7 +23,7 @@ export const changelog = {
 🐛 **Bug Fixed:**
 - Fixed \${docWords} not working properly for status bar tracker
 
-**Enhancements:**
+⚡️ **Enhancements:**
 1. Faster plugin reaction and performance improvements
 2. Word counting is now identical with Obsidian's native word counting
 3. Rebuilt word counting functions for better readability, stability and performance
@@ -36,6 +44,14 @@ export const changelog = {
 `,
 'zh-CN': 
 `
+### 1.6.4 更新
+🐛 **错误修复：**
+- YAML 前置元数据有时会被重复添加的问题
+- 状态栏在阅读模式下有时会错误显示内容的问题
+
+⚡️ **性能增强：**
+- 使用 Obsidian 的 metadataCache API 改进 YAML 前置元数据处理，提高元数据操作的可靠性
+
 ### 1.6.3 更新
 🎨 **界面优化：**
 - 开启移动端的状态栏后，在 Obsidian 1.11.x 移动端大改后的界面不再崩溃。
