@@ -306,6 +306,13 @@
         ],
         "preview": "Current saturation options: "
       },
+      "tagColors": {
+        "name": "Tag-based colors",
+        "desc": "Assign hue values to tags. Files with the same tag will have different saturation levels (35-85%) based on file count. Files with multiple tags will have blended colors.",
+        "addButton": "Add Tag Color",
+        "deleteButton": "Delete",
+        "tagPlaceholder": "Enter tag name (without #)"
+      },
       "fieldAlias": {
         "name": "Field alias",
         "desc": "Define aliases for the field.",

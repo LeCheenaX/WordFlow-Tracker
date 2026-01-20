@@ -5,6 +5,7 @@ import { MetaDataParser } from "./MetaDataParser";
 import { DocTracker } from "./DocTracker";
 import { ConfirmationModal } from "./settings"
 import { UniqueColorGenerator } from "./Utils/UniqueColorGenerator";
+import { TagColorManager } from "./Utils/TagColorManager";
 import { DropdownComponent, IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon, setTooltip } from "obsidian";
 
 export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
@@ -12,6 +13,7 @@ export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
 export class WordflowWidgetView extends ItemView {
     plugin: WordflowTrackerPlugin;
     public colorGenerator: UniqueColorGenerator;
+    public tagColorManager: TagColorManager;
     public onFocusMode: boolean = false;
     public focusPaused: boolean = true;
     private recorderDropdown: DropdownComponent;
@@ -35,6 +37,7 @@ export class WordflowWidgetView extends ItemView {
                                     parseInt(this.plugin.settings.colorGroupLightness), 
                                     this.plugin.settings.colorGroupSaturation
                                 );
+        this.tagColorManager = new TagColorManager(this.plugin.settings.tagColors);
         this.colorMap = new Map<string, string>;
     }
 
@@ -161,8 +164,14 @@ export class WordflowWidgetView extends ItemView {
 
                 textContainer.createEl('span', { text: `${activeFile.basename}`, cls: 'wordflow-widget-current-note-label' });
                 const noteValueStyle = textContainer.createEl('span', { text: currentValueString, cls: 'wordflow-widget-current-note-value' });
-                if (!this.colorMap.get(activeTracker.filePath)) this.colorMap.set(activeTracker.filePath, this.colorGenerator.generate());
-                noteValueStyle.style.color = this.colorMap.get(activeTracker.filePath)??'initial';
+                
+                // Get color for current file using appendToColorMap
+                if (!this.colorMap.has(activeTracker.filePath)) {
+                    this.appendToColorMap(activeTracker.filePath);
+                }
+                
+                const fileColor = this.colorMap.get(activeTracker.filePath) || '#666666';
+                noteValueStyle.style.color = fileColor;
 
                 if (currentTotalValue > 0) {
                     let barContainer: HTMLDivElement | null = leftContentWrapper?.querySelector('.wordflow-widget-current-note-bar-container');
@@ -234,10 +243,127 @@ export class WordflowWidgetView extends ItemView {
         await this.initFieldDropDown();
     }
 
-    public regenerateColors() {
-        this.colorMap.forEach( (color:string, filePath: string)=>{
-            this.colorMap.set(filePath, this.colorGenerator.generate());
+    public updateColorMap() {
+        // Clear existing color map
+        this.colorMap.clear();
+        
+        if (!this.dataMap) return;
+        
+        // Build files with tags map for saturation calculation
+        const allFilesWithTags = this.tagColorManager.buildFilesWithTagsMap(this.plugin.app, this.dataMap);
+        
+        // Process all files in data map
+        this.dataMap.forEach((data, filePath) => {
+            const fileTags = this.tagColorManager.getFileTags(this.plugin.app, this.plugin.app.vault.getFileByPath(filePath));
+            
+            // Check if file has any configured tags
+            const configuredTags = this.plugin.settings.tagColors.map(config => config.tag);
+            const hasConfiguredTags = fileTags.some(tag => {
+                const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
+                return configuredTags.includes(cleanTag);
+            });
+            
+            let color: string;
+            if (hasConfiguredTags) {
+                // Use tag-based color calculation
+                const fallbackColor = this.colorGenerator.generate();
+                color = this.tagColorManager.getFileColor(fileTags, filePath, allFilesWithTags, fallbackColor);
+            } else {
+                // Use random color for files without configured tags
+                color = this.colorGenerator.generate();
+            }
+            
+            this.colorMap.set(filePath, color);
         });
+    }
+
+    /**
+     * Update colors only for files with configured tags
+     */
+    public updateTaggedColorMap() {
+        if (!this.dataMap) return;
+        
+        const configuredTags = this.plugin.settings.tagColors.map(config => config.tag);
+        const allFilesWithTags = this.tagColorManager.buildFilesWithTagsMap(this.plugin.app, this.dataMap);
+        
+        this.dataMap.forEach((data, filePath) => {
+            const fileTags = this.tagColorManager.getFileTags(this.plugin.app, this.plugin.app.vault.getFileByPath(filePath));
+            const hasConfiguredTags = fileTags.some(tag => {
+                const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
+                return configuredTags.includes(cleanTag);
+            });
+            
+            if (hasConfiguredTags) {
+                const fallbackColor = this.colorGenerator.generate();
+                const color = this.tagColorManager.getFileColor(fileTags, filePath, allFilesWithTags, fallbackColor);
+                this.colorMap.set(filePath, color);
+            }
+        });
+    }
+
+    /**
+     * Update colors only for files without configured tags (preserve existing random colors)
+     */
+    public updateUntaggedColorMap() {
+        if (!this.dataMap) return;
+        
+        const configuredTags = this.plugin.settings.tagColors.map(config => config.tag);
+        
+        this.dataMap.forEach((data, filePath) => {
+            const fileTags = this.tagColorManager.getFileTags(this.plugin.app, this.plugin.app.vault.getFileByPath(filePath));
+            const hasConfiguredTags = fileTags.some(tag => {
+                const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
+                return configuredTags.includes(cleanTag);
+            });
+            
+            if (!hasConfiguredTags && !this.colorMap.has(filePath)) {
+                // Only generate new color if not already exists
+                const color = this.colorGenerator.generate();
+                this.colorMap.set(filePath, color);
+            }
+        });
+    }
+
+    /**
+     * Append color for a new file, automatically determining tagged vs untagged
+     */
+    public appendToColorMap(filePath: string) {
+        if (!this.dataMap) return;
+        if (this.colorMap.has(filePath)) return; // Skip if already exists
+        
+        const configuredTags = this.plugin.settings.tagColors.map(config => config.tag);
+        
+        // Create extended dataMap that includes the new file for accurate saturation calculation
+        const extendedDataMap = new Map(this.dataMap);
+        if (!extendedDataMap.has(filePath)) {
+            extendedDataMap.set(filePath, {} as any); // Add placeholder data
+        }
+        
+        const allFilesWithTags = this.tagColorManager.buildFilesWithTagsMap(this.plugin.app, extendedDataMap);
+        
+        const fileTags = this.tagColorManager.getFileTags(this.plugin.app, this.plugin.app.vault.getFileByPath(filePath));
+        const hasConfiguredTags = fileTags.some(tag => {
+            const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
+            return configuredTags.includes(cleanTag);
+        });
+        
+        let color: string;
+        if (hasConfiguredTags) {
+            // Tagged file: use tag-based color calculation with extended dataMap
+            const fallbackColor = this.colorGenerator.generate();
+            color = this.tagColorManager.getFileColor(fileTags, filePath, allFilesWithTags, fallbackColor);
+        } else {
+            // Untagged file: use random color
+            color = this.colorGenerator.generate();
+        }
+        
+        this.colorMap.set(filePath, color);
+    }
+
+    public updateTagColors() {
+        this.tagColorManager.updateTagColors(this.plugin.settings.tagColors);
+        this.updateTaggedColorMap(); // Only update tagged files
+        this.updateData();
     }
 
     private initRecorderDropdown() {
@@ -343,9 +469,10 @@ export class WordflowWidgetView extends ItemView {
                 : value.toString();
 
             if (!this.colorMap.has(rowData.filePath)) {
-                this.colorMap.set(rowData.filePath, this.colorGenerator.generate())
+                this.appendToColorMap(rowData.filePath);
             }
             let barColor = this.colorMap.get(rowData.filePath)?? 'initial'; // 'initial' is useless, only for passing the compiler warning. 
+
             // add to total progress bar
             const segment = totalProgressBarContainer.createDiv({ 
                 cls: 'wordflow-widget-progress-bar-segment' 

@@ -4,6 +4,7 @@ import { DataRecorder } from './DataRecorder';
 import { moment, normalizePath } from 'obsidian';
 import { SupportedLocale, I18nManager, getI18n } from './i18n';
 import { updateStatusBarStyle, removeStatusBarStyle } from './StatusBarManager';
+import { TagColorConfig } from './Utils/TagColorManager';
 
 // Obsidian supports only string and boolean for settings. numbers are not supported. 
 export interface WordflowRecorderConfigs {
@@ -53,6 +54,7 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
     switchToFieldOnFocus: string;
     colorGroupLightness: string; // required to restart widget or plugin
     colorGroupSaturation: number[]; // required to restart widget or plugin
+    tagColors: TagColorConfig[]; // tag-based color configurations
     fieldAlias: { key: string, value: string }[];
 
     // Status bar setting tab
@@ -109,6 +111,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     switchToFieldOnFocus: 'disabled',
     colorGroupLightness: '66',
     colorGroupSaturation: [60, 85],
+    tagColors: [],
     fieldAlias: [],
 
 
@@ -1120,6 +1123,13 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 }));
 
         new Setting(tabContent)
+            .setName(this.i18n.t('settings.widget.tagColors.name'))
+            .setDesc(this.i18n.t('settings.widget.tagColors.desc'))
+            .setHeading();
+
+        this.renderTagColorSetting(tabContent, this.plugin.settings.tagColors);
+
+        new Setting(tabContent)
             .setName(this.i18n.t('settings.widget.fieldAlias.name'))
             .setDesc(this.i18n.t('settings.widget.fieldAlias.desc'))
             .setHeading();
@@ -1180,6 +1190,64 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     // 刷新侧栏组件以更新字段显示名称
                     this.plugin.Widget?.updateAll();
                     this.display(); // Re-render the settings tab to reflect changes
+                });
+            });
+    }
+
+    private renderTagColorSetting(containerEl: HTMLElement, tagColors: TagColorConfig[]): void {
+        const tagColorsContainer = containerEl.createDiv('wordflow-widget-tag-colors-container');
+
+        tagColors.forEach((tagColor, index) => {
+            const setting = new Setting(tagColorsContainer)
+                .addText(text => {
+                    text.setPlaceholder(this.i18n.t('settings.widget.tagColors.tagPlaceholder'));
+                    text.setValue(tagColor.tag);
+                    text.onChange(async (value) => {
+                        // Remove # prefix if user adds it
+                        const cleanTag = value.startsWith('#') ? value.slice(1) : value;
+                        tagColors[index].tag = cleanTag;
+                        await this.plugin.saveSettings();
+                        // Update tag color manager
+                        this.plugin.Widget?.updateTagColors();
+                    });
+                })
+                .addColorPicker(colorPicker => {
+                    // Convert hue to hex for color picker (using standard S=70%, L=50% for display)
+                    const displayHex = this.plugin.Widget?.tagColorManager.hueToHex(tagColor.hue || 200) || '#3366cc';
+                    colorPicker.setValue(displayHex);
+                    colorPicker.onChange(async (value) => {
+                        // Extract hue from hex color
+                        const hue = this.plugin.Widget?.tagColorManager.hexToHue(value) || 200;
+                        tagColors[index].hue = hue;
+                        await this.plugin.saveSettings();
+                        // Update tag color manager
+                        this.plugin.Widget?.updateTagColors();
+                    });
+                })
+                .addButton(button => {
+                    button.setButtonText(this.i18n.t('settings.widget.tagColors.deleteButton'));
+                    button.setIcon('trash');
+                    button.onClick(async () => {
+                        tagColors.splice(index, 1);
+                        await this.plugin.saveSettings();
+                        // Update tag color manager and regenerate colors
+                        this.plugin.Widget?.updateTagColors();
+                        this.display(); // Re-render the settings tab
+                    });
+                });
+        });
+
+        new Setting(tagColorsContainer)
+            .addButton(button => {
+                button.setButtonText(this.i18n.t('settings.widget.tagColors.addButton'));
+                button.setIcon('plus');
+                button.setCta();
+                button.onClick(async () => {
+                    tagColors.push({ tag: '', hue: 200 }); // Default blue hue
+                    await this.plugin.saveSettings();
+                    // Update tag color manager
+                    this.plugin.Widget?.updateTagColors();
+                    this.display(); // Re-render the settings tab
                 });
             });
     }

@@ -78,7 +78,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		this.app.workspace.onLayoutReady(async () => {
 			if (this.settings.enableWidgetOnLoad) {
 				await sleep(500); // add delay to allow view to check if there's existing view, when plugin is updated through Obsidian community.
-				this.activateView();
+				this.createWidgetView(); // Use createWidgetView instead of activateView
 			};
 		});
 		
@@ -109,7 +109,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 			id: 'refresh-widget-with-random-colors',
 			name: this.i18n.t('commands.refreshWidget.name'),
 			callback: () => {
-				this.Widget?.regenerateColors();
+				this.Widget?.updateTaggedColorMap();
+				this.Widget?.updateUntaggedColorMap();
 				this.activateView();
 			}
 		});
@@ -216,6 +217,15 @@ export default class WordflowTrackerPlugin extends Plugin {
 				new Notice(this.i18n.t('notices.autoRecordSuccess'), 3000);
 			}, Number(this.settings.autoRecordInterval) * 1000));
 		}
+
+		// Update widget colors when file metadata (tags) changes
+        this.registerEvent(this.app.metadataCache.on('changed', (file) => {
+            if (file instanceof TFile && this.Widget) {
+                // Update only tagged colors since metadata changed
+                this.Widget.updateTaggedColorMap();
+                this.Widget.updateData();
+            }
+        }));
 	}
 	
 
@@ -338,6 +348,17 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 		this.app.workspace.revealLeaf(
 			this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET)[0]
 		);
+		this.Widget?.updateAll();
+	}
+
+	async createWidgetView(){
+		const existingLeafView = this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET);
+		if (existingLeafView.length == 0) {
+			await this.app.workspace.getRightLeaf(false)?.setViewState({
+				type: VIEW_TYPE_WORDFLOW_WIDGET,
+				active: false, // Don't make it active automatically
+			});
+		}
 		this.Widget?.updateAll();
 	}
 /*
