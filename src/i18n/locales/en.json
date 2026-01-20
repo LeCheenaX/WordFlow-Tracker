@@ -250,6 +250,13 @@
         ],
         "placeholder": "Set idle time in minute"
       },
+      "autoResumeFocusMode": {
+        "name": "Auto resume focus mode after idle pause",
+        "desc": [
+          "When enabled, focus mode will automatically resume when you are back to the document. ",
+          "When disabled, you need to manually click the 'continue focusing' button in the widget to resume."
+        ]
+      },
       "useSecondInWidget": {
         "name": "Show second in widget pane (beta)",
         "desc": [

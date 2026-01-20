@@ -43,6 +43,7 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
 
     // Timers setting tab
     idleInterval: string;
+    autoResumeFocusMode: boolean; // auto resume focus mode after idle pause when user activity detected
     // could not add another interval for focus mode directly, nor could we use reading interval as the interval will be different in reading/editing mode. 
     useSecondInWidget: boolean; // required to restart plugin, currently support widget only, others are technically supported but not recommended
 
@@ -99,6 +100,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 
     // Timers setting tab
     idleInterval: '3',
+    autoResumeFocusMode: false, 
     useSecondInWidget: false, 
 
     // Widget setting tab
@@ -993,6 +995,16 @@ export class TimersTab extends WordflowSubSettingsTab {
                 .setValue(this.plugin.settings.idleInterval)
                 .onChange(async (value) => {
                     this.plugin.settings.idleInterval = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(tabContent)
+            .setName(this.i18n.t('settings.timers.autoResumeFocusMode.name'))
+            .setDesc(this.createMultiLineDesc('settings.timers.autoResumeFocusMode.desc'))
+            .addToggle(t => t
+                .setValue(this.plugin.settings.autoResumeFocusMode)
+                .onChange(async (value) => {
+                    this.plugin.settings.autoResumeFocusMode = value;
                     await this.plugin.saveSettings();
                 }));
 

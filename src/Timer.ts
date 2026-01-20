@@ -45,6 +45,17 @@ export default class Timer {
 
         if (this.debouncedPauser != null) this.debouncedPauser();
 
+        // Auto resume focus mode if enabled and was previously paused due to idle
+        if (this.plugin.settings.autoResumeFocusMode && 
+            this.plugin.Widget && 
+            this.plugin.Widget.focusPaused && 
+            !this.plugin.Widget.onFocusMode) {
+            
+            this.plugin.Widget.onFocusMode = true;
+            this.plugin.Widget.updateButtons_Start();
+            // No notice needed as this is automatic behavior
+        }
+
         // count remaining time until next min
         if (this.timeToNextUpdate === 0) {
             const totalTime = this.accumulatedTime;

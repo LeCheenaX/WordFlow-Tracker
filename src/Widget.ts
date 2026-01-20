@@ -13,7 +13,7 @@ export class WordflowWidgetView extends ItemView {
     plugin: WordflowTrackerPlugin;
     public colorGenerator: UniqueColorGenerator;
     public onFocusMode: boolean = false;
-    private focusPaused: boolean = true;
+    public focusPaused: boolean = true;
     private recorderDropdown: DropdownComponent;
     private fieldDropdown: DropdownComponent;
     private totalDataContainer: HTMLSpanElement;

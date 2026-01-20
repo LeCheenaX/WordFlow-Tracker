@@ -4,6 +4,9 @@ export const changelog = {
 'en': 
 `
 ### 1.6.4 updates
+✨ **New Features:**
+- Option to automatically resume focus mode after idle pause.
+
 🐛 **Bug Fixed:**
 - Metadata of the notes may sometimes be duplicated in YAML frontmatter
 - Status bar occasionally displaying incorrect content in reading mode
@@ -45,6 +48,9 @@ export const changelog = {
 'zh-CN': 
 `
 ### 1.6.4 更新
+✨ **新功能：**
+- 新增设置：专注模式因闲置暂停后，回到文档可以自动恢复专注（默认关闭）。
+
 🐛 **错误修复：**
 - YAML 前置元数据有时会被重复添加的问题
 - 状态栏在阅读模式下有时会错误显示内容的问题
@@ -57,7 +63,7 @@ export const changelog = {
 - 开启移动端的状态栏后，在 Obsidian 1.11.x 移动端大改后的界面不再崩溃。
 
 ### 1.6.2 更新
-✨ **新增功能**
+✨ **新功能**
 - 快速参考：可在插件设置中查看，提供快速的插件文档和字符串插值参考
 
 ### 1.6.1 更新
