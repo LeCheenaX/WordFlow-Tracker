@@ -301,7 +301,7 @@ export class WordflowWidgetView extends ItemView {
                 return configuredTags.includes(cleanTag);
             });
             
-            if (!hasConfiguredTags && !this.colorMap.has(filePath)) {
+            if (!hasConfiguredTags) {
                 // Only generate new color if not already exists
                 const color = this.colorGenerator.generate();
                 this.colorMap.set(filePath, color);
