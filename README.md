@@ -118,7 +118,7 @@ For details regarding how to implement this, see [Enable dynamic folder](https:/
 Please also ensure that this folder is the same folder where templates from other plugin will be applied. 
 
 ## Settings documentation
-
+See [settings documentation](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/docs/Settings%20Documentation.md). 
 
 ## Development Roadmap
 See [Development Roadmap](https://github.com/LeCheenaX/WordFlow-Tracker/wiki/Development-RoadMap) for known issues and planned features! 
