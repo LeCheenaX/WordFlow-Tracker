@@ -125,7 +125,7 @@ WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插
 ## 开发路线图
 参见[开发路线图](https://github.com/LeCheenaX/WordFlow-Tracker/wiki/Development-RoadMap)了解已知问题和计划功能！
 
-[下载量趋势](https://github.com/LeCheenaX/WordFlow-Tracker/raw/main/miscellaneous/cumulative_downloads_trend.png)
+![下载量趋势](https://github.com/LeCheenaX/WordFlow-Tracker/raw/main/miscellaneous/cumulative_downloads_trend.png)
 
 ## 安装
 ### 通过Obsidian插件市场安装
