@@ -55,6 +55,7 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
     colorGroupLightness: string; // required to restart widget or plugin
     colorGroupSaturation: number[]; // required to restart widget or plugin
     tagColors: TagColorConfig[]; // tag-based color configurations
+    enableTagGroupBasedDataDisplay: boolean; // enable dual-layer tracker bar
     fieldAlias: { key: string, value: string }[];
 
     // Status bar setting tab
@@ -112,6 +113,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     colorGroupLightness: '66',
     colorGroupSaturation: [60, 85],
     tagColors: [], // 修改为支持多标签的数组结构
+    enableTagGroupBasedDataDisplay: false, // 默认关闭
     fieldAlias: [],
 
 
@@ -1126,6 +1128,17 @@ export class WidgetTab extends WordflowSubSettingsTab {
             .setName(this.i18n.t('settings.widget.tagColors.name'))
             .setDesc(this.i18n.t('settings.widget.tagColors.desc'))
             .setHeading();
+
+        new Setting(tabContent)
+            .setName(this.i18n.t('settings.widget.enableTagGroupBasedDataDisplay.name'))
+            .setDesc(this.i18n.t('settings.widget.enableTagGroupBasedDataDisplay.desc'))
+            .addToggle(t => t
+                .setValue(this.plugin.settings.enableTagGroupBasedDataDisplay)
+                .onChange(async (value) => {
+                    this.plugin.settings.enableTagGroupBasedDataDisplay = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.Widget?.updateData();
+                }));
 
         this.renderTagColorSetting(tabContent, this.plugin.settings.tagColors);
 

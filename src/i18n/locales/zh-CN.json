@@ -314,6 +314,10 @@
         "tagPlaceholder": "输入标签名称（不含#）",
         "maxLimit": "最多允许10个标签颜色"
       },
+      "enableTagGroupBasedDataDisplay": {
+        "name": "启用基于标签组的数据显示",
+        "desc": "启用双层追踪条，显示标签组（80%高度）和单个文件（20%高度）的加权分布"
+      },
       "fieldAlias": {
         "name": "属性别名",
         "desc": "为属性设置侧栏组件中的显示名称。",

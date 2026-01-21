@@ -10,6 +10,20 @@ import { DropdownComponent, IconName, ItemView, Notice, WorkspaceLeaf, moment, s
 
 export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
 
+export interface TagGroupData {
+    tagName: string;
+    totalWeight: number;
+    color: string;
+    files: string[];
+}
+
+export interface FileData {
+    filePath: string;
+    fileName: string;
+    value: number;
+    color: string;
+}
+
 export class WordflowWidgetView extends ItemView {
     plugin: WordflowTrackerPlugin;
     public colorGenerator: UniqueColorGenerator;
@@ -418,19 +432,61 @@ export class WordflowWidgetView extends ItemView {
             ? formatTime(this.totalFieldValue)
             : this.totalFieldValue.toString();
 
+        // Check if dual-layer display is enabled
+        if (this.plugin.settings.enableTagGroupBasedDataDisplay) {
+            this.renderDualLayerProgressBar(sortedData, field);
+        } else {
+            this.renderSingleLayerProgressBar(sortedData, field);
+        }
+    }
+
+    private renderSingleLayerProgressBar(sortedData: ExistingData[], field: string) {
         const totalProgressBarContainer = this.dataContainer.createDiv({ 
             cls: 'wordflow-widget-total-progress-bar-container' 
         });
 
+        // Reuse existing logic for single layer
+        this.renderProgressBarSegments(totalProgressBarContainer, sortedData, field);
+        this.renderFileDataRows(sortedData, field);
+    }
+
+    private renderDualLayerProgressBar(sortedData: ExistingData[], field: string) {
+        // Calculate tag groups and file data
+        const { tagGroups, untaggedFiles } = this.calculateTagGroupData(sortedData, field);
+        const fileData = this.calculateFileData(sortedData, field);
+
+        // Create dual-layer container
+        const dualLayerContainer = this.dataContainer.createDiv({ 
+            cls: 'wordflow-widget-dual-layer-container' 
+        });
+
+        // Upper layer: Tag groups (80% height)
+        const tagLayerContainer = dualLayerContainer.createDiv({ 
+            cls: 'wordflow-widget-tag-layer-container' 
+        });
+
+        // Render tag groups
+        this.renderTagSegments(tagLayerContainer, tagGroups, untaggedFiles, field);
+
+        // Lower layer: Individual files (20% height)
+        const fileLayerContainer = dualLayerContainer.createDiv({ 
+            cls: 'wordflow-widget-file-layer-container' 
+        });
+
+        // Render files sorted by total size
+        this.renderFileSegments(fileLayerContainer, fileData, field);
+
+        // Render data rows for interaction (reuse existing logic)
+        this.renderFileDataRows(sortedData, field);
+    }
+
+    private renderProgressBarSegments(container: HTMLElement, sortedData: ExistingData[], field: string) {
         sortedData.forEach(rowData => {
             const value = this.getFieldValue(rowData, field);
             let percentage = 0;
             if (this.totalFieldValue > 0) {
                 percentage = (value / this.totalFieldValue) * 100;
             }
-            const valueString = (field == 'editTime' || field == 'readTime' || field == 'readEditTime')
-                ? formatTime(value)
-                : value.toString();
 
             if (!this.colorMap.has(rowData.filePath)) {
                 this.appendToColorMap(rowData.filePath);
@@ -438,12 +494,84 @@ export class WordflowWidgetView extends ItemView {
             let barColor = this.colorMap.get(rowData.filePath)?? 'initial'; // 'initial' is useless, only for passing the compiler warning. 
 
             // add to total progress bar
-            const segment = totalProgressBarContainer.createDiv({ 
+            const segment = container.createDiv({ 
                 cls: 'wordflow-widget-progress-bar-segment' 
             });
             
             segment.style.width = `${percentage}%`;
             segment.style.backgroundColor = barColor;
+        });
+    }
+
+    private renderTagSegments(container: HTMLElement, tagGroups: TagGroupData[], untaggedFiles: { totalWeight: number }, field: string) {
+        // Render configured tag groups
+        tagGroups.forEach((tagGroup, index) => {
+            const percentage = this.totalFieldValue > 0 ? (tagGroup.totalWeight / this.totalFieldValue) * 100 : 0;
+            
+            const tagSegment = container.createDiv({ 
+                cls: 'wordflow-widget-tag-segment' 
+            });
+            tagSegment.style.width = `${percentage}%`;
+            tagSegment.style.backgroundColor = tagGroup.color;
+            
+            // 使用 Obsidian 的 setTooltip 方法
+            setTooltip(tagSegment, tagGroup.tagName);
+            
+            // 添加交互逻辑 - 存储标签组信息
+            tagSegment.dataset.tagGroupIndex = index.toString();
+            tagSegment.dataset.tagGroupName = tagGroup.tagName;
+            tagSegment.addEventListener('mouseenter', () => this.handleHover(tagGroup, true));
+            tagSegment.addEventListener('mouseleave', () => this.handleHover(tagGroup, false));
+        });
+
+        // Render untagged files with medium-light grey
+        if (untaggedFiles.totalWeight > 0) {
+            const percentage = this.totalFieldValue > 0 ? (untaggedFiles.totalWeight / this.totalFieldValue) * 100 : 0;
+            
+            const untaggedSegment = container.createDiv({ 
+                cls: 'wordflow-widget-tag-segment' 
+            });
+            untaggedSegment.style.width = `${percentage}%`;
+            untaggedSegment.style.backgroundColor = '#999999'; // Medium-light grey
+            
+            // 使用 Obsidian 的 setTooltip 方法
+            setTooltip(untaggedSegment, 'Untagged');
+            
+            // 添加无标签文件的交互逻辑 - 标记为无标签段落
+            untaggedSegment.dataset.isUntagged = 'true';
+            untaggedSegment.addEventListener('mouseenter', () => this.handleHover(null, true));
+            untaggedSegment.addEventListener('mouseleave', () => this.handleHover(null, false));
+        }
+    }
+
+    private renderFileSegments(container: HTMLElement, fileData: FileData[], field: string) {
+        fileData.forEach(file => {
+            const percentage = this.totalFieldValue > 0 ? (file.value / this.totalFieldValue) * 100 : 0;
+            
+            const fileSegment = container.createDiv({ 
+                cls: 'wordflow-widget-file-segment' 
+            });
+            fileSegment.style.width = `${percentage}%`;
+            fileSegment.style.backgroundColor = file.color;
+            
+            // 使用 Obsidian 的 setTooltip 方法
+            setTooltip(fileSegment, `${file.fileName}: ${this.formatValue(file.value, field)}`);
+            
+            // 添加文件路径数据属性，用于交互逻辑
+            fileSegment.dataset.filePath = file.filePath;
+        });
+    }
+
+    private renderFileDataRows(sortedData: ExistingData[], field: string) {
+        // Reuse existing data row rendering logic
+        sortedData.forEach(rowData => {
+            const value = this.getFieldValue(rowData, field);
+            const valueString = this.formatValue(value, field);
+
+            if (!this.colorMap.has(rowData.filePath)) {
+                this.appendToColorMap(rowData.filePath);
+            }
+            let barColor = this.colorMap.get(rowData.filePath)?? 'initial';
 
             const dataRow = this.dataContainer.createDiv({ cls: 'wordflow-widget-data-row' });
 
@@ -461,6 +589,191 @@ export class WordflowWidgetView extends ItemView {
             const rowText = dataRow.createEl('span', { text: valueString, cls: `wordflow-widget-data-row-value`});
             rowText.style.color = barColor;
         });
+    }
+
+    private calculateTagGroupData(sortedData: ExistingData[], field: string): { tagGroups: TagGroupData[], untaggedFiles: { totalWeight: number } } {
+        // 为每个标签配置创建一个组
+        const tagColorGroups: TagGroupData[] = this.plugin.settings.tagColors.map(config => ({
+            tagName: config.tags?.join(', ') || 'Unknown',
+            totalWeight: 0,
+            color: this.tagColorManager.hueToHex(config.hue),
+            files: []
+        }));
+        
+        let untaggedTotalWeight = 0;
+
+        sortedData.forEach(rowData => {
+            const file = this.plugin.app.vault.getFileByPath(rowData.filePath);
+            if (!file) return;
+
+            const fileTags = this.tagColorManager.getFileTags(this.plugin.app, file);
+            const fileValue = this.getFieldValue(rowData, field);
+            
+            // 找到文件匹配的标签配置组
+            const matchingConfigIndices: number[] = [];
+            this.plugin.settings.tagColors.forEach((config, configIndex) => {
+                const hasMatchingTag = config.tags?.some(configTag => 
+                    fileTags.some(fileTag => {
+                        const cleanFileTag = fileTag.startsWith('#') ? fileTag.slice(1) : fileTag;
+                        return cleanFileTag === configTag;
+                    })
+                );
+                if (hasMatchingTag) {
+                    matchingConfigIndices.push(configIndex);
+                }
+            });
+
+            if (matchingConfigIndices.length === 0) {
+                // 无匹配标签配置的文件
+                untaggedTotalWeight += fileValue;
+            } else {
+                // 有匹配标签配置的文件 - 按配置组分配权重
+                const weightPerConfig = fileValue / matchingConfigIndices.length;
+                
+                matchingConfigIndices.forEach(configIndex => {
+                    const tagGroup = tagColorGroups[configIndex];
+                    tagGroup.totalWeight += weightPerConfig;
+                    if (!tagGroup.files.includes(rowData.filePath)) {
+                        tagGroup.files.push(rowData.filePath);
+                    }
+                });
+            }
+        });
+
+        // 过滤掉权重为0的组，然后按权重排序
+        const activeTagGroups = tagColorGroups
+            .filter(group => group.totalWeight > 0)
+            .sort((a, b) => b.totalWeight - a.totalWeight);
+
+        return { 
+            tagGroups: activeTagGroups, 
+            untaggedFiles: { totalWeight: untaggedTotalWeight } 
+        };
+    }
+
+    private calculateFileData(sortedData: ExistingData[], field: string): FileData[] {
+        const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
+        const allFilesWithTags = this.tagColorManager.buildFilesWithTagsMap(this.plugin.app, this.dataMap!);
+
+        const fileData: FileData[] = sortedData.map(rowData => {
+            const file = this.plugin.app.vault.getFileByPath(rowData.filePath);
+            const fileTags = file ? this.tagColorManager.getFileTags(this.plugin.app, file) : [];
+            const fileValue = this.getFieldValue(rowData, field);
+            
+            // Determine file color (reuse existing color logic)
+            const hasConfiguredTags = fileTags.some(tag => {
+                const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
+                return configuredTags.includes(cleanTag);
+            });
+
+            let fileColor: string;
+            if (hasConfiguredTags) {
+                fileColor = this.tagColorManager.getFileColor(fileTags, rowData.filePath, allFilesWithTags);
+            } else {
+                if (!this.colorMap.has(rowData.filePath)) {
+                    this.appendToColorMap(rowData.filePath);
+                }
+                fileColor = this.colorMap.get(rowData.filePath) || '#666666';
+            }
+
+            return {
+                filePath: rowData.filePath,
+                fileName: rowData.fileName !== 'unknown' ? 
+                    rowData.fileName : 
+                    file?.basename || 'file deleted',
+                value: fileValue,
+                color: fileColor
+            };
+        });
+
+        // Sort by file total size (descending)
+        return fileData.sort((a, b) => b.value - a.value);
+    }
+
+    private formatValue(value: number, field: string): string {
+        return (field === 'editTime' || field === 'readTime' || field === 'readEditTime')
+            ? formatTime(value, this.plugin.settings.useSecondInWidget)
+            : value.toString();
+    }
+
+    private handleHover(hoveredTagGroup: TagGroupData | null, isHovering: boolean) {
+        // 获取所有文件段落和标签段落
+        const fileSegments = this.dataContainer.querySelectorAll('.wordflow-widget-file-segment') as NodeListOf<HTMLElement>;
+        const tagSegments = this.dataContainer.querySelectorAll('.wordflow-widget-tag-segment') as NodeListOf<HTMLElement>;
+        
+        if (isHovering) {
+            // 悬浮状态：高亮相关元素，强烈变暗无关元素
+            
+            // 处理文件段落
+            fileSegments.forEach(segment => {
+                const filePath = segment.dataset.filePath;
+                let shouldHighlight = false;
+                
+                if (hoveredTagGroup === null) {
+                    // 悬浮无标签区域：检查文件是否无配置标签
+                    if (filePath) {
+                        const file = this.plugin.app.vault.getFileByPath(filePath);
+                        if (file) {
+                            const fileTags = this.tagColorManager.getFileTags(this.plugin.app, file);
+                            const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
+                            const hasConfiguredTags = fileTags.some(tag => {
+                                const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
+                                return configuredTags.includes(cleanTag);
+                            });
+                            shouldHighlight = !hasConfiguredTags; // 无配置标签的文件高亮
+                        }
+                    }
+                } else {
+                    // 悬浮标签组：检查文件是否属于该标签组
+                    shouldHighlight = filePath ? hoveredTagGroup.files.includes(filePath) : false;
+                }
+                
+                if (shouldHighlight) {
+                    // 相关文件：保持正常状态
+                    segment.style.opacity = '1';
+                    segment.style.filter = 'none';
+                } else {
+                    // 无关文件：强烈变暗变灰
+                    //segment.style.opacity = '0.6';
+                    segment.style.filter = 'grayscale(30%) brightness(0.75)';
+                }
+            });
+            
+            // 处理标签段落
+            tagSegments.forEach(segment => {
+                let isCurrentHovered = false;
+                
+                if (hoveredTagGroup === null) {
+                    // 悬浮无标签区域：检查是否是无标签段落
+                    isCurrentHovered = segment.dataset.isUntagged === 'true';
+                } else {
+                    // 悬浮标签组：检查是否是当前悬浮的标签组
+                    isCurrentHovered = segment.dataset.tagGroupName === hoveredTagGroup.tagName;
+                }
+                
+                if (isCurrentHovered) {
+                    // 当前悬浮的标签：保持正常状态
+                    segment.style.opacity = '1';
+                    segment.style.filter = 'none';
+                } else {
+                    // 其他标签：强烈变暗变灰
+                    //segment.style.opacity = '0.6';
+                    segment.style.filter = 'grayscale(30%) brightness(0.75)';
+                }
+            });
+            
+        } else {
+            // 离开悬浮：恢复所有元素的正常状态
+            fileSegments.forEach(segment => {
+                segment.style.opacity = '1';
+                segment.style.filter = 'none';
+            });
+            
+            tagSegments.forEach(segment => {
+                segment.style.opacity = '1';
+                segment.style.filter = 'none';
+            });
+        }
     }
 
     private async getSortedData(field: string): Promise<ExistingData[]> {

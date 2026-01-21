@@ -559,6 +559,49 @@
     border-radius: 5px;
     overflow: hidden;
 }
+
+/* Dual-layer progress bar styles */
+.wordflow-widget-dual-layer-container {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    overflow: hidden;
+    background-color: var(--background-modifier-hover);
+}
+
+.wordflow-widget-tag-layer-container {
+    height: 16px; /* 80% of 20px total height */
+    display: flex;
+    width: 100%;
+    background-color: var(--background-modifier-hover);
+}
+
+.wordflow-widget-file-layer-container {
+    height: 4px; /* 20% of 20px total height */
+    display: flex;
+    width: 100%;
+    background-color: var(--background-modifier-hover);
+}
+
+.wordflow-widget-tag-segment {
+    height: 100%;
+    cursor: pointer;
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.wordflow-widget-tag-segment:hover {
+    opacity: 0.8;
+}
+
+.wordflow-widget-file-segment {
+    height: 100%;
+    cursor: pointer;
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.wordflow-widget-file-segment:hover {
+    opacity: 0.8;
+}
 /*
 .wordflow-widget-progress-bar {
     height: 100%;

@@ -314,6 +314,10 @@
         "tagPlaceholder": "Enter tag name (without #)",
         "maxLimit": "Maximum 10 tag colors allowed"
       },
+      "enableTagGroupBasedDataDisplay": {
+        "name": "Enable Tag Group Based Data Display",
+        "desc": "Enable dual-layer tracker bar that shows tag groups (80% height) and individual files (20% height) with weighted distribution"
+      },
       "fieldAlias": {
         "name": "Field alias",
         "desc": "Define aliases for the field.",
