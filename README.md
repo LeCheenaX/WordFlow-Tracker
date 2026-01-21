@@ -23,6 +23,14 @@ WordFlow Tracker is a lite plugin that track your focused time and edits statist
 - Display changes in a bar style to show the portion of original contents v.s. modified contents.
 
   ![image](https://github.com/user-attachments/assets/6c977b5f-0aba-4481-847b-f0fda6c5cd98)
+- Display the portions of statistics based on files or tags.
+    - file view:
+
+      <img width="410" height="240" alt="image" src="https://github.com/user-attachments/assets/afd8a8c7-45bb-43ab-b84a-96f3de4d08e0" />
+    - tag view:
+
+      <img width="409" height="341" alt="image" src="https://github.com/user-attachments/assets/cbef9fff-6eaf-4c5b-accd-d70b44b0264d" />
+
 - Record edited statistics such as total words you edited today, to the YAML(Frontmatter) of daily note. Other plugins such as heatmap could use these metadata to generate analysis.
 
   ![image](https://github.com/user-attachments/assets/1e5bbe85-a943-4d10-b81c-ecef5e6b15bb)
