@@ -131,7 +131,7 @@ See [settings documentation](https://github.com/LeCheenaX/WordFlow-Tracker/blob/
 ## Development Roadmap
 See [Development Roadmap](https://github.com/LeCheenaX/WordFlow-Tracker/wiki/Development-RoadMap) for known issues and planned features! 
 
-What to know how this project is built? Or wanna collaborate on this plugin? See details at https://deepwiki.com/LeCheenaX/WordFlow-Tracker
+Want to know how this project is built? Or wanna collaborate on this plugin? See details at https://deepwiki.com/LeCheenaX/WordFlow-Tracker
 
 ![Downloads trend](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/miscellaneous/cumulative_downloads_trend.png)
 
