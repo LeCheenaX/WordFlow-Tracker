@@ -292,6 +292,15 @@
           "noField": "Recorder in widget has {field}: ❌"
         }
       },
+      "fieldAlias": {
+        "name": "Field alias",
+        "desc": "Define aliases for the field.",
+        "addButton": "Add New Mapping",
+        "deleteButton": "Delete",
+        "placeholder": "Enter display name",
+        "noOptions": "No options available"
+      },
+      "randomColorGeneration": "Random color generation",
       "colorGroupLightness": {
         "name": "Random color group lightness",
         "desc": "Specify the lightness from 0-100 in hsl to generate random colors for file entries.",
@@ -306,25 +315,26 @@
         ],
         "preview": "Current saturation options: "
       },
+      "displayBasedOnTags": "Tag-based daily data display",
+      "enableTagGroupBasedDataDisplay": {
+        "name": "Enable tag-based view",
+        "desc": [
+          "By default, data rows are displayed by file entries. ",
+          "If enabled, data rows will be displayed by tag entries;",
+          "If a file matches multiple tag groups, which have colors configured in the following setting, this file will appear in multiple tag rows."
+        ]
+      },
       "tagColors": {
-        "name": "Tag-based colors",
-        "desc": "Assign hue values to tags. Files with the same tag will have different saturation levels (35-85%) based on file count. Files with multiple tags will have blended colors.",
-        "addButton": "Add Tag Color",
+        "name": "Configure colors for tags",
+        "desc": [
+          "Compatible for both file-based view and tag-based view.",
+          "The file with multiple tags will have colors blended.",
+          "Different files with the same tag will auto distinct by saturations. "
+        ],
+        "addButton": "configure tag color",
         "deleteButton": "Delete",
         "tagPlaceholder": "Enter tag name (without #)",
         "maxLimit": "Maximum 10 tag colors allowed"
-      },
-      "enableTagGroupBasedDataDisplay": {
-        "name": "Enable Tag Group Based Data Display",
-        "desc": "Enable dual-layer tracker bar that shows tag groups (80% height) and individual files (20% height) with weighted distribution"
-      },
-      "fieldAlias": {
-        "name": "Field alias",
-        "desc": "Define aliases for the field.",
-        "addButton": "Add New Mapping",
-        "deleteButton": "Delete",
-        "placeholder": "Enter display name",
-        "noOptions": "No options available"
       }
     },
     "statusBar": {

@@ -52,11 +52,11 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
     enableWidgetOnLoad: boolean;
     showWidgetRibbonIcon: boolean;
     switchToFieldOnFocus: string;
+    fieldAlias: { key: string, value: string }[];
     colorGroupLightness: string; // required to restart widget or plugin
     colorGroupSaturation: number[]; // required to restart widget or plugin
     tagColors: TagColorConfig[]; // tag-based color configurations
     enableTagGroupBasedDataDisplay: boolean; // enable dual-layer tracker bar
-    fieldAlias: { key: string, value: string }[];
 
     // Status bar setting tab
     enableMobileStatusBar: boolean;
@@ -1091,6 +1091,14 @@ export class WidgetTab extends WordflowSubSettingsTab {
             });
 
         new Setting(tabContent)
+            .setName(this.i18n.t('settings.widget.fieldAlias.name'))
+            .setDesc(this.i18n.t('settings.widget.fieldAlias.desc'))
+
+        this.renderValueMappingSetting(tabContent, this.plugin.settings.fieldAlias, this.plugin.Widget?.getFieldOptions() || []);
+        
+        new Setting(tabContent).setName(this.i18n.t('settings.widget.randomColorGeneration')).setHeading();
+
+        new Setting(tabContent)
             .setName(this.i18n.t('settings.widget.colorGroupLightness.name'))
             .setDesc(this.i18n.t('settings.widget.colorGroupLightness.desc'))
             .addText(text => text
@@ -1123,15 +1131,12 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     await this.plugin.saveSettings();
                     colorGroupSaturationPreviewText.setText(this.i18n.t('settings.widget.colorGroupSaturation.preview') + this.numArrayToString(this.plugin.settings.colorGroupSaturation))
                 }));
-
-        new Setting(tabContent)
-            .setName(this.i18n.t('settings.widget.tagColors.name'))
-            .setDesc(this.i18n.t('settings.widget.tagColors.desc'))
-            .setHeading();
+        
+        new Setting(tabContent).setName(this.i18n.t('settings.widget.displayBasedOnTags')).setHeading();
 
         new Setting(tabContent)
             .setName(this.i18n.t('settings.widget.enableTagGroupBasedDataDisplay.name'))
-            .setDesc(this.i18n.t('settings.widget.enableTagGroupBasedDataDisplay.desc'))
+            .setDesc(this.createMultiLineDesc('settings.widget.enableTagGroupBasedDataDisplay.desc'))
             .addToggle(t => t
                 .setValue(this.plugin.settings.enableTagGroupBasedDataDisplay)
                 .onChange(async (value) => {
@@ -1140,14 +1145,11 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     this.plugin.Widget?.updateData();
                 }));
 
-        this.renderTagColorSetting(tabContent, this.plugin.settings.tagColors);
-
         new Setting(tabContent)
-            .setName(this.i18n.t('settings.widget.fieldAlias.name'))
-            .setDesc(this.i18n.t('settings.widget.fieldAlias.desc'))
-            .setHeading();
+            .setName(this.i18n.t('settings.widget.tagColors.name'))
+            .setDesc(this.createMultiLineDesc('settings.widget.tagColors.desc'));
 
-        this.renderValueMappingSetting(tabContent, this.plugin.settings.fieldAlias, this.plugin.Widget?.getFieldOptions() || []);
+        this.renderTagColorSetting(tabContent, this.plugin.settings.tagColors);
     }
 
     private renderValueMappingSetting(containerEl: HTMLElement, mappings: { key: string, value: string }[], availableOptions: string[]): void {

@@ -857,6 +857,11 @@
     overflow-y: visible;
     width: 100%;
     max-width: 100%;
+    padding: 0px 16px;
+}
+
+.wordflow-reference-container h4{
+    padding: 0px 0px;
 }
 
 /* 表格水平滚动样式 */
