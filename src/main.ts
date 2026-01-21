@@ -110,7 +110,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			name: this.i18n.t('commands.refreshWidget.name'),
 			callback: () => {
 				this.Widget?.updateTaggedColorMap();
-				this.Widget?.updateUntaggedColorMap();
+				this.Widget?.updateUnconfiguredColorMap();
 				this.activateView();
 			}
 		});

@@ -349,6 +349,7 @@
     padding-bottom: 10px;
     border-bottom: 1px solid var(--background-modifier-border);
     font-size: 18px;
+    min-width: 0; /* Allow container to shrink */
 }
 
 .wordflow-widget-current-note-row {
@@ -356,6 +357,7 @@
     justify-content: space-between;
     align-items: flex-start; /* Align items to the top */
     flex-grow: 1;
+    min-width: 0; /* Allow content to shrink */
 }
 
 .wordflow-widget-current-note-left-content-wrapper {
@@ -364,12 +366,14 @@
     flex-grow: 1;
     min-width: 0; /* Allow content to shrink */
     margin-right: 8px; /* Space between content and buttons */
+    overflow: hidden; /* Prevent content from overflowing */
 }
 
 .wordflow-widget-current-note-text-container {
     display: flex;
     align-items: baseline; /* Align text baselines */
     margin-bottom: 0px; /* Space between text and progress bar */
+    min-width: 0; /* Allow text container to shrink */
     
     container-type: inline-size;
     container-name: wordflow-widget-current-note-text-container;
@@ -452,7 +456,8 @@
 .wordflow-widget-current-note-buttons {
     display: flex;
     gap: 8px;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Buttons never shrink */
+    min-width: fit-content; /* Ensure buttons maintain minimum size */
 }
 
 .wordflow-widget-button {
@@ -467,6 +472,7 @@
     cursor: pointer;
     width: 40px; /* Ensure consistent circular shape */
     height: 40px; /* Ensure consistent circular shape */
+    flex-shrink: 0; /* Individual buttons never shrink */
 }
 
 .wordflow-widget-button:hover {
@@ -586,7 +592,7 @@
 .wordflow-widget-tag-segment {
     height: 100%;
     cursor: pointer;
-    transition: opacity 0.3s ease, filter 0.3s ease;
+    transition: opacity 0.2s ease, filter 0.2s ease, transform 0.1s ease;
 }
 
 .wordflow-widget-tag-segment:hover {
@@ -596,7 +602,7 @@
 .wordflow-widget-file-segment {
     height: 100%;
     cursor: pointer;
-    transition: opacity 0.3s ease, filter 0.3s ease;
+    transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
 .wordflow-widget-file-segment:hover {
@@ -648,6 +654,194 @@
     margin-left: 8px;
     font-weight: 400;
     flex-shrink: 0;
+}
+
+/* ======================== */
+/*  Tag Group List Styles   */
+/* ======================== */
+
+/* Tag group list container */
+.wordflow-widget-tag-list-container {
+    margin-top: 8px;
+}
+
+/* First level: Tag group rows */
+.wordflow-widget-tag-group-row {
+    display: flex;
+    align-items: center;
+    margin: 0 0 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.wordflow-widget-tag-group-row:hover .wordflow-widget-tag-group-arrow {
+    /* Highlight arrow on hover only */
+    color: var(--text-accent);
+}
+
+/* Tag group color dot (HSL pure color) */
+.wordflow-widget-tag-group-color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+/* Tag group name */
+.wordflow-widget-tag-group-name {
+    flex-grow: 1;
+    color: var(--text-normal);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    /* Remove transition - no hover effect for text */
+}
+
+/* Tag group arrow indicator */
+.wordflow-widget-tag-group-arrow {
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-left: 8px;
+    transition: color 0.2s ease, transform 0.2s ease;
+    user-select: none;
+}
+
+/* Unconfigured group specific styling */
+.wordflow-widget-unconfigured-group .wordflow-widget-tag-group-name {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Second level: File list containers */
+.wordflow-widget-tag-files-container {
+    position: relative;
+    margin-left: 5.5px; /* Align with center of tag group color dot, compensating for 1px line width */
+    padding-left: 20px; /* Space for vertical line and indentation */
+    margin-bottom: 8px;
+}
+
+/* Vertical guide line - positioned to align with tag group dot center */
+.wordflow-widget-tag-files-container::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: -4px; /* 向上延伸8px */
+    bottom: -4px; /* 向下延伸8px */
+    width: 1px;
+    background-color: var(--background-modifier-border);
+}
+
+.wordflow-widget-unconfigured-files-container::before {
+    background-color: var(--text-faint);
+}
+
+/* File rows within tag groups - reuse original styling with modifications */
+.wordflow-widget-tag-group-file-row {
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wordflow-widget-tag-group-file-row .wordflow-widget-data-row-circle {
+    width: 8px;
+    height: 8px;
+    margin-right: 0; /* Remove margin since we use gap */
+    flex-shrink: 0;
+}
+
+.wordflow-widget-tag-group-file-row .wordflow-widget-data-row-file-path {
+    flex-shrink: 0; /* Filename doesn't shrink - tags shrink first */
+    min-width: 0; /* Allow text truncation if absolutely necessary */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 0; /* Remove margin since we use gap */
+}
+
+.wordflow-widget-tag-group-file-row .wordflow-widget-data-row-value {
+    flex-shrink: 0; /* Value never shrinks */
+    margin-left: 0; /* Remove margin since we use gap */
+    order: 3; /* Always last */
+}
+
+/* Middle container for tags - positioned between filename and value */
+.wordflow-widget-middle-container {
+    flex-grow: 1;
+    display: flex;
+    justify-content: flex-end; /* Align tags to the right */
+    min-width: 0; /* Allow container to shrink */
+    order: 2;
+    overflow: hidden; /* Hide overflowing content */
+}
+
+/* Source tags container - updated positioning */
+.wordflow-widget-source-tags-container {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 1; /* Allow tags container to shrink first */
+    min-width: 0; /* Allow container to shrink */
+    overflow-x: auto; /* Allow horizontal scrolling for tags */
+    overflow-y: hidden; /* Hide vertical overflow */
+    scrollbar-width: none; /* Firefox: hide scrollbar */
+    -ms-overflow-style: none; /* IE/Edge: hide scrollbar */
+}
+
+/* Hide scrollbar for WebKit browsers */
+.wordflow-widget-source-tags-container::-webkit-scrollbar {
+    display: none;
+}
+
+/* Source tag pills (Obsidian native tag style, desaturated) */
+.wordflow-widget-source-tag-pill {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    line-height: 1.4;
+    background-color: var(--background-modifier-border);
+    color: var(--text-muted);
+    border: 1px solid var(--background-modifier-border);
+    white-space: nowrap;
+    flex-shrink: 0; /* Individual tags don't shrink */
+}
+
+/* Responsive adjustments for current note section */
+@media (max-width: 300px) {
+    .wordflow-widget-current-note-data {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .wordflow-widget-current-note-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .wordflow-widget-current-note-left-content-wrapper {
+        margin-right: 0;
+        margin-bottom: 8px;
+    }
+    
+    .wordflow-widget-current-note-buttons {
+        justify-content: center;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+    .wordflow-widget-tag-files-container {
+        margin-left: 4px;
+        padding-left: 12px;
+    }
+    
+    .wordflow-widget-source-tags-container {
+        display: none; /* Hide source tags on very small screens */
+    }
 }
 
 /* ======================== */

@@ -6,6 +6,7 @@ export const changelog = {
 ### 1.6.4 updates
 🔥 **Key Insights:**
 - Tag group based colors. Instead of randomly generated colors for file displaying in the widget, supports custom colors based on the file tags. 
+- Tag Group Based Data View: Hierarchical list view with collapsible tag groups and dual-layer progress bar for better data organization.
 
 ✨ **New Features:**
 - Option to automatically resume focus mode after idle pause
@@ -32,6 +33,7 @@ export const changelog = {
 ### 1.6.4 更新
 🔥 **核心亮点：**
 - 基于自定义标签组的颜色。侧栏组件中显示的数据可以根据笔记的标签指定显示颜色，让分类更清晰。
+- 基于标签组的数据视图：层级化列表视图，支持标签组折叠和双层进度条，让数据组织更清晰。
 
 ✨ **新功能：**
 - 新增设置：专注模式因闲置暂停后，回到文档可以自动恢复专注（默认关闭）

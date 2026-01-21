@@ -80,13 +80,19 @@ export class WordflowWidgetView extends ItemView {
         const leftGroup = controls.createDiv({cls: "wordflow-widget-control-leftgroup-container"})
         const recorderDropdownContainer = leftGroup.createEl("span", {cls: "recorder-dropdown-container"});
         this.recorderDropdown = new DropdownComponent(recorderDropdownContainer);
-        setTooltip(recorderDropdownContainer, 'Switch the recorder')
+        setTooltip(recorderDropdownContainer, 'Switch the recorder', {
+            placement: 'top',
+            delay: 300
+        })
         
         const rightGroup = controls.createDiv({cls: "wordflow-widget-control-rightgroup-container"})
         const fieldDropdownContainer = rightGroup.createEl("span", {cls: "field-dropdown-container"});
         this.fieldDropdown = new DropdownComponent(fieldDropdownContainer);
         fieldDropdownContainer.insertAdjacentText("afterend", ':');
-        setTooltip(fieldDropdownContainer, 'switch data to display from recording syntax')
+        setTooltip(fieldDropdownContainer, 'switch data to display from recording syntax', {
+            placement: 'top',
+            delay: 300
+        })
 
         this.totalDataContainer = rightGroup.createEl("span", {cls: "totalDataContainer"});
 
@@ -283,7 +289,7 @@ export class WordflowWidgetView extends ItemView {
     /**
      * Update colors only for files without configured tags (preserve existing random colors)
      */
-    public updateUntaggedColorMap() {
+    public updateUnconfiguredColorMap() {
         if (!this.dataMap) return;
         
         const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
@@ -304,7 +310,7 @@ export class WordflowWidgetView extends ItemView {
     }
 
     /**
-     * Append color for a new file, automatically determining tagged vs untagged
+     * Append color for a new file, automatically determining configured vs unconfigured tags
      */
     public appendToColorMap(filePath: string) {
         if (!this.dataMap) return;
@@ -331,7 +337,7 @@ export class WordflowWidgetView extends ItemView {
             // Tagged file: use tag-based color calculation with extended dataMap
             color = this.tagColorManager.getFileColor(fileTags, filePath, allFilesWithTags);
         } else {
-            // Untagged file: use random color
+            // Unconfigured tags file: use random color
             color = this.colorGenerator.generate();
         }
         
@@ -452,7 +458,7 @@ export class WordflowWidgetView extends ItemView {
 
     private renderDualLayerProgressBar(sortedData: ExistingData[], field: string) {
         // Calculate tag groups and file data
-        const { tagGroups, untaggedFiles } = this.calculateTagGroupData(sortedData, field);
+        const { tagGroups, unconfiguredTagsFiles } = this.calculateTagGroupData(sortedData, field);
         const fileData = this.calculateFileData(sortedData, field);
 
         // Create dual-layer container
@@ -466,7 +472,7 @@ export class WordflowWidgetView extends ItemView {
         });
 
         // Render tag groups
-        this.renderTagSegments(tagLayerContainer, tagGroups, untaggedFiles, field);
+        this.renderTagSegments(tagLayerContainer, tagGroups, unconfiguredTagsFiles, field);
 
         // Lower layer: Individual files (20% height)
         const fileLayerContainer = dualLayerContainer.createDiv({ 
@@ -476,8 +482,8 @@ export class WordflowWidgetView extends ItemView {
         // Render files sorted by total size
         this.renderFileSegments(fileLayerContainer, fileData, field);
 
-        // Render data rows for interaction (reuse existing logic)
-        this.renderFileDataRows(sortedData, field);
+        // Render hierarchical tag-based list instead of flat file list
+        this.renderTagGroupList(tagGroups, unconfiguredTagsFiles, sortedData, field);
     }
 
     private renderProgressBarSegments(container: HTMLElement, sortedData: ExistingData[], field: string) {
@@ -503,7 +509,7 @@ export class WordflowWidgetView extends ItemView {
         });
     }
 
-    private renderTagSegments(container: HTMLElement, tagGroups: TagGroupData[], untaggedFiles: { totalWeight: number }, field: string) {
+    private renderTagSegments(container: HTMLElement, tagGroups: TagGroupData[], unconfiguredTagsFiles: { totalWeight: number }, field: string) {
         // Render configured tag groups
         tagGroups.forEach((tagGroup, index) => {
             const percentage = this.totalFieldValue > 0 ? (tagGroup.totalWeight / this.totalFieldValue) * 100 : 0;
@@ -515,32 +521,44 @@ export class WordflowWidgetView extends ItemView {
             tagSegment.style.backgroundColor = tagGroup.color;
             
             // 使用 Obsidian 的 setTooltip 方法
-            setTooltip(tagSegment, tagGroup.tagName);
+            setTooltip(tagSegment, tagGroup.tagName, {
+                placement: 'top',
+                delay: 300
+            });
             
             // 添加交互逻辑 - 存储标签组信息
             tagSegment.dataset.tagGroupIndex = index.toString();
             tagSegment.dataset.tagGroupName = tagGroup.tagName;
             tagSegment.addEventListener('mouseenter', () => this.handleHover(tagGroup, true));
             tagSegment.addEventListener('mouseleave', () => this.handleHover(tagGroup, false));
+            
+            // 添加点击事件 - 自动折叠其他标签组并展开当前标签组
+            tagSegment.addEventListener('click', () => this.handleTagSegmentClick(tagGroup.tagName));
         });
 
-        // Render untagged files with medium-light grey
-        if (untaggedFiles.totalWeight > 0) {
-            const percentage = this.totalFieldValue > 0 ? (untaggedFiles.totalWeight / this.totalFieldValue) * 100 : 0;
+        // Render unconfigured tags files with medium-light grey
+        if (unconfiguredTagsFiles.totalWeight > 0) {
+            const percentage = this.totalFieldValue > 0 ? (unconfiguredTagsFiles.totalWeight / this.totalFieldValue) * 100 : 0;
             
-            const untaggedSegment = container.createDiv({ 
+            const unconfiguredSegment = container.createDiv({ 
                 cls: 'wordflow-widget-tag-segment' 
             });
-            untaggedSegment.style.width = `${percentage}%`;
-            untaggedSegment.style.backgroundColor = '#999999'; // Medium-light grey
+            unconfiguredSegment.style.width = `${percentage}%`;
+            unconfiguredSegment.style.backgroundColor = '#999999'; // Medium-light grey
             
             // 使用 Obsidian 的 setTooltip 方法
-            setTooltip(untaggedSegment, 'Untagged');
+            setTooltip(unconfiguredSegment, 'Unconfigured Tags', {
+                placement: 'top',
+                delay: 300
+            });
             
-            // 添加无标签文件的交互逻辑 - 标记为无标签段落
-            untaggedSegment.dataset.isUntagged = 'true';
-            untaggedSegment.addEventListener('mouseenter', () => this.handleHover(null, true));
-            untaggedSegment.addEventListener('mouseleave', () => this.handleHover(null, false));
+            // 添加无配置标签文件的交互逻辑 - 标记为无配置段落
+            unconfiguredSegment.dataset.isUnconfigured = 'true';
+            unconfiguredSegment.addEventListener('mouseenter', () => this.handleHover(null, true));
+            unconfiguredSegment.addEventListener('mouseleave', () => this.handleHover(null, false));
+            
+            // 添加点击事件 - 自动折叠其他标签组并展开无配置标签组
+            unconfiguredSegment.addEventListener('click', () => this.handleTagSegmentClick('Unconfigured Tags'));
         }
     }
 
@@ -555,7 +573,10 @@ export class WordflowWidgetView extends ItemView {
             fileSegment.style.backgroundColor = file.color;
             
             // 使用 Obsidian 的 setTooltip 方法
-            setTooltip(fileSegment, `${file.fileName}: ${this.formatValue(file.value, field)}`);
+            setTooltip(fileSegment, `${file.fileName}: ${this.formatValue(file.value, field)}`, {
+                placement: 'top',
+                delay: 300
+            });
             
             // 添加文件路径数据属性，用于交互逻辑
             fileSegment.dataset.filePath = file.filePath;
@@ -586,12 +607,175 @@ export class WordflowWidgetView extends ItemView {
                     : this.app.vault.getFileByPath(rowData.filePath)?.basename?? 'file deleted';
             filePathSpan.textContent = filePathSpan.dataset.fileName;
 
+            // Add tooltip for filename on the left side
+            setTooltip(filePathSpan, 'click to open', {
+                placement: 'left',
+                delay: 500
+            });
+
             const rowText = dataRow.createEl('span', { text: valueString, cls: `wordflow-widget-data-row-value`});
             rowText.style.color = barColor;
         });
     }
 
-    private calculateTagGroupData(sortedData: ExistingData[], field: string): { tagGroups: TagGroupData[], untaggedFiles: { totalWeight: number } } {
+    /**
+     * Render file data rows within a tag group using original logic with modifications
+     * This is a specialized version of renderFileDataRows for tag group context
+     */
+    private renderFileDataRowsInTagGroup(container: HTMLElement, sortedData: ExistingData[], field: string) {
+        // Reuse original logic but with container modifications for tag group context
+        sortedData.forEach(rowData => {
+            const value = this.getFieldValue(rowData, field);
+            const valueString = this.formatValue(value, field);
+
+            if (!this.colorMap.has(rowData.filePath)) {
+                this.appendToColorMap(rowData.filePath);
+            }
+            let barColor = this.colorMap.get(rowData.filePath) ?? 'initial';
+
+            // Create data row with tag group specific styling
+            const dataRow = container.createDiv({ cls: 'wordflow-widget-data-row wordflow-widget-tag-group-file-row' });
+
+            const circleSpan = dataRow.createEl('span', { cls: 'wordflow-widget-data-row-circle' });
+            circleSpan.style.backgroundColor = barColor;
+
+            const filePathSpan = dataRow.createEl('span', { cls: 'wordflow-widget-data-row-file-path' });
+            filePathSpan.dataset.filePath = rowData.filePath;
+            filePathSpan.dataset.fileName = 
+                (rowData.fileName !== 'unknown')
+                    ? rowData.fileName
+                    : this.app.vault.getFileByPath(rowData.filePath)?.basename ?? 'file deleted';
+            filePathSpan.textContent = filePathSpan.dataset.fileName;
+
+            // Add tooltip for filename on the left side
+            setTooltip(filePathSpan, 'click to open', {
+                placement: 'left',
+                delay: 500
+            });
+
+            // Create middle container for tags (positioned between filename and value)
+            const middleContainer = dataRow.createEl('span', { cls: 'wordflow-widget-middle-container' });
+
+            // Add source tags for tagged files (in middle container)
+            const file = this.plugin.app.vault.getFileByPath(rowData.filePath);
+            if (file) {
+                const fileTags = this.tagColorManager.getFileTags(this.plugin.app, file);
+                const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
+                
+                // Show only configured tags
+                const relevantTags = fileTags.filter(tag => {
+                    const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
+                    return configuredTags.includes(cleanTag);
+                });
+
+                if (relevantTags.length > 0) {
+                    const sourceTagsContainer = middleContainer.createEl('span', { cls: 'wordflow-widget-source-tags-container' });
+                    relevantTags.forEach(tag => {
+                        const tagPill = sourceTagsContainer.createEl('span', { 
+                            cls: 'wordflow-widget-source-tag-pill',
+                            text: tag.startsWith('#') ? tag : `#${tag}`
+                        });
+                    });
+                }
+            }
+
+            // Value always on the right
+            const rowText = dataRow.createEl('span', { text: valueString, cls: `wordflow-widget-data-row-value`});
+            rowText.style.color = barColor;
+        });
+    }
+
+    /**
+     * Render hierarchical tag-based list with collapsible tag groups
+     */
+    private renderTagGroupList(tagGroups: TagGroupData[], unconfiguredTagsFiles: { totalWeight: number }, sortedData: ExistingData[], field: string) {
+        const listContainer = this.dataContainer.createDiv({ cls: 'wordflow-widget-tag-list-container' });
+
+        // Render configured tag groups
+        tagGroups.forEach((tagGroup, index) => {
+            this.renderTagGroupRow(listContainer, tagGroup, sortedData, field);
+        });
+
+        // Render unconfigured tags files group if exists (treat as special tag group)
+        if (unconfiguredTagsFiles.totalWeight > 0) {
+            // Create a special tag group for unconfigured tags files
+            const unconfiguredGroup: TagGroupData = {
+                tagName: 'Unconfigured Tags',
+                totalWeight: unconfiguredTagsFiles.totalWeight,
+                color: '#999999',
+                files: [] // Will be calculated in renderTagGroupRow
+            };
+            this.renderTagGroupRow(listContainer, unconfiguredGroup, sortedData, field, true);
+        }
+    }
+
+    /**
+     * Render a single tag group row (works for both configured and unconfigured groups)
+     */
+    private renderTagGroupRow(container: HTMLElement, tagGroup: TagGroupData, sortedData: ExistingData[], field: string, isUnconfiguredGroup: boolean = false) {
+        // Create tag group row
+        const tagRow = container.createDiv({ 
+            cls: isUnconfiguredGroup ? 'wordflow-widget-tag-group-row wordflow-widget-unconfigured-group' : 'wordflow-widget-tag-group-row'
+        });
+        tagRow.dataset.collapsed = 'true'; // Default collapsed
+
+        // Left: HSL color dot
+        const colorDot = tagRow.createEl('span', { cls: 'wordflow-widget-tag-group-color-dot' });
+        colorDot.style.backgroundColor = tagGroup.color;
+
+        // Middle: Tag name (plain text)
+        const tagName = tagRow.createEl('span', { cls: 'wordflow-widget-tag-group-name' });
+        tagName.textContent = tagGroup.tagName;
+
+        // Right: Expand/collapse arrow indicator
+        const arrowIndicator = tagRow.createEl('span', { cls: 'wordflow-widget-tag-group-arrow' });
+        arrowIndicator.innerHTML = '▼'; // Down arrow for collapsed state
+
+        // Create collapsible file list container with vertical line
+        const fileListContainer = container.createDiv({ 
+            cls: isUnconfiguredGroup ? 'wordflow-widget-tag-files-container wordflow-widget-unconfigured-files-container' : 'wordflow-widget-tag-files-container'
+        });
+        fileListContainer.style.display = 'none'; // Initially hidden
+
+        // Filter files based on group type
+        let groupFiles: ExistingData[];
+        if (isUnconfiguredGroup) {
+            // Filter unconfigured tags files
+            const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
+            groupFiles = sortedData.filter(rowData => {
+                const file = this.plugin.app.vault.getFileByPath(rowData.filePath);
+                if (!file) return true; // Treat deleted files as unconfigured
+                
+                const fileTags = this.tagColorManager.getFileTags(this.plugin.app, file);
+                const hasConfiguredTags = fileTags.some(tag => {
+                    const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
+                    return configuredTags.includes(cleanTag);
+                });
+                
+                return !hasConfiguredTags;
+            });
+        } else {
+            // Filter files that belong to this configured tag group
+            groupFiles = sortedData.filter(rowData => 
+                tagGroup.files.includes(rowData.filePath)
+            );
+        }
+
+        // Use original renderFileDataRows logic but with modified container and styling
+        this.renderFileDataRowsInTagGroup(fileListContainer, groupFiles, field);
+
+        // Add click handler for expand/collapse
+        tagRow.addEventListener('click', () => {
+            const isCollapsed = tagRow.dataset.collapsed === 'true';
+            tagRow.dataset.collapsed = isCollapsed ? 'false' : 'true';
+            fileListContainer.style.display = isCollapsed ? 'block' : 'none';
+            
+            // Update arrow direction
+            arrowIndicator.innerHTML = isCollapsed ? '▲' : '▼';
+        });
+    }
+
+    private calculateTagGroupData(sortedData: ExistingData[], field: string): { tagGroups: TagGroupData[], unconfiguredTagsFiles: { totalWeight: number } } {
         // 为每个标签配置创建一个组
         const tagColorGroups: TagGroupData[] = this.plugin.settings.tagColors.map(config => ({
             tagName: config.tags?.join(', ') || 'Unknown',
@@ -600,7 +784,7 @@ export class WordflowWidgetView extends ItemView {
             files: []
         }));
         
-        let untaggedTotalWeight = 0;
+        let unconfiguredTotalWeight = 0;
 
         sortedData.forEach(rowData => {
             const file = this.plugin.app.vault.getFileByPath(rowData.filePath);
@@ -625,7 +809,7 @@ export class WordflowWidgetView extends ItemView {
 
             if (matchingConfigIndices.length === 0) {
                 // 无匹配标签配置的文件
-                untaggedTotalWeight += fileValue;
+                unconfiguredTotalWeight += fileValue;
             } else {
                 // 有匹配标签配置的文件 - 按配置组分配权重
                 const weightPerConfig = fileValue / matchingConfigIndices.length;
@@ -647,7 +831,7 @@ export class WordflowWidgetView extends ItemView {
 
         return { 
             tagGroups: activeTagGroups, 
-            untaggedFiles: { totalWeight: untaggedTotalWeight } 
+            unconfiguredTagsFiles: { totalWeight: unconfiguredTotalWeight } 
         };
     }
 
@@ -696,6 +880,42 @@ export class WordflowWidgetView extends ItemView {
             : value.toString();
     }
 
+    /**
+     * Handle click on tag segment in progress bar
+     * Collapse all other tag groups and expand the clicked one if collapsed
+     */
+    private handleTagSegmentClick(clickedTagName: string) {
+        // Find all tag group rows in the list
+        const tagGroupRows = this.dataContainer.querySelectorAll('.wordflow-widget-tag-group-row') as NodeListOf<HTMLElement>;
+        
+        tagGroupRows.forEach(tagRow => {
+            const tagNameElement = tagRow.querySelector('.wordflow-widget-tag-group-name') as HTMLElement;
+            const arrowElement = tagRow.querySelector('.wordflow-widget-tag-group-arrow') as HTMLElement;
+            const fileListContainer = tagRow.nextElementSibling as HTMLElement;
+            
+            if (!tagNameElement || !arrowElement || !fileListContainer) return;
+            
+            const currentTagName = tagNameElement.textContent;
+            const isCurrentTag = currentTagName === clickedTagName;
+            const isCurrentlyCollapsed = tagRow.dataset.collapsed === 'true';
+            
+            if (isCurrentTag) {
+                // For the clicked tag: expand if collapsed, keep expanded if already expanded
+                if (isCurrentlyCollapsed) {
+                    tagRow.dataset.collapsed = 'false';
+                    fileListContainer.style.display = 'block';
+                    arrowElement.innerHTML = '▲';
+                }
+                // If already expanded, keep it expanded (no change)
+            } else {
+                // For all other tags: collapse them
+                tagRow.dataset.collapsed = 'true';
+                fileListContainer.style.display = 'none';
+                arrowElement.innerHTML = '▼';
+            }
+        });
+    }
+
     private handleHover(hoveredTagGroup: TagGroupData | null, isHovering: boolean) {
         // 获取所有文件段落和标签段落
         const fileSegments = this.dataContainer.querySelectorAll('.wordflow-widget-file-segment') as NodeListOf<HTMLElement>;
@@ -710,7 +930,7 @@ export class WordflowWidgetView extends ItemView {
                 let shouldHighlight = false;
                 
                 if (hoveredTagGroup === null) {
-                    // 悬浮无标签区域：检查文件是否无配置标签
+                    // 悬浮无配置标签区域：检查文件是否无配置标签
                     if (filePath) {
                         const file = this.plugin.app.vault.getFileByPath(filePath);
                         if (file) {
@@ -734,7 +954,6 @@ export class WordflowWidgetView extends ItemView {
                     segment.style.filter = 'none';
                 } else {
                     // 无关文件：强烈变暗变灰
-                    //segment.style.opacity = '0.6';
                     segment.style.filter = 'grayscale(30%) brightness(0.75)';
                 }
             });
@@ -744,8 +963,8 @@ export class WordflowWidgetView extends ItemView {
                 let isCurrentHovered = false;
                 
                 if (hoveredTagGroup === null) {
-                    // 悬浮无标签区域：检查是否是无标签段落
-                    isCurrentHovered = segment.dataset.isUntagged === 'true';
+                    // 悬浮无配置标签区域：检查是否是无配置标签段落
+                    isCurrentHovered = segment.dataset.isUnconfigured === 'true';
                 } else {
                     // 悬浮标签组：检查是否是当前悬浮的标签组
                     isCurrentHovered = segment.dataset.tagGroupName === hoveredTagGroup.tagName;
@@ -757,7 +976,6 @@ export class WordflowWidgetView extends ItemView {
                     segment.style.filter = 'none';
                 } else {
                     // 其他标签：强烈变暗变灰
-                    //segment.style.opacity = '0.6';
                     segment.style.filter = 'grayscale(30%) brightness(0.75)';
                 }
             });
