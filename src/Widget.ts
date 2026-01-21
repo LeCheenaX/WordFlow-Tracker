@@ -574,7 +574,6 @@ export class WordflowWidgetView extends ItemView {
             
             // 使用 Obsidian 的 setTooltip 方法
             setTooltip(fileSegment, `${file.fileName}: ${this.formatValue(file.value, field)}`, {
-                placement: 'top',
                 delay: 300
             });
             
@@ -949,9 +948,9 @@ export class WordflowWidgetView extends ItemView {
                 }
                 
                 if (shouldHighlight) {
-                    // 相关文件：保持正常状态
+                    // 相关文件：高亮显示
                     segment.style.opacity = '1';
-                    segment.style.filter = 'none';
+                    segment.style.filter = 'brightness(1.05)';
                 } else {
                     // 无关文件：强烈变暗变灰
                     segment.style.filter = 'grayscale(30%) brightness(0.75)';
@@ -973,7 +972,7 @@ export class WordflowWidgetView extends ItemView {
                 if (isCurrentHovered) {
                     // 当前悬浮的标签：保持正常状态
                     segment.style.opacity = '1';
-                    segment.style.filter = 'none';
+                    segment.style.filter = 'brightness(1.05)';
                 } else {
                     // 其他标签：强烈变暗变灰
                     segment.style.filter = 'grayscale(30%) brightness(0.75)';
