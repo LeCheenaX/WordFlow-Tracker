@@ -24,9 +24,9 @@ export interface RGB {
 
 export class TagColorManager {
     private tagHues: Map<string, number> = new Map(); // tag -> hue
-    private readonly lightness: number = 66; // Fixed lightness
-    private readonly minSaturation: number = 35;
-    private readonly maxSaturation: number = 85;
+    private readonly lightness: number = 60; // Fixed lightness
+    private readonly minSaturation: number = 50;
+    private readonly maxSaturation: number = 86;
 
     constructor(
         private tagColorConfigs: TagColorConfig[], 
@@ -177,8 +177,8 @@ export class TagColorManager {
         const blendedHsl = this.rgbToHsl(avgRgb);
         
         // Adjust lightness and saturation as specified
-        blendedHsl.l = Math.max(0, Math.min(100, blendedHsl.l - 10)); // Lower lightness
-        blendedHsl.s = Math.max(0, Math.min(100, blendedHsl.s + 5));  // Slightly higher saturation
+        blendedHsl.l = Math.max(0, Math.min(100, blendedHsl.l - 6)); // Lower lightness
+        blendedHsl.s = Math.max(0, Math.min(100, blendedHsl.s + 8));  // Slightly higher saturation
         
         return this.hslToHex(blendedHsl);
     }
