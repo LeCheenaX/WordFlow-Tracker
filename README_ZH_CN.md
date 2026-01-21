@@ -113,6 +113,7 @@ WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插
 具体实现方法详见[开启动态文件夹](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/README_ZH_CN.md#%E5%9F%BA%E7%A1%80%E8%AE%BE%E7%BD%AE)。
 
 ## 设置文档
+详情请见[设置文档](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/docs/%E8%AE%BE%E7%BD%AE%E6%96%87%E6%A1%A3.md)。
 
 ## 开发路线图
 参见[开发路线图](https://github.com/LeCheenaX/WordFlow-Tracker/wiki/Development-RoadMap)了解已知问题和计划功能！
