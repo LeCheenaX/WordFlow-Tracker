@@ -1,12 +1,12 @@
-export const currentPluginVersion = '1.6.4';
+export const currentPluginVersion = '1.7.0';
 
 export const changelog = {
 'en': 
 `
-### 1.6.4 updates
-🔥 **Key Insights:**
-- Tag group based colors. Instead of randomly generated colors for file displaying in the widget, supports custom colors based on the file tags. 
-- Tag Group Based Data View: Hierarchical list view with collapsible tag groups and dual-layer progress bar for better data organization.
+### 1.7.0 updates
+🔥 **Major Updates:**
+- Tag-based colors. Instead of randomly generated colors for file displaying in the widget, supports custom colors based on the file tags. 
+- Tag-based data View: Hierarchical list view with collapsible tag groups and dual-layer progress bar for better data organization.
 
 ✨ **New Features:**
 - Option to automatically resume focus mode after idle pause
@@ -20,8 +20,13 @@ export const changelog = {
 - Improved YAML frontmatter handling using Obsidian's metadataCache API for more reliable metadata operations
 - Optimized plugin loading & unloading process to prevent UI conflicts
 
+🎨 **UI Optimization: **
+- Realigned the setting pages for clarity.
+- More tooltips and hover behaviors. 
+
+
 ### 1.6.3 updates
-🎨 **UI Enhancement**
+🎨 **UI Optimization: **
 - Mobile status bar(if enabled) is now compatible with Obsidian 1.11.x version (Android and iOS).
 
 ### 1.6.2 updates
@@ -31,11 +36,11 @@ export const changelog = {
 'zh-CN': 
 `
 ### 1.6.4 更新
-🔥 **核心亮点：**
-- 基于自定义标签组的颜色。侧栏组件中显示的数据可以根据笔记的标签指定显示颜色，让分类更清晰。
-- 基于标签组的数据视图：层级化列表视图，支持标签组折叠和双层进度条，让数据组织更清晰。
+🔥 **核心功能：**
+- 基于自定义标签的颜色。侧栏组件中显示的数据可以根据笔记的标签指定显示颜色，让分类更清晰。
+- 基于标签的层级化列表视图。支持标签组折叠和双层进度条，让数据组织更清晰。
 
-✨ **新功能：**
+✨ **新特性：**
 - 新增设置：专注模式因闲置暂停后，回到文档可以自动恢复专注（默认关闭）
 
 🐛 **错误修复：**
@@ -47,6 +52,9 @@ export const changelog = {
 - 使用 Obsidian 的 metadataCache API 改进 YAML 前置元数据处理，提高元数据操作的可靠性
 - 优化插件加载、卸载流程，防止界面冲突
 
+🎨 **界面优化：**
+- 重新整理设置页面，展示更清晰。
+- 增加鼠标悬浮效果和提示。
 
 ### 1.6.3 更新
 🎨 **界面优化：**
