@@ -22,6 +22,13 @@ WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插
   ![Pasted image 20250706223743](https://github.com/user-attachments/assets/6edc1be0-f262-4054-8803-1b1b37caeec7)
 - 以比例条样式显示更改，展示原始内容(黄色)与修改内容(红色、绿色)的比例。
   ![image](https://github.com/user-attachments/assets/6c977b5f-0aba-4481-847b-f0fda6c5cd98)
+- 基于文件或基于标签，显示不同数据的比例：
+    - 基于文件的视图:
+
+      <img width="410" height="240" alt="image" src="https://github.com/user-attachments/assets/afd8a8c7-45bb-43ab-b84a-96f3de4d08e0" />
+    - 基于标签的视图:
+
+      <img width="409" height="341" alt="image" src="https://github.com/user-attachments/assets/cbef9fff-6eaf-4c5b-accd-d70b44b0264d" />
 - 将编辑统计数据（例如你今天编辑的总字数）记录到日记的 YAML（Frontmatter）中。其他插件（如热图）可以使用这些元数据生成分析。
 
   ![image](https://github.com/user-attachments/assets/1e5bbe85-a943-4d10-b81c-ecef5e6b15bb)
