@@ -167,6 +167,13 @@
     border: none;
 }
 
+/* 修复移动端 tag colors 设置中 color picker 被拉伸的问题 */
+.is-mobile .wordflow-widget-tag-colors-container .setting-item-control input[type="color"] {
+    flex-shrink: 0 !important;
+    width: auto !important;
+    min-width: auto !important;
+}
+
 /* ======================== */
 /*  Widget Setting Tab  */
 /* ======================== */
