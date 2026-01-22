@@ -1,8 +1,15 @@
-export const currentPluginVersion = '1.7.0';
+export const currentPluginVersion = '1.7.1';
 
 export const changelog = {
 'en': 
 `
+### 1.7.1 updates
+🐛 **Bug Fixed:**
+- Tag colors are not saved correctly.
+
+🎨 **UI Optimization:**
+- Fixed mobile color picker distortion in tag color settings.
+
 ### 1.7.0 updates
 🔥 **Major Updates:**
 - Tag-based colors. Instead of randomly generated colors for file displaying in the widget, supports custom colors based on the file tags. 
@@ -20,21 +27,28 @@ export const changelog = {
 - Improved YAML frontmatter handling using Obsidian's metadataCache API for more reliable metadata operations
 - Optimized plugin loading & unloading process to prevent UI conflicts
 
-🎨 **UI Optimization: **
+🎨 **UI Optimization:**
 - Realigned the setting pages for clarity.
 - More tooltips and hover behaviors. 
 
 
 ### 1.6.3 updates
-🎨 **UI Optimization: **
+🎨 **UI Optimization:**
 - Mobile status bar(if enabled) is now compatible with Obsidian 1.11.x version (Android and iOS).
 
 ### 1.6.2 updates
-✨ **New Features**
+✨ **New Features:**
 - Quick Reference: In the setting page, offer quick reference to essential plugin documentation and string interpolation reference.
 `,
 'zh-CN': 
 `
+### 1.7.1 更新
+🐛 **错误修复：**
+- 标签颜色无法正确保存
+
+🎨 **界面优化：**
+- 修复移动端标签颜色设置中颜色选择器变形
+
 ### 1.7.0 更新
 🔥 **核心功能：**
 - 基于自定义标签的颜色。侧栏组件中显示的数据可以根据笔记的标签指定显示颜色，让分类更清晰。
@@ -61,7 +75,7 @@ export const changelog = {
 - 开启移动端的状态栏后，在 Obsidian 1.11.x 移动端大改后的界面不再崩溃。
 
 ### 1.6.2 更新
-✨ **新功能**
+✨ **新功能：**
 - 快速参考：可在插件设置中查看，提供快速的插件文档和字符串插值参考
 `
 };
