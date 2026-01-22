@@ -288,8 +288,7 @@
           "readEditTime": "readEditTime"
         },
         "validation": {
-          "hasField": "Recorder in widget has {field}: ✅",
-          "noField": "Recorder in widget has {field}: ❌"
+          "hasField": "Recorder in widget has {field}: "
         }
       },
       "fieldAlias": {

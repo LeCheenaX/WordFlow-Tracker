@@ -288,8 +288,7 @@
           "readEditTime": "总时间（阅读+编辑）"
         },
         "validation": {
-          "hasField": "侧边栏组件中的记录器已配置该时间属性：✅",
-          "noField": "侧边栏组件中的记录器已配置该时间属性：❌"
+          "hasField": "侧边栏组件中的记录器已配置该时间属性："
         }
       },
       "fieldAlias": {

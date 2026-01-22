@@ -1085,7 +1085,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     const hasTimeField = this.plugin.Widget?.getFieldOptions().indexOf(this.plugin.settings.switchToFieldOnFocus);
                     if(value !== 'disabled') {
                         switchToFieldOnFocusPreviewText.setText(
-                        this.i18n.t('settings.widget.switchToFieldOnFocus.validation.hasField', { field: this.plugin.settings.switchToFieldOnFocus }) + ((hasTimeField && hasTimeField !== -1) ?': ✅':': ❌'));
+                        this.i18n.t('settings.widget.switchToFieldOnFocus.validation.hasField', { field: this.plugin.settings.switchToFieldOnFocus }) + ((hasTimeField && hasTimeField !== -1) ?'✅':'❌'));
                     } else switchToFieldOnFocusPreviewText.empty();
                 })
             });
