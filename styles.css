@@ -207,14 +207,20 @@
 }
 
 .wordflow-widget-tag-colors-container .setting-item .setting-item-control {
-    width: 100%;
     max-width: none;
     margin-left: 0; /* 移除左边距，让控制区域占满宽度 */
 }
 
-.wordflow-widget-tag-colors-container .setting-item .setting-item-control input[type="text"] {
-    flex: 1;
-    min-width: 120px;
+
+.wordflow-widget-tag-colors-container .setting-item .setting-item-control input[type="color"] {
+    width: 27px !important;
+    border-radius: 50%;
+}
+
+.wordflow-widget-tag-colors-container .setting-item-control button {
+    flex-shrink: 0;        /* 防止被压缩 */
+    max-width: 42px !important;     /* 最大宽度限制 */
+    padding: 4px 12px;      /* 设置合理的内边距 */
 }
 
 /* 内联标签输入样式 - 类似 Obsidian properties */
@@ -251,7 +257,7 @@
     border-radius: 12px;
     font-size: 12px;
     gap: 4px;
-    flex-shrink: 0;
+    flex-shrink: initial;
 }
 
 .inline-tag-text {
@@ -263,10 +269,10 @@
     border: none;
     color: var(--text-on-accent);
     cursor: pointer;
-    padding: 0;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
+    height: 14px !important;
+    width: 14px !important;
+    border-radius: 50% !important;
+    padding: unset !important;
     display: flex;
     align-items: center;
     justify-content: center;
