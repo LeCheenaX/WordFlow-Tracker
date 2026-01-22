@@ -7,7 +7,7 @@ import { UniqueColorGenerator } from "./UniqueColorGenerator";
 
 export interface TagColorConfig {
     tags: string[]; // 支持多个标签共享同一颜色
-    hue: number; // 0-360, only hue value
+    color: string; // 完整的hex颜色值，如 #ff0000
 }
 
 export interface HSL {
@@ -23,8 +23,8 @@ export interface RGB {
 }
 
 export class TagColorManager {
-    private tagHues: Map<string, number> = new Map(); // tag -> hue
-    private readonly lightness: number = 60; // Fixed lightness
+    private tagColors: Map<string, string> = new Map(); // tag -> hex color
+    private readonly lightness: number = 60; // Fixed lightness (保留用于向后兼容)
     private readonly minSaturation: number = 50;
     private readonly maxSaturation: number = 86;
 
@@ -39,25 +39,24 @@ export class TagColorManager {
      * Update tag color configurations
      */
     public updateTagColors(tagColorConfigs: TagColorConfig[]): void {
-        this.tagHues.clear();
+        this.tagColors.clear();
         if (!tagColorConfigs || !Array.isArray(tagColorConfigs)) {
             return;
         }
         
         tagColorConfigs.forEach(config => {
-            // 检查 config 是否存在，tags 是否为有效数组，hue 是否为有效数字
+            // 检查 config 是否存在，tags 是否为有效数组，color 是否为有效字符串
             if (config && 
                 config.tags && 
                 Array.isArray(config.tags) &&
-                config.hue !== undefined && 
-                config.hue !== null && 
-                typeof config.hue === 'number' && 
-                !isNaN(config.hue)) {
+                config.color && 
+                typeof config.color === 'string' && 
+                config.color.trim() !== '') {
                 
-                // 为每个标签设置相同的色相值
+                // 为每个标签设置相同的颜色值
                 config.tags.forEach(tag => {
                     if (tag && typeof tag === 'string' && tag.trim() !== '') {
-                        this.tagHues.set(tag.trim(), config.hue);
+                        this.tagColors.set(tag.trim(), config.color.trim());
                     }
                 });
             }
@@ -65,11 +64,22 @@ export class TagColorManager {
     }
 
     /**
-     * Get color for a file based on its tags and position among files with same tags
+     * Get configured color for a specific tag as HSL
+     * Returns the exact color user configured, converted to HSL
+     */
+    public getTagColorAsHSL(tag: string): HSL | null {
+        const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
+        const hexColor = this.tagColors.get(cleanTag) || null;
+        if (!hexColor) return null;
+        return this.hexToHsl(hexColor);
+    }
+
+    /**
+     * Get color for a file based on its tags (for file progress bars and dots)
+     * Uses hue from user-configured colors but applies dynamic saturation/lightness
      * @param fileTags Array of tags from the file
      * @param filePath Current file path
      * @param allFilesWithTags Map of tag -> array of file paths
-     * @param fallbackColor Fallback color if no matching tags
      * @returns Final color as hex string
      */
     public getFileColor(
@@ -77,7 +87,7 @@ export class TagColorManager {
         filePath: string, 
         allFilesWithTags: Map<string, string[]>
     ): string {
-        const matchingTagColors = this.getMatchingTagColors(fileTags, filePath, allFilesWithTags);
+        const matchingTagColors = this.getMatchingTagColorsForFile(fileTags, filePath, allFilesWithTags);
         
         if (matchingTagColors.length === 0) {
             return this.uniqueColorGenerator.generate();
@@ -103,9 +113,10 @@ export class TagColorManager {
     }
 
     /**
-     * Get matching tag colors with saturation grading for given file tags
+     * Get matching tag colors with saturation grading for file colors (not tag colors)
+     * This extracts hue from user-configured colors and applies dynamic saturation
      */
-    private getMatchingTagColors(
+    private getMatchingTagColorsForFile(
         fileTags: string[], 
         filePath: string, 
         allFilesWithTags: Map<string, string[]>
@@ -115,16 +126,18 @@ export class TagColorManager {
         fileTags.forEach(tag => {
             // Remove # prefix if present for matching
             const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
-            const hue = this.tagHues.get(cleanTag);
+            const configuredColor = this.tagColors.get(cleanTag);
             
-            if (hue !== undefined) {
+            if (configuredColor) {
+                // 从用户配置的颜色中提取hue值
+                const hsl = this.hexToHsl(configuredColor);
                 const filesWithThisTag = allFilesWithTags.get(cleanTag) || [];
                 const saturation = this.calculateSaturation(filePath, filesWithThisTag);
                 
                 matchingColors.push({
-                    h: hue,
-                    s: saturation,
-                    l: this.lightness
+                    h: hsl.h, // 使用用户配置颜色的hue
+                    s: saturation, // 动态计算的饱和度
+                    l: this.lightness // 固定亮度
                 });
             }
         });
@@ -270,7 +283,7 @@ export class TagColorManager {
      * Get all configured tags
      */
     public getConfiguredTags(): string[] {
-        return Array.from(this.tagHues.keys());
+        return Array.from(this.tagColors.keys());
     }
 
     /**
@@ -278,11 +291,11 @@ export class TagColorManager {
      */
     public hasTagColor(tag: string): boolean {
         const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
-        return this.tagHues.has(cleanTag);
+        return this.tagColors.has(cleanTag);
     }
 
     /**
-     * Convert hue (0-360) to hex color for color picker display
+     * Convert hue (0-360) to hex color for color picker display (向后兼容)
      */
     public hueToHex(hue: number): string {
         const hsl: HSL = { h: hue, s: 70, l: 50 }; // Use standard S and L for display
@@ -290,7 +303,7 @@ export class TagColorManager {
     }
 
     /**
-     * Extract hue from hex color
+     * Extract hue from hex color (向后兼容)
      */
     public hexToHue(hex: string): number {
         const hsl = this.hexToHsl(hex);

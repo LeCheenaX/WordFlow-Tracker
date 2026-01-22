@@ -112,7 +112,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     switchToFieldOnFocus: 'disabled',
     colorGroupLightness: '66',
     colorGroupSaturation: [60, 85],
-    tagColors: [], // 修改为支持多标签的数组结构
+    tagColors: [], // 修改为支持完整颜色的数组结构
     enableTagGroupBasedDataDisplay: false, // 默认关闭
     fieldAlias: [],
 
@@ -1240,11 +1240,11 @@ export class WidgetTab extends WordflowSubSettingsTab {
             
             // 添加颜色选择器
             setting.addColorPicker(colorPicker => {
-                const displayHex = this.plugin.Widget?.tagColorManager.hueToHex(tagColor.hue || 200) || '#3366cc';
+                const displayHex = tagColor.color || '#3366cc';
                 colorPicker.setValue(displayHex);
                 colorPicker.onChange(async (value) => {
-                    const hue = this.plugin.Widget?.tagColorManager.hexToHue(value) || 200;
-                    tagColors[index].hue = hue;
+                    // 保存完整的颜色值
+                    tagColors[index].color = value;
                     await this.plugin.saveSettings();
                     this.plugin.Widget?.updateTagColors();
                 });
@@ -1274,7 +1274,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     button.setTooltip(this.i18n.t('settings.widget.tagColors.maxLimit') || 'Maximum 10 tag colors allowed');
                 } else {
                     button.onClick(async () => {
-                        tagColors.push({ tags: [], hue: 200 });
+                        tagColors.push({ tags: [], color: '#3366cc' });
                         await this.plugin.saveSettings();
                         this.plugin.Widget?.updateTagColors();
                         this.display();

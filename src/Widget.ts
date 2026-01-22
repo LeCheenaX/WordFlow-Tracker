@@ -779,7 +779,7 @@ export class WordflowWidgetView extends ItemView {
         const tagColorGroups: TagGroupData[] = this.plugin.settings.tagColors.map(config => ({
             tagName: config.tags?.join(', ') || 'Unknown',
             totalWeight: 0,
-            color: this.tagColorManager.hueToHex(config.hue),
+            color: config.color || '#3366cc',
             files: []
         }));
         

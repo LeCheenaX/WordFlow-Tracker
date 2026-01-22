@@ -517,9 +517,89 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		
+		// Migrate old hue-based tag colors to new color-based format
+		// Can be deleted in future versions
+		if (this.settings.tagColors?.some((config: any) => config.hue !== undefined)) {
+			await this.migrateTagColorsFromHueToColor();
+		}
+		
 		// Initialize i18n with the loaded locale setting
 		this.i18n = initI18n(this.settings.locale);
 		updateStatusBarStyle(this.settings);
+	}
+
+	/**
+	 * Migrate old hue-based tag colors to new color-based format
+	 * Can be deleted in future versions
+	 */
+	private async migrateTagColorsFromHueToColor(): Promise<void> {
+		if (!this.settings.tagColors || !Array.isArray(this.settings.tagColors)) {
+			return;
+		}
+
+		let needsSave = false;
+
+		this.settings.tagColors.forEach((config: any) => {
+			// Check if config has old hue field but no color field
+			if (config.hue !== undefined && 
+				typeof config.hue === 'number' && 
+				!isNaN(config.hue) && 
+				(!config.color || typeof config.color !== 'string')) {
+				
+				// Convert hue to hex color using standard S=70, L=50
+				const hsl = { h: config.hue, s: 70, l: 50 };
+				config.color = this.hslToHex(hsl);
+				
+				// Remove old hue field
+				delete config.hue;
+				
+				needsSave = true;
+			}
+		});
+
+		// Save migrated settings if any changes were made
+		if (needsSave) {
+			await this.saveSettings();
+		}
+	}
+
+	/**
+	 * Convert HSL to hex color (helper for migration)
+	 * Can be deleted in future versions
+	 */
+	private hslToHex(hsl: { h: number; s: number; l: number }): string {
+		const h = hsl.h / 360;
+		const s = hsl.s / 100;
+		const l = hsl.l / 100;
+
+		const hue2rgb = (p: number, q: number, t: number): number => {
+			if (t < 0) t += 1;
+			if (t > 1) t -= 1;
+			if (t < 1/6) return p + (q - p) * 6 * t;
+			if (t < 1/2) return q;
+			if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+			return p;
+		};
+
+		let r: number, g: number, b: number;
+
+		if (s === 0) {
+			r = g = b = l; // achromatic
+		} else {
+			const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+			const p = 2 * l - q;
+			r = hue2rgb(p, q, h + 1/3);
+			g = hue2rgb(p, q, h);
+			b = hue2rgb(p, q, h - 1/3);
+		}
+
+		const toHex = (c: number): string => {
+			const hex = Math.round(c * 255).toString(16);
+			return hex.length === 1 ? '0' + hex : hex;
+		};
+
+		return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 	}
 
 	async saveSettings() {
