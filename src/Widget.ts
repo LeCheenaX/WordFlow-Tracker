@@ -875,7 +875,7 @@ export class WordflowWidgetView extends ItemView {
 
     private formatValue(value: number, field: string): string {
         return (field === 'editTime' || field === 'readTime' || field === 'readEditTime')
-            ? formatTime(value, this.plugin.settings.useSecondInWidget)
+            ? formatTime(value, false)
             : value.toString();
     }
 
