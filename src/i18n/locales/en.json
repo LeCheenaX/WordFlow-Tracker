@@ -333,6 +333,7 @@
         "addButton": "configure tag color",
         "deleteButton": "Delete",
         "tagPlaceholder": "Enter tag name (without #)",
+        "groupNamePlaceholder": "Tag group name (optional)",
         "maxLimit": "Maximum 10 tag colors allowed"
       }
     },

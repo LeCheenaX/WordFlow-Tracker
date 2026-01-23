@@ -8,6 +8,7 @@ import { UniqueColorGenerator } from "./UniqueColorGenerator";
 export interface TagColorConfig {
     tags: string[]; // 支持多个标签共享同一颜色
     color: string; // 完整的hex颜色值，如 #ff0000
+    groupName?: string; // 可选的标签组名称
 }
 
 export interface HSL {

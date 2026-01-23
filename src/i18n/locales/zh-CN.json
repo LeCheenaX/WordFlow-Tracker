@@ -333,6 +333,7 @@
         "addButton": "添加标签颜色",
         "deleteButton": "删除",
         "tagPlaceholder": "输入标签名称（不含#）",
+        "groupNamePlaceholder": "标签组名称（可选）",
         "maxLimit": "最多允许10个标签颜色"
       }
     },

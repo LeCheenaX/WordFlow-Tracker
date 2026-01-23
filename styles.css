@@ -211,6 +211,11 @@
     margin-left: 0; /* 移除左边距，让控制区域占满宽度 */
 }
 
+.wordflow-widget-tag-colors-container .setting-item .setting-item-control input[type="text"] {
+    flex: 1;
+    min-width: 20px;
+    position: relative;
+}
 
 .wordflow-widget-tag-colors-container .setting-item .setting-item-control input[type="color"] {
     width: 27px !important;
@@ -250,6 +255,7 @@
 
 .inline-tag-item {
     display: inline-flex;
+    overflow: auto;
     align-items: center;
     background-color: var(--interactive-accent);
     color: var(--text-on-accent);
@@ -258,6 +264,11 @@
     font-size: 12px;
     gap: 4px;
     flex-shrink: initial;
+    scrollbar-width: none;
+}
+
+.inline-tag-item::-webkit-scrollbar {
+    display: none;
 }
 
 .inline-tag-text {
@@ -706,8 +717,8 @@
 .wordflow-widget-tag-group-name {
     flex-grow: 1;
     color: var(--nav-item-color);
-    /*font-weight: 500;*/
-    font-size: 14px;
+    font-weight: bold;
+    font-size: 15px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -727,7 +738,6 @@
 /* Unconfigured group specific styling */
 .wordflow-widget-unconfigured-group .wordflow-widget-tag-group-name {
     color: var(--text-muted);
-    font-style: italic;
 }
 
 /* Second level: File list containers */

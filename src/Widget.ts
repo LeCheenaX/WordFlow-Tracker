@@ -777,7 +777,7 @@ export class WordflowWidgetView extends ItemView {
     private calculateTagGroupData(sortedData: ExistingData[], field: string): { tagGroups: TagGroupData[], unconfiguredTagsFiles: { totalWeight: number } } {
         // 为每个标签配置创建一个组
         const tagColorGroups: TagGroupData[] = this.plugin.settings.tagColors.map(config => ({
-            tagName: config.tags?.join(', ') || 'Unknown',
+            tagName: config.groupName || config.tags?.join('  ') || 'Unknown',
             totalWeight: 0,
             color: config.color || '#3366cc',
             files: []
