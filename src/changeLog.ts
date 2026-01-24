@@ -1,8 +1,20 @@
-export const currentPluginVersion = '1.7.1';
+export const currentPluginVersion = '1.7.2';
 
 export const changelog = {
 'en': 
 `
+### 1.7.2 updates
+✨ **New Features:**
+-  Custom tag group labels (optional)
+
+🐛 **Bug Fixed:**
+- Setting validation is incorrect.
+- Widget timing will unexpectedly display seconds.
+
+🎨 **UI Optimization:**
+- Uniform font styles in the tag based view.
+- Correcting setting styling when width is not enough.
+
 ### 1.7.1 updates
 🐛 **Bug Fixed:**
 - Tag colors are not saved correctly.
@@ -42,6 +54,18 @@ export const changelog = {
 `,
 'zh-CN': 
 `
+### 1.7.2 更新
+✨ **新功能：**
+- 自定义标签组标签（可选）
+
+🐛 **错误修复：**
+- 设置验证的结果显示与实际不符
+- 侧栏组件计时会意外显示秒数
+
+🎨 **界面优化：**
+- 统一基于标签视图中的字体样式
+- 修正宽度不足时的设置样式
+
 ### 1.7.1 更新
 🐛 **错误修复：**
 - 标签颜色无法正确保存
