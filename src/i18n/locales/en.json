@@ -432,7 +432,8 @@
       "noRecorder": "No available recorder",
       "noField": "No available field for this recorder",
       "noData": "No available data in this field",
-      "noFieldinSyntax": "No available field in wordflow recording syntax to display."
+      "noFieldinSyntax": "No available field in wordflow recording syntax to display.",
+      "unconfiguredTags": "Unconfigured Tags"
     }
   },
   "modals": {

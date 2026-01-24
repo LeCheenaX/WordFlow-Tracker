@@ -238,7 +238,6 @@ export interface WidgetSettingsResources {
         };
         validation: {
             hasField: string;
-            noField: string;
         };
     };
     colorGroupLightness: {

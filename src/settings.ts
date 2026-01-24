@@ -1215,17 +1215,6 @@ export class WidgetTab extends WordflowSubSettingsTab {
         tagColors.forEach((tagColor, index) => {
             const setting = new Setting(tagColorsContainer);
             
-            // 在开头添加 tag group name 输入框
-            setting.addText(text => {
-                text.setPlaceholder(this.i18n.t('settings.widget.tagColors.groupNamePlaceholder'))
-                    .setValue(tagColor.groupName || '')
-                    .onChange(async (value) => {
-                        tagColors[index].groupName = value.trim() || undefined;
-                        await this.plugin.saveSettings();
-                        this.plugin.Widget?.updateTagColors();
-                    });
-            });
-            
             // 创建标签输入容器（类似 Obsidian properties 的样式）
             const tagInputContainer = setting.controlEl.createDiv('tag-input-field');
             
@@ -1248,6 +1237,17 @@ export class WidgetTab extends WordflowSubSettingsTab {
             
             // 设置输入框事件
             this.setupInlineTagInput(input, suggestionsContainer, tagColor, index, tagColors, inputWrapper);
+            
+            // add tag group name input
+            setting.addText(text => {
+                text.setPlaceholder(this.i18n.t('settings.widget.tagColors.groupNamePlaceholder'))
+                    .setValue(tagColor.groupName || '')
+                    .onChange(async (value) => {
+                        tagColors[index].groupName = value.trim() || undefined;
+                        await this.plugin.saveSettings();
+                        this.plugin.Widget?.updateTagColors();
+                    });
+            });
             
             // 添加颜色选择器
             setting.addColorPicker(colorPicker => {
