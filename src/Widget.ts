@@ -547,7 +547,7 @@ export class WordflowWidgetView extends ItemView {
             unconfiguredSegment.style.backgroundColor = '#999999'; // Medium-light grey
             
             // 使用 Obsidian 的 setTooltip 方法
-            setTooltip(unconfiguredSegment, 'Unconfigured Tags', {
+            setTooltip(unconfiguredSegment, this.plugin.i18n.t('widget.prompts.unconfiguredTags'), {
                 placement: 'top',
                 delay: 300
             });
@@ -558,7 +558,7 @@ export class WordflowWidgetView extends ItemView {
             unconfiguredSegment.addEventListener('mouseleave', () => this.handleHover(null, false));
             
             // 添加点击事件 - 自动折叠其他标签组并展开无配置标签组
-            unconfiguredSegment.addEventListener('click', () => this.handleTagSegmentClick('Unconfigured Tags'));
+            unconfiguredSegment.addEventListener('click', () => this.handleTagSegmentClick(this.plugin.i18n.t('widget.prompts.unconfiguredTags')));
         }
     }
 
@@ -699,7 +699,7 @@ export class WordflowWidgetView extends ItemView {
         if (unconfiguredTagsFiles.totalWeight > 0) {
             // Create a special tag group for unconfigured tags files
             const unconfiguredGroup: TagGroupData = {
-                tagName: 'Unconfigured Tags',
+                tagName: this.plugin.i18n.t('widget.prompts.unconfiguredTags'),
                 totalWeight: unconfiguredTagsFiles.totalWeight,
                 color: '#999999',
                 files: [] // Will be calculated in renderTagGroupRow
