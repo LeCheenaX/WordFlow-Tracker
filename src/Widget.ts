@@ -115,13 +115,13 @@ export class WordflowWidgetView extends ItemView {
         
         this.updateButtons_Quit(); // Initial icon setup
 
-        this.recordButton.addEventListener('click', () => {
+        this.recordButton.addEventListener('click', async () => {
             if (this.onFocusMode || (!this.onFocusMode && this.focusPaused)) {
                 this.onFocusMode = false;
                 this.updateButtons_Quit();
             }
             for (const DocRecorder of this.plugin.DocRecorders) {
-                DocRecorder.record();
+                await DocRecorder.record();
             }
             new Notice(this.plugin.i18n.t('notices.recordSuccess'), 3000);
         });

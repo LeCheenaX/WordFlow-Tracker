@@ -58,12 +58,12 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		// This creates an icon in the left ribbon.
 		if (this.settings.showRecordRibbonIcon) {
-			const ribbonIconEl = this.addRibbonIcon('file-clock', 'Record wordflows from edited notes', (evt: MouseEvent) => {
+			const ribbonIconEl = this.addRibbonIcon('file-clock', 'Record wordflows from edited notes', async(evt: MouseEvent) => {
 				// Called when the user clicks the icon.
 				new Notice(this.i18n.t('notices.recordSuccess'), 3000);
 				
 				for (const DocRecorder of this.DocRecorders) {
-					DocRecorder.record();
+					await DocRecorder.record();
 				}
 			});
 		}
@@ -89,9 +89,9 @@ export default class WordflowTrackerPlugin extends Plugin {
 		this.addCommand({
 			id: 'record-wordflows-from-edited-notes-to-periodic-note',
 			name: this.i18n.t('commands.recordWordflows.name'),
-			callback: () => {
+			callback: async () => {
 				for (const DocRecorder of this.DocRecorders) {
-                    DocRecorder.record();
+                    await DocRecorder.record();
                 }
 				new Notice(this.i18n.t('notices.recordSuccess'), 3000);
 			}
@@ -210,9 +210,9 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		if (this.settings.autoRecordInterval && Number(this.settings.autoRecordInterval) != 0){
-			this.registerInterval(window.setInterval(() => {
+			this.registerInterval(window.setInterval(async () => {
 				for (const DocRecorder of this.DocRecorders) {
-                    DocRecorder.record();
+                    await DocRecorder.record();
                 }
 				new Notice(this.i18n.t('notices.autoRecordSuccess'), 3000);
 			}, Number(this.settings.autoRecordInterval) * 1000));
@@ -299,7 +299,7 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 		if (tracker.meetThreshold())
 		{
 			for (const DocRecorder of this.DocRecorders) {
-				DocRecorder.record(tracker);
+				await DocRecorder.record(tracker);
 			}
 			new Notice(this.i18n.t('notices.editsRecorded', { filePath: tracker.filePath }), 1000)
 			//if (DEBUG) console.log (`Edits from ${tracker.filePath} are recorded.`);	
