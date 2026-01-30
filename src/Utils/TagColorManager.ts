@@ -321,7 +321,10 @@ export class TagColorManager {
         
         dataMap.forEach((data, filePath) => {
             const file = app.vault.getFileByPath(filePath);
-            if (!file) return;
+            if (!file) {
+                console.warn(`⚠️ TagColorManager.buildFilesWithTagsMap: File not found in : ${filePath}. This file may have been renamed or moved.`);
+                return; // equal to term continue in a loop, not early return
+            }
             
             const fileTags = this.getFileTags(app, file);
             fileTags.forEach(tag => {
@@ -343,6 +346,11 @@ export class TagColorManager {
      * Get tags from a file's frontmatter only (excluding inline tags)
      */
     public getFileTags(app: any, file: any): string[] {
+        if (!file) {
+            console.warn('[Wordflow Tracker] getFileTags called with null file');
+            return [];
+        }
+        
         const cache = app.metadataCache.getFileCache(file);
         const tags: string[] = [];
 

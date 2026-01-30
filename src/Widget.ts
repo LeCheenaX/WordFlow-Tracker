@@ -273,7 +273,14 @@ export class WordflowWidgetView extends ItemView {
         const allFilesWithTags = this.tagColorManager.buildFilesWithTagsMap(this.plugin.app, this.dataMap);
         
         this.dataMap.forEach((data, filePath) => {
-            const fileTags = this.tagColorManager.getFileTags(this.plugin.app, this.plugin.app.vault.getFileByPath(filePath));
+            const file = this.plugin.app.vault.getFileByPath(filePath);
+            if (!file) {
+                console.warn(`⚠️ [Wordflow Tracker] File not found: ${filePath}. This file may have been renamed or moved, but the periodic note index was not updated.`);
+                new Notice(this.plugin.i18n.t('notices.fileNotFound', { filePath: filePath }));
+                return; // equal to term continue in a loop, not early return
+            }
+            
+            const fileTags = this.tagColorManager.getFileTags(this.plugin.app, file);
             const hasConfiguredTags = fileTags.some(tag => {
                 const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
                 return configuredTags.includes(cleanTag);
@@ -295,7 +302,14 @@ export class WordflowWidgetView extends ItemView {
         const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
         
         this.dataMap.forEach((data, filePath) => {
-            const fileTags = this.tagColorManager.getFileTags(this.plugin.app, this.plugin.app.vault.getFileByPath(filePath));
+            const file = this.plugin.app.vault.getFileByPath(filePath);
+            if (!file) {
+                console.warn(`⚠️ [Wordflow Tracker] File not found: ${filePath}. This file may have been renamed or moved, but the periodic note index was not updated.`);
+                new Notice(this.plugin.i18n.t('notices.fileNotFound', { filePath: filePath }));
+                return; // equal to term continue in a loop, not early return
+            }
+            
+            const fileTags = this.tagColorManager.getFileTags(this.plugin.app, file);
             const hasConfiguredTags = fileTags.some(tag => {
                 const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
                 return configuredTags.includes(cleanTag);
@@ -316,6 +330,13 @@ export class WordflowWidgetView extends ItemView {
         if (!this.dataMap) return;
         if (this.colorMap.has(filePath)) return; // Skip if already exists
         
+        const fileToAppend = this.plugin.app.vault.getFileByPath(filePath);
+        if (!fileToAppend) {
+            console.warn(`⚠️ [Wordflow Tracker] File not found: ${filePath}. This file may have been renamed or moved, but the periodic note index was not updated.`);
+            new Notice(this.plugin.i18n.t('notices.fileNotFound', { filePath: filePath }));
+            return;
+        }
+        
         const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
         
         // Create extended dataMap that includes the new file for accurate saturation calculation
@@ -326,7 +347,7 @@ export class WordflowWidgetView extends ItemView {
         
         const allFilesWithTags = this.tagColorManager.buildFilesWithTagsMap(this.plugin.app, extendedDataMap);
         
-        const fileTags = this.tagColorManager.getFileTags(this.plugin.app, this.plugin.app.vault.getFileByPath(filePath));
+        const fileTags = this.tagColorManager.getFileTags(this.plugin.app, fileToAppend);
         const hasConfiguredTags = fileTags.some(tag => {
             const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
             return configuredTags.includes(cleanTag);

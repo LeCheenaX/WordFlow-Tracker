@@ -412,7 +412,8 @@
     "settingsResetFailed": "❌ Could not reset settings! Check console!",
     "recordTypeUndefined": "❌Record type is not defined in this recorder!",
     "focusPaused": "Focusing is paused because of idling.",
-    "languageChanged": "Plugin language has been changed."
+    "languageChanged": "Plugin language has been changed.",
+    "fileNotFound": "⚠️ {filePath} may have been renamed or moved, but the periodic note index was not updated."
   },
   "widget": {
     "title": "Wordflow Tracker",
