@@ -266,7 +266,7 @@ export class WordflowWidgetView extends ItemView {
     /**
      * Update colors only for files with configured tags
      */
-    public updateTaggedColorMap() {
+    public async updateTaggedColorMap(): Promise<void> {
         if (!this.dataMap) return;
         
         const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
@@ -365,9 +365,10 @@ export class WordflowWidgetView extends ItemView {
         this.colorMap.set(filePath, color);
     }
 
-    public updateTagColors() {
+    public async updateTagColors() {
         this.tagColorManager.updateTagColors(this.plugin.settings.tagColors);
-        this.updateTaggedColorMap(); // Only update tagged files
+        await this.updateDataMap();
+        await this.updateTaggedColorMap(); // must update color first
         this.updateData();
     }
 
@@ -435,6 +436,10 @@ export class WordflowWidgetView extends ItemView {
             await this.renderData(value);
             this.updateCurrentData();
         });
+    }
+
+    private async updateDataMap(): Promise<void> {
+        this.dataMap = await this.getDataMap(this.selectedField); // this.selectedField here can be ignored, which is a historic issue 
     }
 
     private async renderData(field: string | null) {
