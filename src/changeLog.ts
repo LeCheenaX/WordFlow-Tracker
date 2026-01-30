@@ -1,8 +1,16 @@
-export const currentPluginVersion = '1.7.2';
+export const currentPluginVersion = '1.7.3';
 
 export const changelog = {
 'en': 
 `
+### 1.7.3 updates
+🐛 **Bug Fixed:**
+- Race condition issues while recording [Issue 11](https://github.com/LeCheenaX/WordFlow-Tracker/issues/11).
+- Widget silently collapses when data is corrupted by unexpected file rename or migration.
+
+⚡️ **Enhancements:**
+- Safeguarding the color updating mechanism to prevent racing issues.
+
 ### 1.7.2 updates
 ✨ **New Features:**
 -  Custom tag group labels (optional)
@@ -42,18 +50,17 @@ export const changelog = {
 🎨 **UI Optimization:**
 - Realigned the setting pages for clarity.
 - More tooltips and hover behaviors. 
-
-
-### 1.6.3 updates
-🎨 **UI Optimization:**
-- Mobile status bar(if enabled) is now compatible with Obsidian 1.11.x version (Android and iOS).
-
-### 1.6.2 updates
-✨ **New Features:**
-- Quick Reference: In the setting page, offer quick reference to essential plugin documentation and string interpolation reference.
 `,
 'zh-CN': 
 `
+### 1.7.3 更新
+🐛 **错误修复：**
+- 侧栏组件静默崩溃，当文件被意外重命名或迁移导致数据污染后。
+- 记录器触发竞态条件导致的记录失败 [Issue 11](https://github.com/LeCheenaX/WordFlow-Tracker/issues/11)。
+
+⚡️ **性能增强：**
+- 优化颜色更新机制，防止竞态问题
+
 ### 1.7.2 更新
 ✨ **新功能：**
 - 自定义标签组标签（可选）
@@ -93,13 +100,5 @@ export const changelog = {
 🎨 **界面优化：**
 - 重新整理设置页面，展示更清晰。
 - 增加鼠标悬浮效果和提示。
-
-### 1.6.3 更新
-🎨 **界面优化：**
-- 开启移动端的状态栏后，在 Obsidian 1.11.x 移动端大改后的界面不再崩溃。
-
-### 1.6.2 更新
-✨ **新功能：**
-- 快速参考：可在插件设置中查看，提供快速的插件文档和字符串插值参考
 `
 };
