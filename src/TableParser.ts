@@ -148,13 +148,28 @@ export class TableParser{
         const rowTemplate = templateRows.join('\n');
         
         // Generate rows from the merged data
-        const rows = mergedData.map(data => {
-            return rowTemplate.replace(
-                /\${(\w+)}/g,
-                (_, varName: string) => {
-                    switch (varName) {
-                        case 'modifiedNote':
-                            return data.filePath;
+        const rows = mergedData
+            .filter(data => {
+                // If keepDeletedFileRecords is disabled, filter out deleted files
+                if (!this.plugin.settings.keepDeletedFileRecords) {
+                    const file = this.plugin.app.vault.getFileByPath(data.filePath);
+                    return file !== null;
+                }
+                return true; // Keep all records if setting is enabled
+            })
+            .map(data => {
+                return rowTemplate.replace(
+                    /\${(\w+)}/g,
+                    (_, varName: string) => {
+                        switch (varName) {
+                            case 'modifiedNote':
+                                // Use Obsidian's fileToLinktext for shortest link text
+                                const file = this.plugin.app.vault.getFileByPath(data.filePath);
+                                if (!file) {
+                                    // File doesn't exist, use original filePath to preserve existing record
+                                    return data.filePath;
+                                }
+                                return this.plugin.app.metadataCache.fileToLinktext(file, ''); // only for passing the validation
                         case 'noteTitle':
                             return data.fileName;
                         case 'lastModifiedTime':

@@ -41,6 +41,10 @@
         ],
         "placeholder": "#ignore\n#private"
       },
+      "keepDeletedFileRecords": {
+        "name": "Preserve records for deleted files",
+        "desc": "When enabled, records of deleted files will be preserved in periodic notes. When disabled, records of deleted files will be removed permanently in the next update."
+      },
       "noteThreshold": {
         "name": "Threshold for notes to record in edit mode",
         "desc": [

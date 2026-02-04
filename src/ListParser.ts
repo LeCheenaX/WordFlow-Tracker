@@ -236,10 +236,30 @@ export class BulletListParser{
     public generateContent(mergedData: MergedData[]): string {
         // Implement bullet list generation
         let output = '\n';
+        
+        // Filter data based on keepDeletedFileRecords setting
+        const filteredData = this.plugin.settings.keepDeletedFileRecords 
+            ? mergedData 
+            : mergedData.filter(data => {
+                const file = this.plugin.app.vault.getFileByPath(data.filePath);
+                return file !== null;
+            });
                 
-        for (const data of mergedData) {
+        for (const data of filteredData) {
+            // Check if file exists
+            const file = this.plugin.app.vault.getFileByPath(data.filePath);
+            let linkText: string;
+            
+            if (!file) {
+                // File doesn't exist, use original filePath to preserve existing record
+                linkText = data.filePath;
+            } else {
+                // Use Obsidian's fileToLinktext for shortest link text
+                linkText = this.plugin.app.metadataCache.fileToLinktext(file, '');
+            }
+            
             let line = this.syntax
-                .replace(/\${modifiedNote}/g, data.filePath)
+                .replace(/\${modifiedNote}/g, linkText)
                 .replace(/\${noteTitle}/g, data.fileName)
                 .replace(/\${lastModifiedTime}/g, typeof data.lastModifiedTime === 'number' 
                     ? moment(data.lastModifiedTime).format(this.timeFormat) 
@@ -512,9 +532,33 @@ export class ListParser{
         // Implement bullet list generation
         let output = '\n';
                 
-        for (const data of mergedData) {
+    public generateContent(mergedData: MergedData[]): string {
+        // Implement bullet list generation
+        let output = '\n';
+        
+        // Filter data based on keepDeletedFileRecords setting
+        const filteredData = this.plugin.settings.keepDeletedFileRecords 
+            ? mergedData 
+            : mergedData.filter(data => {
+                const file = this.plugin.app.vault.getFileByPath(data.filePath);
+                return file !== null;
+            });
+                
+        for (const data of filteredData) {
+            // Check if file exists
+            const file = this.plugin.app.vault.getFileByPath(data.filePath);
+            let linkText: string;
+            
+            if (!file) {
+                // File doesn't exist, use original filePath to preserve existing record
+                linkText = data.filePath;
+            } else {
+                // Use Obsidian's fileToLinktext for shortest link text
+                linkText = this.plugin.app.metadataCache.fileToLinktext(file, '');
+            }
+            
             let line = this.syntax
-                .replace(/\${modifiedNote}/g, data.filePath)
+                .replace(/\${modifiedNote}/g, linkText)
                 .replace(/\${lastModifiedTime}/g, typeof data.lastModifiedTime === 'number' 
                     ? moment(data.lastModifiedTime).format(this.timeFormat) 
                     : data.lastModifiedTime as string)

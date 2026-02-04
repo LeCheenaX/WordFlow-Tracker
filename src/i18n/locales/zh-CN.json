@@ -41,6 +41,10 @@
         ],
         "placeholder": "#ignore\n#private"
       },
+      "keepDeletedFileRecords": {
+        "name": "保留已删除文件的记录",
+        "desc": "启用时，已删除文件的记录仍在日记中保留。禁用时，下次记录会永久移除已删除的文件之前的记录。"
+      },
       "noteThreshold": {
         "name": "编辑模式下记录笔记的门槛",
         "desc": [

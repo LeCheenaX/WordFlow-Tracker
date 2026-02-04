@@ -34,6 +34,7 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
     showRecordRibbonIcon: boolean;
     ignoredFolders: string[];
     ignoredFileTags: string[];
+    keepDeletedFileRecords: boolean; // whether to keep records of deleted files
     noteThreshold: string;
     noteToRecord: string;
     autoRecordInterval: string;
@@ -75,6 +76,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     showRecordRibbonIcon: true,
     ignoredFolders: [],
     ignoredFileTags: [],
+    keepDeletedFileRecords: true, // keep records of deleted files by default
 	noteThreshold: 'eot', // requrie edits or time
     noteToRecord: 'all', // requrie edits only
 	autoRecordInterval: '0', // disable
@@ -235,6 +237,16 @@ export class GeneralTab extends WordflowSubSettingsTab {
                     await this.plugin.saveSettings();
                 })
             );
+
+        new Setting(tabContent)
+            .setName(this.i18n.t('settings.general.keepDeletedFileRecords.name'))
+            .setDesc(this.i18n.t('settings.general.keepDeletedFileRecords.desc'))
+            .addToggle(t => t
+                .setValue(this.plugin.settings.keepDeletedFileRecords)
+                .onChange(async (value) => {
+                    this.plugin.settings.keepDeletedFileRecords = value;
+                    await this.plugin.saveSettings();
+                }));
 
         new Setting(tabContent)
             .setName(this.i18n.t('settings.general.noteThreshold.name'))
