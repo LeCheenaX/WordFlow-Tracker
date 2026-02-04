@@ -240,7 +240,7 @@ export class GeneralTab extends WordflowSubSettingsTab {
 
         new Setting(tabContent)
             .setName(this.i18n.t('settings.general.keepDeletedFileRecords.name'))
-            .setDesc(this.i18n.t('settings.general.keepDeletedFileRecords.desc'))
+            .setDesc(this.createMultiLineDesc('settings.general.keepDeletedFileRecords.desc'))
             .addToggle(t => t
                 .setValue(this.plugin.settings.keepDeletedFileRecords)
                 .onChange(async (value) => {
