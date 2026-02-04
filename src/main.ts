@@ -21,8 +21,6 @@ export default class WordflowTrackerPlugin extends Plugin {
 	public Widget: WordflowWidgetView | null = null;
 	public executeOnce = executeOnceWithKey();
 
-	private activeTrackers: Map<string, boolean> = new Map(); // for multiple notes editing	
-    private pathToNameMap: Map<string|undefined, string> = new Map(); // 新增：反向映射用于重命名检测
 	private isModeSwitch: boolean = false;
 	private lastActiveFile: { path: string; mode: 'source' | 'preview'} = {path: '', mode: 'preview'};
 
@@ -154,15 +152,13 @@ export default class WordflowTrackerPlugin extends Plugin {
 		// Update tracking files after rename events
         this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
             if (file instanceof TFile) {
-                const oldName = this.pathToNameMap.get(oldPath);
-                if (oldName && this.activeTrackers.has(oldName)) {
-                    // 迁移追踪记录到新文件名
-                    this.activeTrackers.set(file.basename, true);
-                    this.activeTrackers.delete(oldName);
-                    
-                    // 更新路径映射
-                    this.pathToNameMap.delete(oldPath);
-                    this.pathToNameMap.set(file.path, file.basename);
+                // Update trackerMap - move tracker from old path to new path
+                const tracker = this.trackerMap.get(oldPath);
+                if (tracker) {
+                    tracker.filePath = file.path;
+                    tracker.fileName = file.basename; // Update fileName as well
+                    this.trackerMap.set(file.path, tracker);
+                    this.trackerMap.delete(oldPath);
                 }
             }
         }));
@@ -313,8 +309,6 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 	private async activateTracker(activeEditor: MarkdownView | null) {	
 		if (!activeEditor?.file?.path) return; 
 		let activeFilePath = activeEditor?.file?.path; 
-		// rename后更新路径映射
-        this.pathToNameMap.set(activeEditor?.file?.path, activeFilePath);
 
 //		console.log("Calling:", activeFilePath, " activeState:", this.trackerMap.get(activeFilePath)?.isActive) // debug
 		// normal process

@@ -2,6 +2,7 @@ import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
 import { formatTime, restoreTimeString } from "./Timer";
 import { moment, Plugin, TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
+import { resolveLinkToPath } from "./Utils/pathNormalizer";
 
 export class BulletListParser{
     //private recordType: string;
@@ -98,7 +99,7 @@ export class BulletListParser{
             if (isGroupStart) {
                 const ListData = new ExistingData();
                 if (groupData.modifiedNote) {
-                    ListData.filePath = groupData.modifiedNote;
+                    ListData.filePath = resolveLinkToPath(this.plugin.app, groupData.modifiedNote);
                 }
 
                 if (groupData.noteTitle) {
@@ -421,7 +422,7 @@ export class ListParser{
             if (isGroupStart) {
                 const ListData = new ExistingData();
                 if (groupData.modifiedNote) {
-                    ListData.filePath = groupData.modifiedNote;
+                    ListData.filePath = resolveLinkToPath(this.plugin.app, groupData.modifiedNote);
                 }
 
                 // Parse editedWords

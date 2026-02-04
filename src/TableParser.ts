@@ -2,6 +2,7 @@ import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
 import { formatTime, restoreTimeString } from "./Timer";
 import { moment, Notice, TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
+import { normalizeFilePath, normalizeObsidianLinkPath, resolveLinkToPath } from "./Utils/pathNormalizer";
 
 export class TableParser{
     //private recordType: string;
@@ -264,7 +265,7 @@ export class TableParser{
             if (varTemplate === '[[${modifiedNote}\\|${noteTitle}]]') { // Handle [[path\|title]] format
                 const match = value.match(/^\[\[([^\]]+)\\\|([^\]]+)\]\]$/);
                 if (match) {
-                    entry.filePath = match[1].replace(/\\+$/, '');
+                    entry.filePath = normalizeObsidianLinkPath(this.plugin.app, match[1]);
                     entry.fileName = match[2];
                 } else {
                     console.error('The captured value: ', value, ' could not match the regex:', "/^\[\[([^\]]+)\\\|([^\]]+)\]\]$/")
@@ -277,7 +278,7 @@ export class TableParser{
 
                 switch (varName) {
                 case 'modifiedNote':
-                    entry.filePath = value.replace(/^\[\[+|\]\]+$/g, '');
+                    entry.filePath = resolveLinkToPath(this.plugin.app, value.replace(/^\[\[+|\]\]+$/g, ''));
                     break;
                 case 'noteTitle':
                     entry.fileName = value.toString();
