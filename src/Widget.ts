@@ -51,7 +51,7 @@ export class WordflowWidgetView extends ItemView {
                                     parseInt(this.plugin.settings.colorGroupLightness), 
                                     this.plugin.settings.colorGroupSaturation
                                 );
-        this.tagColorManager = new TagColorManager(this.plugin.settings.tagColors, this.colorGenerator);
+        this.tagColorManager = new TagColorManager(this.plugin, this.plugin.settings.tagColors, this.colorGenerator);
         this.colorMap = new Map<string, string>;
     }
 
@@ -275,8 +275,10 @@ export class WordflowWidgetView extends ItemView {
         this.dataMap.forEach((data, filePath) => {
             const file = this.plugin.app.vault.getFileByPath(filePath);
             if (!file) {
-                console.warn(`⚠️ [Wordflow Tracker] File not found: ${filePath}. This file may have been renamed or moved, but the periodic note index was not updated.`);
-                new Notice(this.plugin.i18n.t('notices.fileNotFound', { filePath: filePath }));
+                this.plugin.executeOnce(`fileNotFound:${filePath}`, ()=>{
+                    console.warn(`⚠️ [Wordflow Tracker] File not found: ${filePath}. This file may have been renamed or moved, but the periodic note index was not updated.`);
+                    new Notice(this.plugin.i18n.t('notices.fileNotFound', { filePath: filePath }));
+                })
                 return; // equal to term continue in a loop, not early return
             }
             
@@ -304,8 +306,10 @@ export class WordflowWidgetView extends ItemView {
         this.dataMap.forEach((data, filePath) => {
             const file = this.plugin.app.vault.getFileByPath(filePath);
             if (!file) {
-                console.warn(`⚠️ [Wordflow Tracker] File not found: ${filePath}. This file may have been renamed or moved, but the periodic note index was not updated.`);
-                new Notice(this.plugin.i18n.t('notices.fileNotFound', { filePath: filePath }));
+                this.plugin.executeOnce(`fileNotFound:${filePath}`, ()=>{
+                    console.warn(`⚠️ [Wordflow Tracker] File not found: ${filePath}. This file may have been renamed or moved, but the periodic note index was not updated.`);
+                    new Notice(this.plugin.i18n.t('notices.fileNotFound', { filePath: filePath }));
+                })
                 return; // equal to term continue in a loop, not early return
             }
             
@@ -332,8 +336,10 @@ export class WordflowWidgetView extends ItemView {
         
         const fileToAppend = this.plugin.app.vault.getFileByPath(filePath);
         if (!fileToAppend) {
-            console.warn(`⚠️ [Wordflow Tracker] File not found: ${filePath}. This file may have been renamed or moved, but the periodic note index was not updated.`);
-            new Notice(this.plugin.i18n.t('notices.fileNotFound', { filePath: filePath }));
+            this.plugin.executeOnce(`fileNotFound:${filePath}`, ()=>{
+                console.warn(`⚠️ [Wordflow Tracker] File not found: ${filePath}. This file may have been renamed or moved, but the periodic note index was not updated.`);
+                new Notice(this.plugin.i18n.t('notices.fileNotFound', { filePath: filePath }));
+            })
             return;
         }
         

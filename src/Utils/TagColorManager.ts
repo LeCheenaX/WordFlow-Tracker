@@ -3,6 +3,7 @@
  * Handles color assignment based on file tags with HSL color blending
  */
 
+import WordflowTrackerPlugin from "src/main";
 import { UniqueColorGenerator } from "./UniqueColorGenerator";
 
 export interface TagColorConfig {
@@ -30,6 +31,7 @@ export class TagColorManager {
     private readonly maxSaturation: number = 86;
 
     constructor(
+        public plugin: WordflowTrackerPlugin,
         private tagColorConfigs: TagColorConfig[], 
         private uniqueColorGenerator: UniqueColorGenerator
     ) {
@@ -322,7 +324,10 @@ export class TagColorManager {
         dataMap.forEach((data, filePath) => {
             const file = app.vault.getFileByPath(filePath);
             if (!file) {
-                console.warn(`⚠️ TagColorManager.buildFilesWithTagsMap: File not found in : ${filePath}. This file may have been renamed or moved.`);
+                this.plugin.executeOnce(`fileNotFound:${filePath}`,()=>{
+                    console.warn(`⚠️ TagColorManager.buildFilesWithTagsMap: File not found in : ${filePath}. This file may have been renamed or moved.`);
+                })
+                
                 return; // equal to term continue in a loop, not early return
             }
             

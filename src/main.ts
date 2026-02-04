@@ -5,6 +5,7 @@ import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, Wo
 import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
 import { currentPluginVersion, changelog } from './changeLog';
 import { initI18n, SupportedLocale, I18nManager } from './i18n';
+import { executeOnceWithKey } from './Utils/executeOnce';
 import { App, Component, getAllTags, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
 
 
@@ -18,6 +19,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 	public statusBarManager: StatusBarManager;
 	public DocRecorders: DataRecorder[] = [];
 	public Widget: WordflowWidgetView | null = null;
+	public executeOnce = executeOnceWithKey();
 
 	private activeTrackers: Map<string, boolean> = new Map(); // for multiple notes editing	
     private pathToNameMap: Map<string|undefined, string> = new Map(); // 新增：反向映射用于重命名检测
