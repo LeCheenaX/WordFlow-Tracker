@@ -759,10 +759,6 @@
     background-color: var(--background-modifier-border);
 }
 
-.wordflow-widget-unconfigured-files-container::before {
-    background-color: var(--text-faint);
-}
-
 /* File rows within tag groups - reuse original styling with modifications */
 .wordflow-widget-tag-group-file-row {
     margin: 0 0 8px;
@@ -779,7 +775,7 @@
 }
 
 .wordflow-widget-tag-group-file-row .wordflow-widget-data-row-file-path {
-    flex-shrink: 0; /* Filename doesn't shrink - tags shrink first */
+    flex-shrink: 1; /* Allow filename to shrink when necessary */
     min-width: 0; /* Allow text truncation if absolutely necessary */
     overflow: hidden;
     text-overflow: ellipsis;
