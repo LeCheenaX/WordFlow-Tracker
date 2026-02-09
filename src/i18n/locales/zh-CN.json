@@ -202,7 +202,8 @@
                 "href": "https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations"
               }
             ]
-          }
+          },
+          "preview": "记录语法预览："
         },
         "insertPlace": {
           "name": "插入位置",

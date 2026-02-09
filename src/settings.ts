@@ -1,5 +1,5 @@
 import WordflowTrackerPlugin from './main';
-import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, MarkdownView, MarkdownRenderer, Component } from 'obsidian';
+import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, MarkdownView, MarkdownRenderer, Component, setIcon } from 'obsidian';
 import { DataRecorder } from './DataRecorder';
 import { moment, normalizePath } from 'obsidian';
 import { SupportedLocale, I18nManager, getI18n } from './i18n';
@@ -798,11 +798,15 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     this.toggleSortByVisibility(value !== 'metadata');
                     this.toggleMTimeVisibility(value !== 'metadata');
                     recorderInstance.loadSettings();
+                    // Update preview when record type changes
+                    const previewContainer = this.settingsContainer.querySelector('.wordflow-syntax-preview-container') as HTMLElement;
+                    if (previewContainer) {
+                        this.updateSyntaxPreview(settings, previewContainer);
+                    }
                 })
             );
 
-        makeMultilineTextSetting(
-            new Setting(container)
+        const syntaxSetting = new Setting(container)
                 .setName(this.i18n.t('settings.recorders.recordingContents.syntax.name'))
                 .setDesc(this.createMultiLineDesc('settings.recorders.recordingContents.syntax.desc'))
                 .addTextArea(text => {
@@ -813,6 +817,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                             settings.tableSyntax = value;
                             await this.plugin.saveSettings();
                             recorderInstance.loadSettings();
+                            this.updateSyntaxPreview(settings, previewContainer);
                         })
                     }
                     if (settings.recordType == 'bulletList'){
@@ -821,6 +826,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                             settings.bulletListSyntax = value;
                             await this.plugin.saveSettings();
                             recorderInstance.loadSettings();
+                            this.updateSyntaxPreview(settings, previewContainer);
                         })
                     }
                     if (settings.recordType == 'metadata'){
@@ -829,10 +835,23 @@ export class RecordersTab extends WordflowSubSettingsTab {
                             settings.metadataSyntax = value;
                             await this.plugin.saveSettings();
                             recorderInstance.loadSettings();
+                            this.updateSyntaxPreview(settings, previewContainer);
                         })
                     }				
-                })
-        );
+                });
+        
+        makeMultilineTextSetting(syntaxSetting);
+
+        // Add preview container below the syntax textarea
+        const previewContainer = container.createDiv('wordflow-syntax-preview-container');
+        previewContainer.createEl('div', { 
+            text: this.i18n.t('settings.recorders.recordingContents.syntax.preview') || 'Preview:', 
+            cls: 'wordflow-syntax-preview-label' 
+        });
+        const previewContent = previewContainer.createDiv('wordflow-syntax-preview-content');
+        
+        // Initial preview render
+        this.updateSyntaxPreview(settings, previewContainer);
 
         new Setting(container)
             .setName(this.i18n.t('settings.recorders.recordingContents.insertPlace.name'))
@@ -963,6 +982,99 @@ export class RecordersTab extends WordflowSubSettingsTab {
 			case 'metadata': this.SyntaxComponent.setValue(settings.metadataSyntax); break;
 		}
 	};
+
+	private updateSyntaxPreview(settings: any, previewContainer: HTMLElement) {
+		// Clear existing preview content
+		const previewContent = previewContainer.querySelector('.wordflow-syntax-preview-content');
+		if (!previewContent) return;
+		
+		previewContent.empty();
+		
+		// Get current syntax based on record type
+		let syntax = '';
+		switch (settings.recordType) {
+			case 'table': syntax = settings.tableSyntax; break;
+			case 'bulletList': syntax = settings.bulletListSyntax; break;
+			case 'metadata': syntax = settings.metadataSyntax; break;
+		}
+		
+		// Create sample data for preview
+		const sampleData = {
+			modifiedNote: 'Folder/Example Note.md',
+			noteTitle: 'Example Note',
+			editedTimes: '50',
+			editedWords: '1200',
+            changedWords: '800',
+            deletedWords: '200',
+            addedWords: '1000',
+            docWords: '2026',
+			readEditTime: '25 min',
+			readTime: '15 min',
+			editTime: '10 min',
+			editedPercentage: '59%',
+            statBar: '<span class="stat-bar-container" data-origin-words="1926" data-deleted-words="20" data-added-words="100"><span class="stat-bar origin" style="width: 60%"></span><span class="stat-bar deleted" style="width: 11%"></span><span class="stat-bar added" style="width: 49%"></span></span>',
+            lastModifiedTime: moment().format(settings.timeFormat),
+            comment: 'user comment that won\'t auto update',
+			totalEdits: '5',
+			totalWords: '150',
+            totalEditTime: '15 min',
+            totalReadTime: '10 min',
+			totalTime: '25 min'
+		};
+		
+		// Replace placeholders with sample data
+		let previewText = syntax;
+		Object.entries(sampleData).forEach(([key, value]) => {
+			const regex = new RegExp(`\\$\\{${key}\\}`, 'g');
+			previewText = previewText.replace(regex, value);
+		});
+		
+		// For metadata type, render as Obsidian-style properties panel
+		if (settings.recordType === 'metadata') {
+			const propertiesContainer = previewContent.createDiv({ cls: 'metadata-properties-container' });
+			
+			// Add "Properties" header
+			const header = propertiesContainer.createDiv({ cls: 'metadata-properties-heading' });
+			header.createEl('h4', { text: 'Properties' });
+			
+			// Parse and display properties
+			const lines = previewText.split('\n').filter(line => line.trim());
+			
+			lines.forEach(line => {
+				const colonIndex = line.indexOf(':');
+				if (colonIndex > 0) {
+					const propertyRow = propertiesContainer.createDiv({ cls: 'metadata-property' });
+					const key = line.substring(0, colonIndex).trim();
+					const value = line.substring(colonIndex + 1).trim();
+					
+					// Create property icon with proper alignment
+					const iconContainer = propertyRow.createSpan({ cls: 'metadata-property-icon' });
+					
+					// Determine icon based on property type
+					let iconName = 'binary'; // default for numbers
+					if (value.includes('min') || value.includes('time')) {
+						iconName = 'text';
+					}
+					setIcon(iconContainer, iconName);
+					
+					// Property key
+					propertyRow.createSpan({ text: key, cls: 'metadata-property-key' });
+					
+					// Property value
+					propertyRow.createSpan({ text: value, cls: 'metadata-property-value' });
+				}
+			});
+		} else {
+			// For table and bulletList, use MarkdownRenderer
+			MarkdownRenderer.render(
+				this.app,
+				previewText,
+				previewContent as HTMLElement,
+				'',
+				new Component()
+			);
+		}
+	}
 
 	
 	private async updateInsertPlace(settings: any): Promise<void>{
