@@ -1,8 +1,20 @@
-export const currentPluginVersion = '1.7.4';
+export const currentPluginVersion = '1.7.5';
 
 export const changelog = {
 'en': 
 `
+### 1.7.5 updates
+✨ **New Features:**
+- Preview the result of recording syntax.
+- Prompt to adapt the existing record to recording syntax after changing.Previews are also supported.
+
+🐛 **Bug Fixed:**
+- Recorders not auto update to Widget after changes.
+
+⚡️ **Enhancements:**
+- Ensure the tracker is reset after recording completes.
+- Handle the cross-day editing correctly when multiple notes are edited simultaneously. 
+
 ### 1.7.4 updates
 🔥 **Key Insight:**
 - The newly generated links will now obey the Obsidian new link format settings(one of shortest, relative path, absolute path), rather than vault absolute path.
@@ -72,6 +84,18 @@ export const changelog = {
 `,
 'zh-CN': 
 `
+### 1.7.5 更新
+✨ **新功能：**
+- 预览记录语法的结果。
+- 修改记录语法后，会提示适配现有记录，并提供预览。
+
+🐛 **错误修复：**
+- 记录器更改后不会自动更新到侧栏组件。
+
+⚡️ **性能增强：**
+- 确保记录完成后追踪器才被重置。
+- 正确处理多个笔记同时编辑时的跨日编辑情况。
+
 ### 1.7.4 更新
 🔥 **核心改进：**
 - 新生成的链接现在会遵循 Obsidian 的新链接格式设置（最短路径、相对路径或绝对路径），而不是固定使用绝对路径。
