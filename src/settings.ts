@@ -1,10 +1,11 @@
 import WordflowTrackerPlugin from './main';
-import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, MarkdownView, MarkdownRenderer, Component, setIcon } from 'obsidian';
-import { DataRecorder } from './DataRecorder';
+import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, MarkdownView, MarkdownRenderer, Component, setIcon, TFile } from 'obsidian';
+import { DataRecorder, ExistingData, MergedData } from './DataRecorder';
 import { moment, normalizePath } from 'obsidian';
 import { SupportedLocale, I18nManager, getI18n } from './i18n';
 import { updateStatusBarStyle, removeStatusBarStyle } from './StatusBarManager';
 import { TagColorConfig } from './Utils/TagColorManager';
+import { error } from 'console';
 
 // Obsidian supports only string and boolean for settings. numbers are not supported. 
 export interface WordflowRecorderConfigs {
@@ -806,6 +807,32 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 })
             );
 
+        // Store original syntax for comparison
+        let originalSyntax = '';
+        let currentSyntax = '';  // Track current (unsaved) syntax separately
+        switch (settings.recordType) {
+            case 'table': 
+                originalSyntax = settings.tableSyntax;
+                currentSyntax = settings.tableSyntax;
+                break;
+            case 'bulletList': 
+                originalSyntax = settings.bulletListSyntax;
+                currentSyntax = settings.bulletListSyntax;
+                break;
+            case 'metadata': 
+                originalSyntax = settings.metadataSyntax;
+                currentSyntax = settings.metadataSyntax;
+                break;
+        }
+        
+        // Create preview container first so it can be referenced in blur handlers
+        const previewContainer = container.createDiv('wordflow-syntax-preview-container');
+        previewContainer.createEl('div', { 
+            text: this.i18n.t('settings.recorders.recordingContents.syntax.preview'), 
+            cls: 'wordflow-syntax-preview-label' 
+        });
+        const previewContent = previewContainer.createDiv('wordflow-syntax-preview-content');
+        
         const syntaxSetting = new Setting(container)
                 .setName(this.i18n.t('settings.recorders.recordingContents.syntax.name'))
                 .setDesc(this.createMultiLineDesc('settings.recorders.recordingContents.syntax.desc'))
@@ -814,41 +841,74 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     if (settings.recordType == 'table'){
                         text.setValue(settings.tableSyntax);
                         text.onChange(async (value) => {
-                            settings.tableSyntax = value;
-                            await this.plugin.saveSettings();
-                            recorderInstance.loadSettings();
-                            this.updateSyntaxPreview(settings, previewContainer);
-                        })
+                            currentSyntax = value;
+                            // Update preview with temporary syntax
+                            this.updateSyntaxPreview(settings, previewContainer, currentSyntax);
+                        });
+                        // Save on blur with confirmation if changed
+                        text.inputEl.addEventListener('blur', async () => {
+                            await this.handleSyntaxBlur(settings, originalSyntax, currentSyntax, 'table', recorderInstance, previewContainer);
+                            // Update originalSyntax and currentSyntax based on what was actually saved
+                            if (settings.tableSyntax !== originalSyntax) {
+                                // User confirmed - update both to new syntax
+                                originalSyntax = settings.tableSyntax;
+                                currentSyntax = settings.tableSyntax;
+                            } else {
+                                // User cancelled - reset currentSyntax to original
+                                currentSyntax = originalSyntax;
+                            }
+                        });
                     }
                     if (settings.recordType == 'bulletList'){
                         text.setValue(settings.bulletListSyntax);
-                        text.onChange(async (value) => {
-                            settings.bulletListSyntax = value;
-                            await this.plugin.saveSettings();
-                            recorderInstance.loadSettings();
-                            this.updateSyntaxPreview(settings, previewContainer);
-                        })
+                        text.onChange((value) => {
+                            currentSyntax = value;
+                            // Update preview with temporary syntax
+                            this.updateSyntaxPreview(settings, previewContainer, currentSyntax);
+                        });
+                        // Save on blur with confirmation if changed
+                        text.inputEl.addEventListener('blur', async () => {
+                            await this.handleSyntaxBlur(settings, originalSyntax, currentSyntax, 'bulletList', recorderInstance, previewContainer);
+                            // Update originalSyntax and currentSyntax based on what was actually saved
+                            if (settings.bulletListSyntax !== originalSyntax) {
+                                // User confirmed - update both to new syntax
+                                originalSyntax = settings.bulletListSyntax;
+                                currentSyntax = settings.bulletListSyntax;
+                            } else {
+                                // User cancelled - reset currentSyntax to original
+                                currentSyntax = originalSyntax;
+                            }
+                        });
                     }
                     if (settings.recordType == 'metadata'){
                         text.setValue(settings.metadataSyntax);
-                        text.onChange(async (value) => {
-                            settings.metadataSyntax = value;
-                            await this.plugin.saveSettings();
-                            recorderInstance.loadSettings();
-                            this.updateSyntaxPreview(settings, previewContainer);
-                        })
-                    }				
+                        text.onChange((value) => {
+                            // CRITICAL: Do NOT modify settings.metadataSyntax here!
+                            // Store in temporary variable instead
+                            currentSyntax = value;
+                            // Update preview with temporary syntax (don't await for real-time updates)
+                            this.updateSyntaxPreview(settings, previewContainer, currentSyntax);
+                        });
+                        // Save on blur with confirmation if changed
+                        text.inputEl.addEventListener('blur', async () => {
+                            await this.handleSyntaxBlur(settings, originalSyntax, currentSyntax, 'metadata', recorderInstance, previewContainer);
+                            // Update originalSyntax and currentSyntax based on what was actually saved
+                            if (settings.metadataSyntax !== originalSyntax) {
+                                // User confirmed - update both to new syntax
+                                originalSyntax = settings.metadataSyntax;
+                                currentSyntax = settings.metadataSyntax;
+                            } else {
+                                // User cancelled - reset currentSyntax to original
+                                currentSyntax = originalSyntax;
+                            }
+                        });
+                    }		
                 });
         
         makeMultilineTextSetting(syntaxSetting);
-
-        // Add preview container below the syntax textarea
-        const previewContainer = container.createDiv('wordflow-syntax-preview-container');
-        previewContainer.createEl('div', { 
-            text: this.i18n.t('settings.recorders.recordingContents.syntax.preview') || 'Preview:', 
-            cls: 'wordflow-syntax-preview-label' 
-        });
-        const previewContent = previewContainer.createDiv('wordflow-syntax-preview-content');
+        
+        // Move preview container before syntax setting for proper display order
+        container.insertBefore(syntaxSetting.settingEl, previewContainer);
         
         // Initial preview render
         this.updateSyntaxPreview(settings, previewContainer);
@@ -974,6 +1034,54 @@ export class RecordersTab extends WordflowSubSettingsTab {
             );
     }
 
+	private async handleSyntaxBlur(settings: any, originalSyntax: string, currentSyntax: string, syntaxType: string, recorderInstance: DataRecorder, previewContainer: HTMLElement): Promise<void> {
+		// Check if syntax actually changed
+		if (originalSyntax === currentSyntax) {
+			return; // No change, nothing to do
+		}
+		
+		// Show confirmation modal with before/after comparison
+		const modal = new SyntaxChangeConfirmationModal(
+			this.app,
+			this.plugin,
+			settings,
+			recorderInstance,
+			originalSyntax,
+			currentSyntax,
+			syntaxType,
+			async (confirmed: boolean) => {
+				if (confirmed) {
+					// User confirmed, save the changes to settings object
+					switch (syntaxType) {
+						case 'table':
+							settings.tableSyntax = currentSyntax;
+							break;
+						case 'bulletList':
+							settings.bulletListSyntax = currentSyntax;
+							break;
+						case 'metadata':
+							settings.metadataSyntax = currentSyntax;
+							break;
+					}
+					
+					await this.plugin.saveSettings();
+					recorderInstance.loadSettings();
+					new Notice(this.i18n.t('notices.syntaxSaved'));
+				} else {
+					// User cancelled, revert textarea to original syntax
+					if (this.SyntaxComponent) {
+						this.SyntaxComponent.setValue(originalSyntax);
+					}
+				}
+				
+				// Update preview to show current state
+				await this.updateSyntaxPreview(settings, previewContainer);
+			}
+		);
+		
+		modal.open();
+	}
+
 	private async updateSyntax(settings: any) {
 		if (!this.SyntaxComponent) return;
 		switch (settings.recordType){
@@ -983,44 +1091,33 @@ export class RecordersTab extends WordflowSubSettingsTab {
 		}
 	};
 
-	private updateSyntaxPreview(settings: any, previewContainer: HTMLElement) {
+	private async updateSyntaxPreview(settings: any, previewContainer: HTMLElement, temporarySyntax?: string) {
 		// Clear existing preview content
-		const previewContent = previewContainer.querySelector('.wordflow-syntax-preview-content');
+		const previewContent = previewContainer.querySelector('.wordflow-syntax-preview-content') as HTMLElement;
 		if (!previewContent) return;
 		
 		previewContent.empty();
 		
 		// Get current syntax based on record type
+		// Use temporary syntax if provided (during onChange), otherwise use saved syntax
 		let syntax = '';
-		switch (settings.recordType) {
-			case 'table': syntax = settings.tableSyntax; break;
-			case 'bulletList': syntax = settings.bulletListSyntax; break;
-			case 'metadata': syntax = settings.metadataSyntax; break;
+		if (temporarySyntax) {
+			syntax = temporarySyntax;
+		} else {
+			switch (settings.recordType) {
+				case 'table': syntax = settings.tableSyntax; break;
+				case 'bulletList': syntax = settings.bulletListSyntax; break;
+				case 'metadata': syntax = settings.metadataSyntax; break;
+			}
 		}
 		
-		// Create sample data for preview
-		const sampleData = {
-			modifiedNote: 'Folder/Example Note.md',
-			noteTitle: 'Example Note',
-			editedTimes: '50',
-			editedWords: '1200',
-            changedWords: '800',
-            deletedWords: '200',
-            addedWords: '1000',
-            docWords: '2026',
-			readEditTime: '25 min',
-			readTime: '15 min',
-			editTime: '10 min',
-			editedPercentage: '59%',
-            statBar: '<span class="stat-bar-container" data-origin-words="1926" data-deleted-words="20" data-added-words="100"><span class="stat-bar origin" style="width: 60%"></span><span class="stat-bar deleted" style="width: 11%"></span><span class="stat-bar added" style="width: 49%"></span></span>',
-            lastModifiedTime: moment().format(settings.timeFormat),
-            comment: 'user comment that won\'t auto update',
-			totalEdits: '5',
-			totalWords: '150',
-            totalEditTime: '15 min',
-            totalReadTime: '10 min',
-			totalTime: '25 min'
-		};
+		// During syntax changes, only show sample data preview
+		const previewText = this.generateSamplePreview(settings, syntax);
+		this.renderPreview(settings, previewText, previewContent);
+	}
+
+	private generateSamplePreview(settings: any, syntax: string): string {
+		const sampleData = this.createSampleData(settings);
 		
 		// Replace placeholders with sample data
 		let previewText = syntax;
@@ -1029,6 +1126,35 @@ export class RecordersTab extends WordflowSubSettingsTab {
 			previewText = previewText.replace(regex, value);
 		});
 		
+		return previewText;
+	}
+
+	private createSampleData(settings: any): Record<string, string> {
+		return {
+			modifiedNote: 'Folder/Example Note.md',
+			noteTitle: 'Example Note',
+			editedTimes: '50',
+			editedWords: '1200',
+            changedWords: '800',
+            deletedWords: '200',
+            addedWords: '1000',
+			docWords: '2026',
+			readEditTime: '25 min',
+			readTime: '15 min',
+			editTime: '10 min',
+			editedPercentage: '59%',
+            statBar: '<span class="stat-bar-container" data-origin-words="1926" data-deleted-words="20" data-added-words="100"><span class="stat-bar origin" style="width: 60%"></span><span class="stat-bar deleted" style="width: 11%"></span><span class="stat-bar added" style="width: 49%"></span></span>',
+			lastModifiedTime: moment().format(settings.timeFormat),
+			comment: 'user comment that won\'t auto update',
+			totalEdits: '5',
+			totalWords: '150',
+			totalEditTime: '15 min',
+			totalReadTime: '10 min',
+			totalTime: '25 min'
+		};
+	}
+
+	private renderPreview(settings: any, previewText: string, previewContent: HTMLElement): void {
 		// For metadata type, render as Obsidian-style properties panel
 		if (settings.recordType === 'metadata') {
 			const propertiesContainer = previewContent.createDiv({ cls: 'metadata-properties-container' });
@@ -1066,8 +1192,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
 			});
 		} else {
 			// For table and bulletList, use MarkdownRenderer
-			MarkdownRenderer.render(
-				this.app,
+			// Use renderMarkdown (async) instead of render to properly render tables
+			MarkdownRenderer.renderMarkdown(
 				previewText,
 				previewContent as HTMLElement,
 				'',
@@ -1877,4 +2003,171 @@ class RecorderRenameModal extends Modal { // this should be updated to text inpu
         const { contentEl } = this;
         contentEl.empty();
     }
+}
+
+
+class SyntaxChangeConfirmationModal extends Modal {
+	private oldContent: string = '';
+	private newContent: string = '';
+	private hasExistingData: boolean = false;
+
+	constructor(
+		app: App,
+		private plugin: WordflowTrackerPlugin,
+		private settings: any,
+		private recorder: DataRecorder,
+		private oldSyntax: string,
+		private newSyntax: string,
+		private syntaxType: string,
+		private onComplete: (confirmed: boolean) => Promise<void>
+	) {
+		super(app);
+	}
+
+	async onOpen() {
+		const i18n = getI18n();
+		const { contentEl } = this;
+		this.containerEl.addClass("wordflow-syntax-change-modal");
+
+		contentEl.createEl("h3", {
+			text: i18n.t('modals.syntaxChange.title')
+		});
+
+		contentEl.createEl("p", {
+			text: i18n.t('modals.syntaxChange.message')
+		});
+
+		// Try to fetch existing data and generate before/after preview
+		await this.generatePreviews();
+
+		if (this.hasExistingData) {
+			// Show before section
+            contentEl.createEl("p", { text: i18n.t('modals.syntaxChange.confirmMerge') });
+			contentEl.createEl("p", { text: i18n.t('modals.syntaxChange.before') });
+			const beforeContainer = contentEl.createDiv('wordflow-syntax-preview-content');
+			await MarkdownRenderer.renderMarkdown(this.oldContent, beforeContainer, '', new Component());
+
+			// Show after section
+			contentEl.createEl("p", { text: i18n.t('modals.syntaxChange.after') });
+			const afterContainer = contentEl.createDiv('wordflow-syntax-preview-content');
+			await MarkdownRenderer.renderMarkdown(this.newContent, afterContainer, '', new Component());
+		}
+
+		const buttonContainer = contentEl.createDiv("syntax-change-buttons");
+
+		new ButtonComponent(buttonContainer)
+			.setButtonText(i18n.t('modals.syntaxChange.cancel'))
+			.setClass("mod-neutral")
+			.onClick(async () => {
+				await this.onComplete(false);
+				this.close();
+			});
+
+		new ButtonComponent(buttonContainer)
+			.setButtonText(i18n.t('modals.syntaxChange.confirm'))
+			.setClass("mod-warning")
+			.onClick(async () => {
+				if (this.hasExistingData) {
+					await this.updatePeriodicNote();
+				}
+				await this.onComplete(true);
+				this.close();
+			});
+	}
+
+	private async generatePreviews(): Promise<void> {
+		try {
+			// Get current periodic note
+			const recordNoteName = moment().format(this.recorder.periodicNoteFormat);
+			const recordNoteFolder = this.recorder.enableDynamicFolder 
+				? moment().format(this.recorder.periodicNoteFolder) 
+				: this.recorder.periodicNoteFolder;
+			const recordNotePath = recordNoteFolder 
+				? normalizePath(`${recordNoteFolder}/${recordNoteName}.md`)
+				: `${recordNoteName}.md`;
+			
+			const recordNote = this.app.vault.getFileByPath(recordNotePath);
+			if (!recordNote) {
+				this.hasExistingData = false;
+				return;
+			}
+
+			// Extract existing data with OLD syntax
+			const existingContent = await this.recorder.getParser().getContent(recordNote);
+			if (!existingContent) {
+				this.hasExistingData = false;
+				return;
+			}
+
+			const existingDataMap = await this.recorder.getParser().extractData(recordNote);
+			if (existingDataMap.size === 0) {
+				this.hasExistingData = false;
+				return;
+			}
+
+			this.hasExistingData = true;
+
+			// Generate old content (with old syntax)
+			const oldMergedData: MergedData[] = [];
+			existingDataMap.forEach((existingData) => {
+				oldMergedData.push(new MergedData(undefined, existingData));
+			});
+			this.oldContent = this.recorder.getParser().generateContent(oldMergedData);
+
+			// Generate new content (with new syntax)
+			this.recorder.getParser().updateSyntax(this.newSyntax);
+			const newMergedData: MergedData[] = [];
+			existingDataMap.forEach((existingData) => {
+				newMergedData.push(new MergedData(undefined, existingData));
+			});
+			this.newContent = this.recorder.getParser().generateContent(newMergedData);
+
+			// Restore old syntax
+			this.recorder.getParser().updateSyntax(this.oldSyntax);
+		} catch (error) {
+			console.error('Failed to generate previews:', error);
+			this.hasExistingData = false;
+		}
+	}
+
+	private async updatePeriodicNote(): Promise<void> {
+		try {
+			// Get current periodic note
+            
+            const recordNoteName = moment().format(this.recorder.periodicNoteFormat);
+            const recordNoteFolder = (this.recorder.enableDynamicFolder) ? moment().format(this.recorder.periodicNoteFolder) : this.recorder.periodicNoteFolder;
+            const isRootFolder: boolean = (recordNoteFolder.trim() == '') || (recordNoteFolder.trim() == '/');
+            let recordNotePath = (isRootFolder) ? '' : recordNoteFolder + '/';
+            recordNotePath += recordNoteName + '.md';
+            let recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
+			if (!recordNote) throw error;
+
+			// Replace old content with new content
+			switch (this.recorder.insertPlace) {
+                case 'custom':
+                    await this.recorder.updateNoteToCustom(recordNote, this.newContent);
+                    break;
+                case 'yaml':
+                    // For YAML, use MetaDataParser to replace old properties with new ones
+                    const parser = this.recorder.getParser();
+                    if ('replaceYAMLProperties' in parser) {
+                        await parser.replaceYAMLProperties(recordNote, this.oldContent, this.newContent);
+                    }
+                    break
+                default: // default insert to bottom if not found
+                    await this.recorder.updateNoteToBottom(recordNote, this.newContent);
+                    break;
+            }
+
+			new Notice(getI18n().t('notices.syntaxUpdatedToNote'));
+		} catch (error) {
+			console.error('Failed to update periodic note:', error);
+			new Notice(getI18n().t('notices.syntaxUpdatedToNoteFailed'), 0);
+		}
+	}
+
+	onClose() {
+		const { contentEl } = this;
+		contentEl.empty();
+	}
 }

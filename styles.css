@@ -1069,6 +1069,28 @@
     margin-top: 1rem;
 }
 
+/* ============================== */
+/*  Syntax Change Confirmation Modal  */
+/* ============================== */
+
+.wordflow-syntax-change-modal .modal {
+    width: 60vw;
+    max-width: 1200px;
+    min-width: 800px;
+}
+
+.wordflow-syntax-change-modal .syntax-change-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.wordflow-syntax-change-modal .syntax-change-buttons button {
+    flex: 1;
+    max-width: 48%;
+}
+
 /* ============================= */
 /*  Customized setting displays  */
 /* ============================= */
@@ -1120,4 +1142,3 @@
     background-color: #00CC66;
     border-radius: 0 6px 6px 0;
 }
-

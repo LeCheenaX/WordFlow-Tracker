@@ -421,6 +421,9 @@
     "recorderRemoveFailed": "❌ Failed to remove recorder at index {index}!",
     "settingsReset": "✅ Settings are reset to default!",
     "settingsResetFailed": "❌ Could not reset settings! Check console!",
+    "syntaxSaved": "✅ Syntax saved successfully",
+    "syntaxUpdatedToNote": "✅ Periodic note updated with new syntax",
+    "syntaxUpdatedToNoteFailed": "❌ Failed to update periodic note with new syntax",
     "tableSyntaxWarning": "⚠️ The table syntax may lack \"\\\" in the alias.",
     "templateNotFound": "Error: Template file not found in wordflow recorders!"
   },
@@ -455,6 +458,15 @@
     "renameRecorder": {
       "title": "Rename recorder",
       "save": "Save",
+      "cancel": "Cancel"
+    },
+    "syntaxChange": {
+      "title": "⚠️ Syntax Change Confirmation",
+      "message": "The recording syntax has changed. Do you want to apply this change to your existing periodic note?",
+      "confirmMerge": "Additionally, the existing record will be altered after confirmation. ",
+      "before": "Existing record (in previous syntax):",
+      "after": "After changing (in current syntax):",
+      "confirm": "Apply Changes",
       "cancel": "Cancel"
     }
   },

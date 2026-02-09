@@ -362,7 +362,7 @@ export class DataRecorder {
         }
     }
 
-    private async updateNoteToBottom(recordNote: TFile, newContent: string): Promise<void> {
+    public async updateNoteToBottom(recordNote: TFile, newContent: string): Promise<void> {
         const noteContent = await this.plugin.app.vault.read(recordNote);
         const lines = noteContent.split('\n');
 
@@ -382,7 +382,7 @@ export class DataRecorder {
         }
     }
 
-    private async updateNoteToCustom(recordNote: TFile, newContent: string): Promise<void> {
+    public async updateNoteToCustom(recordNote: TFile, newContent: string): Promise<void> {
         const noteContent = await this.plugin.app.vault.read(recordNote);
 
         if ((this.insertPlaceStart == '') || (this.insertPlaceEnd == '')) {
@@ -409,7 +409,7 @@ export class DataRecorder {
         }
     }
 
-    private async updateNoteToYAML(recordNote: TFile, newContent: string): Promise<void> {
+    public async updateNoteToYAML(recordNote: TFile, newContent: string): Promise<void> {
         // Parse the newContent to extract key-value pairs
         const contentLines = newContent.trim().split('\n');
         const updates: Record<string, any> = {};
@@ -583,6 +583,12 @@ export class MergedData {
             this.editTime = existingData.editTime;
             this.readTime = existingData.readTime;
             this.readEditTime = existingData.readEditTime;
+            // Copy metadata fields from existingData
+            this.totalWords = existingData.totalWords;
+            this.totalEdits = existingData.totalEdits;
+            this.totalEditTime = existingData.totalEditTime;
+            this.totalReadTime = existingData.totalReadTime;
+            this.totalTime = existingData.totalTime;
             this.isNew = false;
         } else {
             this.filePath = '|M|E|T|A|D|A|T|A|';
@@ -637,10 +643,10 @@ class EditedPercentage {
             const elem = elemMatch[0];
 
             // extract Data, ignoring uppercase
-            this.percentage = parseInt(elem.match(/data-percentage="([^"]*)"/i)?.[1] || "0");
-            this.originalWords = parseInt(elem.match(/data-originWords="([^"]*)"/i)?.[1] || "0");
-            this.deletedWords = parseInt(elem.match(/data-delWords="([^"]*)"/i)?.[1] || "0");
-            this.addedWords = parseInt(elem.match(/data-addWords="([^"]*)"/i)?.[1] || "0");
+            this.percentage = parseInt(elem.match(/data-percentage="([^"]*)"/i)?.[1] ?? "NaN") || 0;
+            this.originalWords = parseInt(elem.match(/data-originWords="([^"]*)"/i)?.[1] ?? "NaN") || 0;
+            this.deletedWords = parseInt(elem.match(/data-delWords="([^"]*)"/i)?.[1] ?? "NaN") || 0;
+            this.addedWords = parseInt(elem.match(/data-addWords="([^"]*)"/i)?.[1] ?? "NaN") || 0;
 
             return true;
         }
@@ -691,9 +697,9 @@ class StatBar {
         if (elemMatch) {
             const elem = elemMatch[0];
 
-            this.originalWords = parseInt(elem.match(/data-origin-words="([^"]*)"/i)?.[1] || "0");
-            this.deletedWords = parseInt(elem.match(/data-deleted-words="([^"]*)"/i)?.[1] || "0");
-            this.addedWords = parseInt(elem.match(/data-added-words="([^"]*)"/i)?.[1] || "0");
+            this.originalWords = parseInt(elem.match(/data-origin-words="([^"]*)"/i)?.[1] ?? "NaN") || 0;
+            this.deletedWords = parseInt(elem.match(/data-deleted-words="([^"]*)"/i)?.[1] ?? "NaN") || 0;
+            this.addedWords = parseInt(elem.match(/data-added-words="([^"]*)"/i)?.[1] ?? "NaN") || 0;
 
             const originWidthMatch = statBar.match(/class="stat-bar origin"[^>]*?width:\s*(\d+)%/i);
             const deletedWidthMatch = statBar.match(/class="stat-bar deleted"[^>]*?width:\s*(\d+)%/i);

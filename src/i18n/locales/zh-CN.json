@@ -421,6 +421,9 @@
     "recorderRemoveFailed": "❌ 删除索引 {index} 处的记录器失败！",
     "settingsReset": "✅ 设置已重置为默认值！",
     "settingsResetFailed": "❌ 无法重置设置！请检查控制台！",
+    "syntaxSaved": "✅ 语法保存成功",
+    "syntaxUpdatedToNote": "✅ 周期笔记已使用新语法更新",
+    "syntaxUpdatedToNoteFailed": "❌ 使用新语法更新周期笔记失败",
     "tableSyntaxWarning": "⚠️ 表格语法可能缺少别名中的 \"\\\"。",
     "templateNotFound": "错误：在 wordflow 记录器中未找到模板文件！"
   },
@@ -455,6 +458,15 @@
     "renameRecorder": {
       "title": "重命名记录器",
       "save": "保存",
+      "cancel": "取消"
+    },
+    "syntaxChange": {
+      "title": "⚠️ 语法变更确认",
+      "message": "记录语法已更改。是否要将此更改应用到新的记录？",
+      "confirmMerge": "确认之后还将更改现有记录。",
+      "before": "原记录（旧语法）：",
+      "after": "更改后（新语法）：",
+      "confirm": "应用更改",
       "cancel": "取消"
     }
   },

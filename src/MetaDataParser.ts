@@ -30,6 +30,12 @@ export class MetaDataParser{
         return this.syntax;
     }
 
+    // Temporarily update syntax without calling loadSettings
+    public updateSyntax(newSyntax: string): void {
+        this.syntax = newSyntax;
+        this.patterns = []; // Clear patterns so they'll be regenerated
+    }
+
     public async extractData(recordNote: TFile): Promise< Map<string, ExistingData>> {
         const existingDataMap: Map<string, ExistingData> = new Map();
 
@@ -157,6 +163,55 @@ export class MetaDataParser{
         }
         
         return output;
+    }
+
+    /**
+     * Replace old YAML properties with new ones in the frontmatter
+     * This is used when syntax changes to ensure old properties are removed
+     */
+    public async replaceYAMLProperties(recordNote: TFile, oldContent: string, newContent: string): Promise<void> {
+        // Parse old content to get property names to remove
+        const oldLines = oldContent.trim().split('\n');
+        const oldKeys = new Set<string>();
+        for (const line of oldLines) {
+            const colonIndex = line.indexOf(':');
+            if (colonIndex > 0) {
+                const key = line.substring(0, colonIndex).trim();
+                oldKeys.add(key);
+            }
+        }
+
+        // Parse new content to get new properties
+        const newLines = newContent.trim().split('\n');
+        const newProperties: Record<string, any> = {};
+        for (const line of newLines) {
+            const colonIndex = line.indexOf(':');
+            if (colonIndex > 0) {
+                const key = line.substring(0, colonIndex).trim();
+                const value = line.substring(colonIndex + 1).trim();
+
+                // Try to parse as number first, then keep as string
+                const numValue = parseInt(value);
+                if (!isNaN(numValue) && numValue.toString() === value) {
+                    newProperties[key] = numValue;
+                } else {
+                    newProperties[key] = value;
+                }
+            }
+        }
+
+        // Use Obsidian's API to update frontmatter
+        await this.plugin.app.fileManager.processFrontMatter(recordNote, (frontmatter) => {
+            // Remove old properties
+            for (const oldKey of oldKeys) {
+                delete frontmatter[oldKey];
+            }
+            
+            // Add new properties
+            for (const [key, value] of Object.entries(newProperties)) {
+                frontmatter[key] = value;
+            }
+        });
     }
 
     private setPatterns(){
