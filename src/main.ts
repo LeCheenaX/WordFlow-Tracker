@@ -6,6 +6,7 @@ import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
 import { currentPluginVersion, changelog } from './changeLog';
 import { initI18n, SupportedLocale, I18nManager } from './i18n';
 import { executeOnceWithKey } from './Utils/executeOnce';
+import { throttleLeadingEdge } from './Utils/throttle';
 import { App, Component, getAllTags, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
 
 
@@ -22,13 +23,12 @@ export default class WordflowTrackerPlugin extends Plugin {
 	public executeOnce = executeOnceWithKey();
 
 	private isModeSwitch: boolean = false;
-	private lastActiveFile: { path: string; mode: 'source' | 'preview'} = {path: '', mode: 'preview'};
+	private lastActiveFile: { path: string; mode: 'source' | 'preview' } = { path: '', mode: 'preview' };
 
 	async onload() {
 		await this.loadSettings();
 
-		if (this.settings.currentVersion !== currentPluginVersion)
-		{
+		if (this.settings.currentVersion !== currentPluginVersion) {
 			const currentLocale = this.settings.locale || 'en';
 			const localizedChangelog = changelog[currentLocale as keyof typeof changelog] || changelog['en'];
 			new ChangelogModal(this.app, this, currentPluginVersion, localizedChangelog).open();
@@ -45,23 +45,23 @@ export default class WordflowTrackerPlugin extends Plugin {
 		);
 
 		const defaultRecorder = new DataRecorder(this, this.trackerMap);
-        this.DocRecorders.push(defaultRecorder);
+		this.DocRecorders.push(defaultRecorder);
 		for (const recorderConfig of this.settings.Recorders) {
-            const recorder = new DataRecorder(this, this.trackerMap, recorderConfig);
-            this.DocRecorders.push(recorder);
-        }
+			const recorder = new DataRecorder(this, this.trackerMap, recorderConfig);
+			this.DocRecorders.push(recorder);
+		}
 
 
-		const debouncedHandler = this.instantDebounce(this.activeDocHandler.bind(this), 50);
+		const debouncedHandler = throttleLeadingEdge(this.activeDocHandler.bind(this), 50);
 		// Warning: don't change the delay, we need 50ms delay to trigger activeDocHandler twice when opening new files. 
-//		if (DEBUG) console.log("Following files were opened:", this.potentialEditors.map(f => f)); 
+		//if (DEBUG) console.log("Following files were opened:", this.potentialEditors.map(f => f)); 
 
 		// This creates an icon in the left ribbon.
 		if (this.settings.showRecordRibbonIcon) {
-			const ribbonIconEl = this.addRibbonIcon('file-clock', 'Record wordflows from edited notes', async(evt: MouseEvent) => {
+			const ribbonIconEl = this.addRibbonIcon('file-clock', 'Record wordflows from edited notes', async (evt: MouseEvent) => {
 				// Called when the user clicks the icon.
 				new Notice(this.i18n.t('notices.recordSuccess'), 3000);
-				
+
 				for (const DocRecorder of this.DocRecorders) {
 					await DocRecorder.record();
 				}
@@ -81,7 +81,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				this.createWidgetView(); // Use createWidgetView instead of activateView
 			};
 		});
-		
+
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		this.statusBarManager = new StatusBarManager(this);
 
@@ -91,12 +91,12 @@ export default class WordflowTrackerPlugin extends Plugin {
 			name: this.i18n.t('commands.recordWordflows.name'),
 			callback: async () => {
 				for (const DocRecorder of this.DocRecorders) {
-                    await DocRecorder.record();
-                }
+					await DocRecorder.record();
+				}
 				new Notice(this.i18n.t('notices.recordSuccess'), 3000);
 			}
 		});
-		
+
 		this.addCommand({
 			id: 'reveal-and-refresh-wordflow-tracker-widget',
 			name: this.i18n.t('commands.revealWidget.name'),
@@ -148,154 +148,151 @@ export default class WordflowTrackerPlugin extends Plugin {
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new WordflowSettingTab(this.app, this));
 
-		/* Registered Events */	
+		/* Registered Events */
 		// Update tracking files after rename events
-        this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
-            if (file instanceof TFile) {
-                // Update trackerMap - move tracker from old path to new path
-                const tracker = this.trackerMap.get(oldPath);
-                if (tracker) {
-                    tracker.filePath = file.path;
-                    tracker.fileName = file.basename; // Update fileName as well
-                    this.trackerMap.set(file.path, tracker);
-                    this.trackerMap.delete(oldPath);
-                }
-            }
-        }));
+		this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
+			if (file instanceof TFile) {
+				// Update trackerMap - move tracker from old path to new path
+				const tracker = this.trackerMap.get(oldPath);
+				if (tracker) {
+					tracker.filePath = file.path;
+					tracker.fileName = file.basename; // Update fileName as well
+					this.trackerMap.set(file.path, tracker);
+					this.trackerMap.delete(oldPath);
+				}
+			}
+		}));
 
 		this.registerEvent(this.app.workspace.on('active-leaf-change', () => {
 			debouncedHandler();
-        }));
+		}));
 
 		this.registerEvent(this.app.workspace.on('layout-change', () => {
 			if (this.lastActiveFile.path == this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path &&
-				this.lastActiveFile.mode !== this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode()){
+				this.lastActiveFile.mode !== this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode()) {
 				this.isModeSwitch = true;
 				debouncedHandler();
 			} else {
 				debouncedHandler();
 			}
-//console.log('last active: ', this.lastActiveFile);
-//console.log('isModeSwitch: ', this.isModeSwitch)
-        }));
+			//console.log('last active: ', this.lastActiveFile);
+			//console.log('isModeSwitch: ', this.isModeSwitch)
+		}));
 
-		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode())
-			{
-				this.lastActiveFile = {
-					path: this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path?? this.lastActiveFile.path,
-					mode: this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode()?? this.lastActiveFile.mode
-				};
-				debouncedHandler();
-			}
+		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode()) {
+			this.lastActiveFile = {
+				path: this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path ?? this.lastActiveFile.path,
+				mode: this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() ?? this.lastActiveFile.mode
+			};
+			debouncedHandler();
+		}
 
 
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
-		
+
 		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-//console.log('click', evt);
+			//console.log('click', evt);
 			//test to switch between editor
-			if(this.app.workspace.activeEditor?.file)
-			{
-//console.log(this.app.workspace.activeEditor.file?.path)
+			if (this.app.workspace.activeEditor?.file) {
+				//console.log(this.app.workspace.activeEditor.file?.path)
 				const docTracker = this.trackerMap.get(this.app.workspace.activeEditor.file?.path)
 				if (docTracker && docTracker.isActive) // to-do: change later
 					if (docTracker.prevViewMode == 'source' && docTracker.editTimer?.debouncedStarter) docTracker.editTimer?.debouncedStarter();
 					else if (docTracker.prevViewMode == 'preview' && docTracker.readTimer?.debouncedStarter) docTracker.readTimer?.debouncedStarter();
 			}
 		});
-		
+
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		if (this.settings.autoRecordInterval && Number(this.settings.autoRecordInterval) != 0){
+		if (this.settings.autoRecordInterval && Number(this.settings.autoRecordInterval) != 0) {
 			this.registerInterval(window.setInterval(async () => {
 				for (const DocRecorder of this.DocRecorders) {
-                    await DocRecorder.record();
-                }
+					await DocRecorder.record();
+				}
 				new Notice(this.i18n.t('notices.autoRecordSuccess'), 3000);
 			}, Number(this.settings.autoRecordInterval) * 1000));
 		}
 
 		// Update widget colors when file metadata (tags) changes
-        this.registerEvent(this.app.metadataCache.on('changed', (file) => {
-            if (file instanceof TFile && this.Widget) {
-                // Update only tagged colors since metadata changed
-                this.Widget.updateTaggedColorMap();
-                this.Widget.updateData();
-            }
-        }));
+		this.registerEvent(this.app.metadataCache.on('changed', (file) => {
+			if (file instanceof TFile && this.Widget) {
+				// Update only tagged colors since metadata changed
+				this.Widget.updateTaggedColorMap();
+				this.Widget.updateData();
+			}
+		}));
 	}
-	
+
 
 	// add private functions since here
-	private async activeDocHandler(){	
+	private async activeDocHandler() {
 		await sleep(
-			(this.app.workspace.getActiveViewOfType(MarkdownView))? 0 : 200 // set delay for newly opened file to fetch the actual view, while maintaining the ability to fast switch files			
+			(this.app.workspace.getActiveViewOfType(MarkdownView)) ? 0 : 200 // set delay for newly opened file to fetch the actual view, while maintaining the ability to fast switch files			
 		)
-		
-//		console.log("trackerMap",this.trackerMap);
+
+		//		console.log("trackerMap",this.trackerMap);
 		//console.log("editor:", this.app.workspace.getActiveViewOfType(MarkdownView)); // bug & warning: get null when open new files, get old files if no delay
-		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source" || this.Widget?.onFocusMode ){
-//			if (DEBUG) new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
+		if (this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() == "source" || this.Widget?.onFocusMode) {
+			//if (DEBUG) new Notice(`Now Edit Mode!`); // should call content in if (activeEditor)
 			// done | need to improve when plugin starts, the cursor must at active document
 			const activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
-if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.basename) // debug
+			if (DEBUG) console.log("Editing file:", this.app.workspace.activeEditor?.file?.basename) // debug
 
 			this.activateTracker(activeEditor); // activate without delay
 
 			await sleep(100); // set delay for getting the correct opened files for deactivating and deleting Map
-			this.lastActiveFile.path = activeEditor?.file?.path?? this.lastActiveFile.path;
-			this.lastActiveFile.mode = activeEditor?.getMode()?? this.lastActiveFile.mode;
+			this.lastActiveFile.path = activeEditor?.file?.path ?? this.lastActiveFile.path;
+			this.lastActiveFile.mode = activeEditor?.getMode() ?? this.lastActiveFile.mode;
 			const potentialEditors = await this.getAllOpenedFilesWithMode();
 			//console.log(potentialEditors) // debug
 			this.trackerMap.forEach(async (tracker, filePath) => {
-				if(!potentialEditors.has(filePath)) {
+				if (!potentialEditors.has(filePath)) {
 					tracker.deactivate();
 					await this.recordTracker(tracker);
 					tracker.destroyTimers();
 					this.trackerMap.delete(filePath);
-//console.log("Closed file:", filePath, " is recorded.")
+					//console.log("Closed file:", filePath, " is recorded.")
 				}
-				else{
+				else {
 					if (filePath !== this.lastActiveFile.path) tracker.deactivate(); // 1.5.0: no longer deactivate tracker when clicked elsewhere
 				}
 			});
 			this.isModeSwitch = false;
 		}
-		else{
+		else {
 			// after leaf-change or mode-switch, current active leaf is not in 'source' mode
 			await sleep(100); // set delay for getting the correct opened files for deactivating and deleting Map
-			this.lastActiveFile.path = this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path?? this.lastActiveFile.path;
-			this.lastActiveFile.mode = this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode()?? this.lastActiveFile.mode;
+			this.lastActiveFile.path = this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path ?? this.lastActiveFile.path;
+			this.lastActiveFile.mode = this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() ?? this.lastActiveFile.mode;
 			const potentialEditors = await this.getAllOpenedFilesWithMode();
 			//console.log(potentialEditors) // debug
-			this.trackerMap.forEach(async (tracker, filePath)=>{
+			this.trackerMap.forEach(async (tracker, filePath) => {
 				tracker.deactivate();
 				if (!potentialEditors.has(filePath)) {
 					await this.recordTracker(tracker);
 					tracker.destroyTimers();
 					this.trackerMap.delete(filePath);
-//console.log("Closed file:", filePath, " is recorded.")
+					//console.log("Closed file:", filePath, " is recorded.")
 				}
 				//else if (this.isModeSwitch && potentialEditors.get(filePath) == 'preview'){// now preview mode}
-				else if (this.isModeSwitch && filePath == this.lastActiveFile.path){ 
-//console.log ('Try recording', filePath, ' current mode: ', potentialEditors.get(filePath));
+				else if (this.isModeSwitch && filePath == this.lastActiveFile.path) {
+					//console.log ('Try recording', filePath, ' current mode: ', potentialEditors.get(filePath));
 					await this.recordTracker(tracker);
 				}
-				else if (this.isModeSwitch && this.settings.noteToRecord == 'all' && potentialEditors.get(filePath) == 'source'){ 
-//console.log ('This note is under edit mode after switching mode: ', filePath);	
-					await this.recordTracker(tracker);		
-				} 
+				else if (this.isModeSwitch && this.settings.noteToRecord == 'all' && potentialEditors.get(filePath) == 'source') {
+					//console.log ('This note is under edit mode after switching mode: ', filePath);	
+					await this.recordTracker(tracker);
+				}
 				// else console.log('Layout changed but no mode switched');*/
 			});
 			this.isModeSwitch = false;
 			this.statusBarManager.clear(); // clear status bar
-//if (DEBUG) console.log(`activeDocHandler: status bar cleared`);
+			//if (DEBUG) console.log(`activeDocHandler: status bar cleared`);
 		}
 	};
 	private async recordTracker(tracker: DocTracker): Promise<void> {
-		if (tracker.meetThreshold())
-		{
+		if (tracker.meetThreshold()) {
 			for (const DocRecorder of this.DocRecorders) {
 				await DocRecorder.record(tracker);
 			}
@@ -306,17 +303,17 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 
 
 	// create or activate DocTracker
-	private async activateTracker(activeEditor: MarkdownView | null) {	
-		if (!activeEditor?.file?.path) return; 
-		let activeFilePath = activeEditor?.file?.path; 
+	private async activateTracker(activeEditor: MarkdownView | null) {
+		if (!activeEditor?.file?.path) return;
+		let activeFilePath = activeEditor?.file?.path;
 
-//		console.log("Calling:", activeFilePath, " activeState:", this.trackerMap.get(activeFilePath)?.isActive) // debug
+		//		console.log("Calling:", activeFilePath, " activeState:", this.trackerMap.get(activeFilePath)?.isActive) // debug
 		// normal process
 
-		if (!this.trackerMap.has(activeFilePath)){
-		// track active File
-//if (DEBUG) console.log("Main.activateTracker: trackerMap",this.trackerMap);
-//if (DEBUG) console.log('Main.activateTracker: file not found in trackerMap');
+		if (!this.trackerMap.has(activeFilePath)) {
+			// track active File
+			//if (DEBUG) console.log("Main.activateTracker: trackerMap",this.trackerMap);
+			//if (DEBUG) console.log('Main.activateTracker: file not found in trackerMap');
 			if (this.isIgnoredFile(activeEditor.file)) {
 				this.statusBarManager.clear();
 				this.Widget?.updateCurrentData();
@@ -324,15 +321,15 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 			}; // restrict tracker creation, not affecting existing created trackers in case of frequently adjustments on the plugin settings. 
 			const newTracker = new DocTracker(activeFilePath, activeEditor, this);
 			this.trackerMap.set(activeFilePath, newTracker);
-		} 
-		else{
+		}
+		else {
 			const activeFileViewMode = activeEditor?.getMode();
 			this.trackerMap.get(activeFilePath)?.activate(activeFileViewMode);
 		}
 		//await sleep(50); // for the process completion
 	};
 
-	async activateView(){
+	async activateView() {
 		const existingLeafView = this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET);
 		if (existingLeafView.length == 0) {
 			await this.app.workspace.getRightLeaf(false)?.setViewState({
@@ -347,7 +344,7 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 		this.Widget?.updateAll();
 	}
 
-	async createWidgetView(){
+	async createWidgetView() {
 		const existingLeafView = this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET);
 		if (existingLeafView.length == 0) {
 			await this.app.workspace.getRightLeaf(false)?.setViewState({
@@ -357,81 +354,81 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 		}
 		this.Widget?.updateAll();
 	}
-/*
-		if(DEBUG){	
-			const trackerEntries:any = [];
-			this.trackerMap.forEach((tracker, fileName) => {
-				trackerEntries.push({
-					fileName: fileName,
-					trackerActiveState: tracker.isActive,
-					lastDone: tracker.lastDone
+	/*
+			if(DEBUG){	
+				const trackerEntries:any = [];
+				this.trackerMap.forEach((tracker, fileName) => {
+					trackerEntries.push({
+						fileName: fileName,
+						trackerActiveState: tracker.isActive,
+						lastDone: tracker.lastDone
+					});
 				});
-			});
-			console.log("Current trackerMap:", trackerEntries);
-			const potentialEditors2 = this.getAllOpenedFiles();
-			console.log("Following files were opened:", potentialEditors2.map(f => f)); 
+				console.log("Current trackerMap:", trackerEntries);
+				const potentialEditors2 = this.getAllOpenedFiles();
+				console.log("Following files were opened:", potentialEditors2.map(f => f)); 
+			}
+	*/
+
+
+	private isIgnoredFile(file: TFile): boolean {
+		// --- Folder Check ---
+		const isIgnoredFolder = this.settings.ignoredFolders.some(folder =>
+			file.path.startsWith(folder + '/')
+		);
+
+		if (isIgnoredFolder) return true;
+
+		// --- Tag Check ---
+		const cache = this.app.metadataCache.getFileCache(file);
+
+		if (cache) {
+			const fileTags = getAllTags(cache);
+
+			if (fileTags) {
+				const hasIgnoredTag = this.settings.ignoredFileTags.some(ignoredTag =>
+					fileTags.includes(ignoredTag)
+				);
+				if (hasIgnoredTag) return true;
+			}
 		}
-*/
-
-
-	private isIgnoredFile(file: TFile): boolean { 
-        // --- Folder Check ---
-        const isIgnoredFolder = this.settings.ignoredFolders.some(folder => 
-            file.path.startsWith(folder + '/')
-        );
-        
-        if (isIgnoredFolder) return true;
-
-        // --- Tag Check ---
-        const cache = this.app.metadataCache.getFileCache(file);
-        
-        if (cache) {
-            const fileTags = getAllTags(cache);
-            
-            if (fileTags) {
-                const hasIgnoredTag = this.settings.ignoredFileTags.some(ignoredTag => 
-                    fileTags.includes(ignoredTag)
-                );
-                if (hasIgnoredTag) return true;
-            }
-        }
-//console.log(file.path, " is not ignored.")
-        return false;
-    }
+		//console.log(file.path, " is not ignored.")
+		return false;
+	}
 
 	// get markdown files (with path) that are in edit mode from all leaves
 	private async getAllOpenedFilesWithMode(): Promise<Map<string, 'source' | 'preview' | unknown>> {
 		const fileMap = new Map<string, 'source' | 'preview' | unknown>();
-		
+
 		const addFileWithMode = (filePath: string, mode: 'source' | 'preview' | unknown) => {
 			//if (fileMap.get(filePath) == 'source') return; // does not allow source overwrite preview mode, because item.state.state.mode may only return source and never return preview
 			fileMap.set(filePath, mode);
 			//console.log(filePath, ' changed to ', mode);
 		};
-		
+
 		const processLeafHistory = (historyItems: any) => {
 			if (!historyItems?.length) return;
-			
+
 			for (const item of historyItems) {
 				try {
 					if (!item?.state?.state?.mode) continue;
 					if (item.state.state.mode !== 'source' && item.state.state.mode !== 'preview') continue;
-					
+
 					addFileWithMode(
 						item.state.state.file,
 						item.state.state.mode
-					); 
+					);
 				} catch (e) {
 					console.warn("Error processing history item", e);
 				}
 			}
 		};
-		
+
 		try {
 			//if (DEBUG) console.log("MD Leaves:", MDLeaves);
 			const MDLeaves = this.app.workspace.getLeavesOfType('markdown');
 			if (MDLeaves.length === 0) return fileMap;
-			
+
 			for (const leaf of MDLeaves) {
 				//console.log(leaf);
 				//if (leaf.view?.getMode() == 'source'){ // Warning: file must have been opened to have function 'getMode()', this influences only start up loading files in saved workspace 
@@ -442,7 +439,7 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 						leaf.view.getState().mode
 					); // get file path of TFile, or get file path directly, and then add to array | which to get depends on if the files have been opened or not.
 				}
-				
+
 				// 处理历史记录（避免滥用 @ts-expect-error）
 				if ('history' in leaf) {
 					const history = (leaf as any).history;
@@ -455,71 +452,43 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 			const currentActiveLeaf = this.app.workspace.getActiveViewOfType(MarkdownView);
 			if (currentActiveLeaf) {
 				addFileWithMode(
-					(currentActiveLeaf?.getState() as any)?.file, 
+					(currentActiveLeaf?.getState() as any)?.file,
 					currentActiveLeaf?.getState()?.mode
 				);
 			}
 		} catch (e) {
 			console.error("Error in getAllOpenedFilesWithMode", e);
 		}
-		
+
 		return fileMap;
 	}
 
 	//private debouncedDeactivator = debounce()
 
-	private instantDebounce<T extends (...args: any[]) => void>(
-		fn: T,
-		wait: number
-	  ): (...args: Parameters<T>) => void {
-		let lastCallTime = 0; 
-		let timeoutId: number | null = null; 
-	  
-		return function (this: any, ...args: Parameters<T>) {
-		  const now = Date.now();
-		  
-		  // run immediately and ban running until timeout exceeded
-		  if (now - lastCallTime >= wait) {
-			// 清理可能存在的残留计时器
-			if (timeoutId !== null) {
-			  clearTimeout(timeoutId);
-			  timeoutId = null;
-			}
 
-			// run immediately
-			fn.apply(this, args);
-			lastCallTime = now;
-			
-			// set timeout
-			timeoutId = window.setTimeout(() => {
-			  timeoutId = null;
-			}, wait);
-		  }
-		};
-	  }
 
 	onunload() {
 		// 首先清理 Widget view
 		this.app.workspace.detachLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET);
-		
+
 		removeStatusBarStyle();
-		this.trackerMap.forEach((tracker, filePath)=>{
+		this.trackerMap.forEach((tracker, filePath) => {
 			this.recordTracker(tracker);
 			tracker.deactivate();
 			tracker.destroyTimers();
 		})
-    	this.trackerMap.clear();
+		this.trackerMap.clear();
 	}
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-		
+
 		// Migrate old hue-based tag colors to new color-based format
 		// Can be deleted in future versions
 		if (this.settings.tagColors?.some((config: any) => config.hue !== undefined)) {
 			await this.migrateTagColorsFromHueToColor();
 		}
-		
+
 		// Initialize i18n with the loaded locale setting
 		this.i18n = initI18n(this.settings.locale);
 		updateStatusBarStyle(this.settings);
@@ -538,18 +507,18 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 
 		this.settings.tagColors.forEach((config: any) => {
 			// Check if config has old hue field but no color field
-			if (config.hue !== undefined && 
-				typeof config.hue === 'number' && 
-				!isNaN(config.hue) && 
+			if (config.hue !== undefined &&
+				typeof config.hue === 'number' &&
+				!isNaN(config.hue) &&
 				(!config.color || typeof config.color !== 'string')) {
-				
+
 				// Convert hue to hex color using standard S=70, L=50
 				const hsl = { h: config.hue, s: 70, l: 50 };
 				config.color = this.hslToHex(hsl);
-				
+
 				// Remove old hue field
 				delete config.hue;
-				
+
 				needsSave = true;
 			}
 		});
@@ -572,9 +541,9 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 		const hue2rgb = (p: number, q: number, t: number): number => {
 			if (t < 0) t += 1;
 			if (t > 1) t -= 1;
-			if (t < 1/6) return p + (q - p) * 6 * t;
-			if (t < 1/2) return q;
-			if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+			if (t < 1 / 6) return p + (q - p) * 6 * t;
+			if (t < 1 / 2) return q;
+			if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
 			return p;
 		};
 
@@ -585,9 +554,9 @@ if (DEBUG) console.log("Editing file:",this.app.workspace.activeEditor?.file?.ba
 		} else {
 			const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
 			const p = 2 * l - q;
-			r = hue2rgb(p, q, h + 1/3);
+			r = hue2rgb(p, q, h + 1 / 3);
 			g = hue2rgb(p, q, h);
-			b = hue2rgb(p, q, h - 1/3);
+			b = hue2rgb(p, q, h - 1 / 3);
 		}
 
 		const toHex = (c: number): string => {
@@ -641,13 +610,13 @@ export class WordflowSettingTab extends PluginSettingTab {
 			tab.textContent = tabName;
 			tab.dataset.tab = tabName;
 			this.tabElements[tabName] = tab;
-			
+
 			// add separation between tabs
 			if (index < tabNames.length - 1) {
 				const separator = tabContainer.createDiv('wordflow-setting-tab-separator');
 				separator.textContent = '|';
 			}
-			
+
 			tab.addEventListener('click', (evt: MouseEvent) => {
 				this.switchTab(tabName);
 			});
@@ -659,9 +628,9 @@ export class WordflowSettingTab extends PluginSettingTab {
 	private switchTab(tabName: string) {
 		// deactivate all
 		Object.values(this.tabElements).forEach(t => t.removeClass('active'));
-		
+
 		this.tabElements[tabName].addClass('active');
-		
+
 		this.contentContainer.empty();
 		this.tabs[tabName].display();
 	}
@@ -670,33 +639,33 @@ export class WordflowSettingTab extends PluginSettingTab {
 class ChangelogModal extends Modal {
 	private renderComponent: Component;
 	private i18n: I18nManager;
-    constructor(app: App, plugin: WordflowTrackerPlugin, private version: string, private content: string) {
-        super(app);
+	constructor(app: App, plugin: WordflowTrackerPlugin, private version: string, private content: string) {
+		super(app);
 		this.renderComponent = new Component();
 		this.i18n = plugin.i18n;
-    }
+	}
 
-    onOpen() {
-        const { contentEl } = this;
-        contentEl.empty();
-        
-        contentEl.createEl('h2', { text: this.i18n.t('changelog.title',{version: this.version})});
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.empty();
+
+		contentEl.createEl('h2', { text: this.i18n.t('changelog.title', { version: this.version }) });
 		const displayContent = this.i18n.t('changelog.reference') + '\n' + this.content;
-        
-        const container = contentEl.createDiv('wordflow-changelog-container');
-        
-        // render markdown contents
-        MarkdownRenderer.render(
-            this.app,
-            displayContent,
-            container,
-            '',
-            this.renderComponent
-        );
-    }
 
-    onClose() {
-        const { contentEl } = this;
-        contentEl.empty();
-    }
+		const container = contentEl.createDiv('wordflow-changelog-container');
+
+		// render markdown contents
+		MarkdownRenderer.render(
+			this.app,
+			displayContent,
+			container,
+			'',
+			this.renderComponent
+		);
+	}
+
+	onClose() {
+		const { contentEl } = this;
+		contentEl.empty();
+	}
 }
