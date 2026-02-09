@@ -1193,7 +1193,7 @@ export class WordflowWidgetView extends ItemView {
         if (this.plugin.settings.switchToFieldOnFocus !== 'disabled') {
             const newField = this.plugin.settings.switchToFieldOnFocus;
             if (this.getFieldOptions().indexOf(newField) == -1) {
-                new Notice(this.plugin.i18n.t('notices.noAvailableField'), 3000);
+                new Notice(this.plugin.i18n.t('notices.fieldSwitchUnavailable'), 3000);
                 return;
             }
             this.fieldDropdown.setValue(newField);

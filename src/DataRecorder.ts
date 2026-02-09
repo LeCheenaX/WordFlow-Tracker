@@ -106,13 +106,13 @@ export class DataRecorder {
         if (this.newDataMap.size == 0) return;
         let trackedTime: number | undefined = this.newDataMap.values().next().value?.trackerResetTime;
         if (moment(trackedTime).dayOfYear() !== moment(Date.now()).dayOfYear()) {
-            new Notice(this.plugin.i18n.t('notices.crossDayRecords'), 3000);
+            new Notice(this.plugin.i18n.t('notices.crossDayRecordsDetected'), 3000);
         }
         //console.log("trackerResetTime: ", moment(trackedTime).dayOfYear())
         // Get the target note file
         const recordNote = await this.getOrCreateRecordNote(trackedTime);
         if (!recordNote) {
-            new Notice(this.plugin.i18n.t('notices.recordNoteFailed'), 0);
+            new Notice(this.plugin.i18n.t('notices.recordNoteGetFailed'), 0);
             console.error("⚠️ Failed to get or create record note");
             await this.backUpData();
             return;
@@ -403,7 +403,7 @@ export class DataRecorder {
                 return data.replace(regex, `$1\n${newContent}\n$3`);
             });
         } else {
-            new Notice(this.plugin.i18n.t('notices.updateNoteError', { notePath: recordNote.path }), 0);
+            new Notice(this.plugin.i18n.t('notices.noteUpdateFailed', { notePath: recordNote.path }), 0);
             console.error(`⚠️ ERROR: The given pattern "${this.insertPlaceStart} ... ${this.insertPlaceEnd}" is not found in ${recordNote.path}!`);
             await this.backUpData();
         }

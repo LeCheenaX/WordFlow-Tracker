@@ -284,7 +284,7 @@ export class TableParser{
                     entry.fileName = match[2];
                 } else {
                     console.error('The captured value: ', value, ' could not match the regex:', "/^\[\[([^\]]+)\\\|([^\]]+)\]\]$/")
-                    new Notice(this.plugin.i18n.t('notices.aliasNotMatched'), 0)
+                    new Notice(this.plugin.i18n.t('notices.aliasMatchFailed'), 0)
                     throw new Error ('❌Var template with note alias is not matched!\nConsider checking if table syntax contains "\\|" in the first coloumn, or if table in periodic note is mixed with notes with alias and notes without alias')
                 }
             } else {

@@ -207,7 +207,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		if (this.settings.autoRecordInterval && Number(this.settings.autoRecordInterval) != 0) {
 			this.registerInterval(window.setInterval(async () => {
 				await this.recorderManager.record();
-				new Notice(this.i18n.t('notices.autoRecordSuccess'), 3000);
+				new Notice(this.i18n.t('notices.recordAutoSuccess'), 3000);
 			}, Number(this.settings.autoRecordInterval) * 1000));
 		}
 
