@@ -420,7 +420,8 @@
     "recordTypeUndefined": "❌Record type is not defined in this recorder!",
     "focusPaused": "Focusing is paused because of idling.",
     "languageChanged": "Plugin language has been changed.",
-    "fileNotFound": "⚠️ {filePath} may have been renamed or moved, but the periodic note index was not updated."
+    "fileNotFound": "⚠️ {filePath} may have been renamed or moved, but the periodic note index was not updated.",
+    "recorderRemoveFailed": "❌ Failed to remove recorder at index {index}!"
   },
   "widget": {
     "title": "Wordflow Tracker",

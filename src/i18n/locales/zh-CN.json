@@ -420,7 +420,8 @@
     "recordTypeUndefined": "❌ 此记录器中未定义记录类型！",
     "focusPaused": "由于空闲太久，专注已暂停。",
     "languageChanged": "插件语言已更改。",
-    "fileNotFound": "⚠️ 该文件 {filePath} 可能已被重命名或移动，但周期笔记中的文件索引未被更新。"
+    "fileNotFound": "⚠️ 该文件 {filePath} 可能已被重命名或移动，但周期笔记中的文件索引未被更新。",
+    "recorderRemoveFailed": "❌ 删除索引 {index} 处的记录器失败！"
   },
   "widget": {
     "title": "Wordflow Tracker",

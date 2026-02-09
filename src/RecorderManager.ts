@@ -16,12 +16,17 @@ export class RecorderManager {
         this.recorders.push(recorder);
     }
 
-    public getRecorders(): DataRecorder[] {
-        return this.recorders;
+    public removeRecorder(index: number) {
+        if (index >= 0 && index < this.recorders.length) {
+            this.recorders.splice(index, 1);
+        } else {
+            console.error(`RecorderManager.removeRecorder: Invalid index ${index}. Valid range: 0-${this.recorders.length - 1}`);
+            new Notice(this.plugin.i18n.t('notices.recorderRemoveFailed', { index }), 3000);
+        }
     }
 
-    public clearRecorders() {
-        this.recorders.length = 0;
+    public getRecorders(): DataRecorder[] {
+        return this.recorders;
     }
 
     public async record(tracker?: DocTracker): Promise<void> {

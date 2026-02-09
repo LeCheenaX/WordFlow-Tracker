@@ -452,7 +452,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         
         // Create a new recorder instance
         const recorder = new DataRecorder(this.plugin, this.plugin.trackerMap, newRecorder);
-        this.plugin.DocRecorders.push(recorder);
+        this.plugin.recorderManager.addRecorder(recorder);
         
         // Switch to the new recorder tab
         this.setActiveRecorder(this.plugin.settings.Recorders.length);
@@ -488,16 +488,17 @@ export class RecordersTab extends WordflowSubSettingsTab {
             async () => {
                 // Remove recorder config
                 this.plugin.settings.Recorders.splice(index, 1);
-                await this.plugin.saveSettings();
+                
 
                 // Remove recorder instance
-                this.plugin.DocRecorders.splice(index + 1, 1);
+                this.plugin.recorderManager.removeRecorder(index + 1);
 
                 // Reset active tab if needed
                 if (this.activeRecorderIndex > this.plugin.settings.Recorders.length) {
                     this.activeRecorderIndex = 0;
                 }
-
+                
+                await this.plugin.saveSettings();
                 this.display();
             }
         );
@@ -510,15 +511,16 @@ export class RecordersTab extends WordflowSubSettingsTab {
         // Get the correct settings object based on the active index
         let settings: any;
         let recorderInstance: DataRecorder;
+        const recorders = this.plugin.recorderManager.getRecorders();
         
         if (index === 0) {
             // Default recorder uses main settings
             settings = this.plugin.settings;
-            recorderInstance = this.plugin.DocRecorders[0];
+            recorderInstance = recorders[0];
         } else {
             // Additional recorders use their own config
             settings = this.plugin.settings.Recorders[index - 1];
-            recorderInstance = this.plugin.DocRecorders[index];
+            recorderInstance = recorders[index];
         }
         
         // Display all settings using the selected configuration

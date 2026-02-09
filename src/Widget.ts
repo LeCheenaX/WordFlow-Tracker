@@ -120,9 +120,7 @@ export class WordflowWidgetView extends ItemView {
                 this.onFocusMode = false;
                 this.updateButtons_Quit();
             }
-            for (const DocRecorder of this.plugin.DocRecorders) {
-                await DocRecorder.record();
-            }
+            await this.plugin.recorderManager.record();
             new Notice(this.plugin.i18n.t('notices.recordSuccess'), 3000);
         });
 
@@ -381,9 +379,10 @@ export class WordflowWidgetView extends ItemView {
     private initRecorderDropdown() {
         this.recorderDropdown.selectEl.empty();
         let availableRecorders = 0;
+        const recorders = this.plugin.recorderManager.getRecorders();
 
-        for (let index = 0; index < this.plugin.DocRecorders.length; ++index){
-            if (this.plugin.DocRecorders[index].getParser() instanceof MetaDataParser) continue;
+        for (let index = 0; index < recorders.length; ++index){
+            if (recorders[index].getParser() instanceof MetaDataParser) continue;
             let recorderName: string;
             if (index !== 0) {
                 recorderName = this.plugin.settings.Recorders[index-1].name;
@@ -403,12 +402,12 @@ export class WordflowWidgetView extends ItemView {
         // Set initial selected recorder and its display name
         if (!this.selectedRecorder) {
             const defaultIndex = 0;
-            this.selectedRecorder = this.plugin.DocRecorders[defaultIndex];
+            this.selectedRecorder = recorders[defaultIndex];
             this.recorderDropdown.setValue(defaultIndex.toString());
         }
 
         this.recorderDropdown.onChange(async (value) => {
-            this.selectedRecorder = this.plugin.DocRecorders[parseInt(value)];
+            this.selectedRecorder = recorders[parseInt(value)];
             await this.updateAll(); // Redraw the entire widget when recorder changes
             this.recorderDropdown.setValue(value); // put after draw to render correct selection
         });
