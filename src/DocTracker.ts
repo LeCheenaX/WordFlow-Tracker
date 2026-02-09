@@ -1,13 +1,13 @@
 import { wordsCounter } from "./Utils/stats";
 import { conditionalSleep } from "./Utils/conditionalSleep";
-import Timer,  { formatTime } from "./Timer";
+import Timer, { formatTime } from "./Timer";
 import WordflowTrackerPlugin from "./main";
 import { debounce, Editor, EventRef, MarkdownView, MarkdownViewModeType, moment, Notice } from "obsidian";
 import { historyField } from "@codemirror/commands";
 
 const DEBUG = false as const;
 
-export class DocTracker{
+export class DocTracker {
     public lastDone: number = 0;
     public lastUndone: number = 0;
     public editedTimes: number = 0;
@@ -24,7 +24,7 @@ export class DocTracker{
     public fileName: string = 'unknown';
     public editTime: number = 0;
     public readTime: number = 0;
-    
+
     public editTimer: Timer | null = null;
     public readTimer: Timer | null = null;
     public prevViewMode: MarkdownViewModeType;
@@ -34,55 +34,55 @@ export class DocTracker{
     private deleteWordsCt: Function
 
     constructor(
-        public filePath: string,      
-        private activeEditor: MarkdownView | null,    
+        public filePath: string,
+        private activeEditor: MarkdownView | null,
         private plugin: WordflowTrackerPlugin,
     ) {
         this.initialize();
     }
 
-    public updateStatusBarTracker(){
+    public updateStatusBarTracker() {
         this.plugin.statusBarManager.updateFromTracker(this);
     }
 
-    public async activate(activeFileViewMode: MarkdownViewModeType | undefined){
-        if(!this.plugin.app.workspace.getActiveViewOfType(MarkdownView) || !activeFileViewMode) { // to-do: may delete the first check as it may be unnecessary
-if(DEBUG) console.log("DocTracker.activate: No active editor!");
+    public async activate(activeFileViewMode: MarkdownViewModeType | undefined) {
+        if (!this.plugin.app.workspace.getActiveViewOfType(MarkdownView) || !activeFileViewMode) { // to-do: may delete the first check as it may be unnecessary
+            if (DEBUG) console.log("DocTracker.activate: No active editor!");
             return;
         }
 
-        if(this.isActive && activeFileViewMode == this.prevViewMode) return; // do nothing
-        else if(activeFileViewMode == 'source' ) { // cases: 1. from inactive to source, 2. from source to source, 3. from inactive to source when focused, 4. from inactive to preview when focused, 5. from source to preview when focused, 6. from preview to source when focused 7. from soure to source when focused 8. from preview to preview when focused,  
+        if (this.isActive && activeFileViewMode == this.prevViewMode) return; // do nothing
+        else if (activeFileViewMode == 'source') { // cases: 1. from inactive to source, 2. from source to source, 3. from inactive to source when focused, 4. from inactive to preview when focused, 5. from source to preview when focused, 6. from preview to source when focused 7. from soure to source when focused 8. from preview to preview when focused,  
             this.deactivate();
             this.trackEditing();
-        } else if(this.plugin.Widget?.onFocusMode && activeFileViewMode == 'preview') {
+        } else if (this.plugin.Widget?.onFocusMode && activeFileViewMode == 'preview') {
             this.deactivate();
             this.trackReading();
         }
-        
+
         this.isActive = true;
         this.prevViewMode = activeFileViewMode;
         this.updateStatusBarTracker();
         this.plugin.Widget?.updateCurrentData();
     }
 
-    public release(){       
+    public release() {
         if (this.debouncedTracker)
-            this.debouncedTracker.run(); 
-if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);    
+            this.debouncedTracker.run();
+        if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);
         this.editTimer?.pause();
         this.readTimer?.pause();
-    }; 
+    };
 
-    public async countWordsFullScan(){ 
+    public async countWordsFullScan() {
         if (!this.activeEditor?.file || this.activeEditor.file.path !== this.filePath) {
-// console.warn(`Tracker for ${this.filePath} misattached to another note for switching too quickly! The issues are fixed but recommend not to record immediately after note-switching.`);
+            // console.warn(`Tracker for ${this.filePath} misattached to another note for switching too quickly! The issues are fixed but recommend not to record immediately after note-switching.`);
             this.countWordsByChanges(); // no editor attached to this tracker, using the conservative method
             return;
         }
 
         const totalWordsCt = wordsCounter();
-        
+
         //@ts-expect-error
         if (this.activeEditor?.editor?.cm) {
             //@ts-expect-error
@@ -93,12 +93,12 @@ if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);
         }
     }
 
-    public countWordsByChanges(){ 
+    public countWordsByChanges() {
         this.docWords = this.originalWords + this.changedWords;
     }
 
     public meetThreshold(): boolean {
-        switch(this.plugin.settings.noteThreshold) {
+        switch (this.plugin.settings.noteThreshold) {
             case 't':
                 return this.editTime >= 60000;
             case 'ent':
@@ -112,7 +112,7 @@ if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);
         }
     }
 
-    public deactivate(){
+    public deactivate() {
         if (this.editorListener) {
             this.plugin.app.workspace.offref(this.editorListener);
             this.editorListener = null;
@@ -120,13 +120,13 @@ if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);
         if (this.isActive) {
             this.release();
             this.isActive = false; // ensure that this will only run once
-if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"); // debug
-        }       
+            if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath, " inactive!"); // debug
+        }
         this.debouncedTracker = null; // dereference the debouncer
     }
 
-    public async resetEdit(){
-//console.log('DocTracker.resetEdit: called')
+    public async resetEdit() {
+        //console.log('DocTracker.resetEdit: called')
         await sleep(1000); // for multiple recorders to record before cleared.
         this.editedTimes = 0;
         this.editedWords = 0;
@@ -140,7 +140,7 @@ if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"
         this.trackerResetTime = Date.now();
     }
 
-    public destroyTimers(){
+    public destroyTimers() {
         if (this.editTimer) this.editTimer.destroy();
         if (this.readTimer) this.readTimer.destroy();
         this.editTimer = null;
@@ -148,70 +148,70 @@ if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"
     }
 
     // Warning: Do not use! This will destroy even the editor of Obsidian! Let Obsidian decide when to destroy!
-/*
-    public destroy(){
-        this.deactivate();        
-        this.activeEditor = null;
-        this.plugin.trackerMap.delete(this.filePath); 
-        // prevent more than one calls
-        this.destroy = () => {
-            throw new Error('DocTracker instance already destroyed');
-        };
-    }
-*/
+    /*
+        public destroy(){
+            this.deactivate();        
+            this.activeEditor = null;
+            this.plugin.trackerMap.delete(this.filePath); 
+            // prevent more than one calls
+            this.destroy = () => {
+                throw new Error('DocTracker instance already destroyed');
+            };
+        }
+    */
 
-    private async trackEditing(): Promise<void>{
+    private async trackEditing(): Promise<void> {
         this.editTimer?.start();
-        this.activeEditor = this.plugin.app.workspace.getActiveViewOfType(MarkdownView); 
+        this.activeEditor = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
         //if (DEBUG) console.log("DocTracker.activate: editor:", this.activeEditor)
-//console.log("DocTracker.trackEditing: ", this.filePath)
+        //console.log("DocTracker.trackEditing: ", this.filePath)
         await sleep(20); // Warning: cm will be delayed for 3-5 ms to be bound to the updated editor.
         // @ts-expect-error
         const history = this.activeEditor?.editor.cm.state.field(historyField); // reference will be destroyed after initialization
 
-        this.lastDone = (history.done.length>1)? history.done.length: 1;
+        this.lastDone = (history.done.length > 1) ? history.done.length : 1;
         this.lastUndone = history.undone.length;
         //@ts-expect-error
         this.docLength = this.activeEditor?.editor.cm.state.doc.length;
 
         // 创建独立防抖实例
         this.debouncedTracker = debounce(this.trackChanges.bind(this), 1000, true); // Modified from official value 500 ms to 1000 ms, for execution delay. Modified from 1000 to 800 to test. 
-        
+
         // 绑定编辑器事件
         this.editorListener = this.plugin.app.workspace.on('editor-change', (editor: Editor, view: MarkdownView) => {
-            if (this.debouncedTracker != null) 
+            if (this.debouncedTracker != null)
                 this.debouncedTracker();
-//console.log('DocTracker.activate: listener registered')
-            if (this.editTimer?.debouncedStarter != null) 
+            //console.log('DocTracker.activate: listener registered')
+            if (this.editTimer?.debouncedStarter != null)
                 this.editTimer?.debouncedStarter();
         });
     }
 
-    private async trackReading(){
+    private async trackReading() {
         this.readTimer?.start();
-//console.log("DocTracker.trackReading: ", this.filePath)
+        //console.log("DocTracker.trackReading: ", this.filePath)
     }
 
     private async initialize() {
         this.lastModifiedTime = Number(this.plugin.app.vault.getFileByPath(this.filePath)?.stat.mtime);
         this.fileName = this.plugin.app.vault.getFileByPath(this.filePath)?.basename ?? 'unknown';
         this.addWordsCt = wordsCounter();
-        this.deleteWordsCt = wordsCounter();  
-        this.editTimer = new Timer(this.plugin, this, 'source');     
-        this.readTimer = new Timer(this.plugin, this, 'preview');  
+        this.deleteWordsCt = wordsCounter();
+        this.editTimer = new Timer(this.plugin, this, 'source');
+        this.readTimer = new Timer(this.plugin, this, 'preview');
         this.trackerResetTime = Date.now();
-//        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.filePath}`); 
+        //        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.filePath}`); 
         await this.activate(this.activeEditor?.getMode());
         await sleep(100) // for loading data
         this.countWordsFullScan();
         this.originalWords = this.docWords;
-        
+
         // Use conditional sleep: 100ms minimum, 900ms maximum, with resource readiness checks
         await conditionalSleep(100, 900,
             () => !!(this.fileName && this.fileName !== 'unknown'),  // File metadata ready
             () => !!(this.activeEditor && this.activeEditor.file?.path === this.filePath),  // Editor attached correctly
         );
-        
+
         this.updateStatusBarTracker();
         this.plugin.Widget?.updateCurrentData();
     }
@@ -221,9 +221,7 @@ if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"
 
         if (moment(this.trackerResetTime).dayOfYear() !== moment(Date.now()).dayOfYear()) {
             await (async () => {
-                for (const DocRecorder of this.plugin.DocRecorders) {
-                    await DocRecorder.record();
-                }
+                await this.plugin.recorderManager.record();
             })();
         }
         //if (DEBUG) console.log("DocTracker.trackChanges: tracking history changes of ", this.activeEditor?.file?.path);
@@ -249,146 +247,145 @@ if (DEBUG) console.log("DocTracker.deactivate: Set ", this.filePath," inactive!"
         const history = this.activeEditor?.editor.cm.state.field(historyField); // changed on 1.3.0, add delay to avoid error, rather than disable the error prompting
         // done on 1.0.1 | abandon false positive errors prompting
 
-//console.log('historyField:', this.activeEditor?.editor.cm.state.field(historyField))
-        
+        //console.log('historyField:', this.activeEditor?.editor.cm.state.field(historyField))
+
         const currentDone = history.done.length;
         const currentUndone = history.undone.length;
-        
+
         // 计算变化差异（原核心逻辑）
         const doneDiff: number = currentDone - this.lastDone;
         const undoneDiff: number = currentUndone - this.lastUndone; // warn: may be reset to 0 when undo and do sth. 
-        const historyCleared: number = ((currentDone + undoneDiff) < this.lastDone)?(this.lastDone - 100 - undoneDiff):0; // cannot use <= lastDone	because of a debounce bug	
-/*
-        if(DEBUG){
-            //@ts-expect-error
-            let doc = this.activeEditor.editor.cm.state.sliceDoc(0); // return string
-            // @ts-expect-error
-		    let docLength = this.activeEditor.editor.cm.state.doc.length;
-            console.log("DocTracker.trackChanges: 捕获操作:", {				
-                done: currentDone,
-                undone: currentUndone,
-                lastDone: this.lastDone,
-                lastUndone: this.lastUndone,
-                doneDiff: doneDiff,
-                undoneDiff: undoneDiff,
-                docLength: docLength,
-                doc: doc,
-                lastModifiedTime: this.lastModifiedTime,
-                lastEditedWords: this.editedWords,
-                lastEditedTimes: this.editedTimes
-            });
-            console.log("DocTracker.trackChanges: CurrentHistory:", history);	
-
-            if (historyCleared){ 
-				console.log("DocTracker.trackChanges: Detected ", historyCleared, " cleared history events!");
-			}       
-        }
-*/
+        const historyCleared: number = ((currentDone + undoneDiff) < this.lastDone) ? (this.lastDone - 100 - undoneDiff) : 0; // cannot use <= lastDone	because of a debounce bug	
+        /*
+                if(DEBUG){
+                    //@ts-expect-error
+                    let doc = this.activeEditor.editor.cm.state.sliceDoc(0); // return string
+                    // @ts-expect-error
+                    let docLength = this.activeEditor.editor.cm.state.doc.length;
+                    console.log("DocTracker.trackChanges: 捕获操作:", {				
+                        done: currentDone,
+                        undone: currentUndone,
+                        lastDone: this.lastDone,
+                        lastUndone: this.lastUndone,
+                        doneDiff: doneDiff,
+                        undoneDiff: undoneDiff,
+                        docLength: docLength,
+                        doc: doc,
+                        lastModifiedTime: this.lastModifiedTime,
+                        lastEditedWords: this.editedWords,
+                        lastEditedTimes: this.editedTimes
+                    });
+                    console.log("DocTracker.trackChanges: CurrentHistory:", history);	
+        
+                    if (historyCleared){ 
+                        console.log("DocTracker.trackChanges: Detected ", historyCleared, " cleared history events!");
+                    }       
+                }
+        */
 
         // done | need to exclude the case where initial history done state has blank value but length is 1
         // done | need to ensure that toA will not change before printing, as a long changes may be joining into one done event. This requires to check if no inputting and if yes pause 0.5 second.
         // only done events need to consider separated inputs that may not be caught by the debouncer function
-        if ((doneDiff + historyCleared > 0) && currentDone > 1 ){
-            for ( let i=(doneDiff+historyCleared); i>0; i--){ 
-                history.done[currentDone-i].changes.iterChanges((fromA:Number, toA:Number, fromB:Number, toB:Number, inserted: string | Text ) => { // inserted is Text in cm, string|Text in Obsidian
+        if ((doneDiff + historyCleared > 0) && currentDone > 1) {
+            for (let i = (doneDiff + historyCleared); i > 0; i--) {
+                history.done[currentDone - i].changes.iterChanges((fromA: Number, toA: Number, fromB: Number, toB: Number, inserted: string | Text) => { // inserted is Text in cm, string|Text in Obsidian
                     //@ts-expect-error
-                    const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA,toA); 
+                    const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA, toA);
                     inserted = inserted.toString();
                     // @ts-expect-error
-                    const prevChA = (fromA == 0)? ' ': this.activeEditor.editor.cm.state.sliceDoc(fromA-1,fromA);
-                    
+                    const prevChA = (fromA == 0) ? ' ' : this.activeEditor.editor.cm.state.sliceDoc(fromA - 1, fromA);
+
                     // only the added texts in history done field need to fix toA, as Obsidian will separate some bahaviors for inputting, causing the subseqChA not accurate. 
                     let fixedToA = toA;
-                    let nextIndex: number = currentDone-i+1;
-                    while (nextIndex <= currentDone-1)
-                    {
-                        history.done[nextIndex].changes.iterChanges((nFromA:Number, nToA:Number, nFromB:Number, nToB:Number, nInserted: string | Text )=>{
-                            if (fixedToA= nFromA){
+                    let nextIndex: number = currentDone - i + 1;
+                    while (nextIndex <= currentDone - 1) {
+                        history.done[nextIndex].changes.iterChanges((nFromA: Number, nToA: Number, nFromB: Number, nToB: Number, nInserted: string | Text) => {
+                            if (fixedToA = nFromA) {
                                 fixedToA = nToA;
                             }
                         })
-                        
+
                         nextIndex++;
                     }
 
                     // @ts-expect-error
-                    const subseqChA = (fixedToA == this.activeEditor.editor.cm.state.doc.length)? ' ': this.activeEditor.editor.cm.state.sliceDoc(fixedToA,fixedToA+1);
-/*// @ts-expect-error
-if (fixedToA != toA) console.log("Fixed toA from ", (toA == this.activeEditor.editor.cm.state.doc.length-1)? ' ': this.activeEditor.editor.cm.state.sliceDoc(toA,toA+1), " to ", subseqChA);
-*/
+                    const subseqChA = (fixedToA == this.activeEditor.editor.cm.state.doc.length) ? ' ' : this.activeEditor.editor.cm.state.sliceDoc(fixedToA, fixedToA + 1);
+                    /*// @ts-expect-error
+                    if (fixedToA != toA) console.log("Fixed toA from ", (toA == this.activeEditor.editor.cm.state.doc.length-1)? ' ': this.activeEditor.editor.cm.state.sliceDoc(toA,toA+1), " to ", subseqChA);
+                    */
                     // @ts-expect-error
-                    const prevChB = (fromB == 0)? ' ': this.activeEditor.editor.cm.state.sliceDoc(fromB-1,fromB);
+                    const prevChB = (fromB == 0) ? ' ' : this.activeEditor.editor.cm.state.sliceDoc(fromB - 1, fromB);
                     // @ts-expect-error
-                    const subseqChB = (toB == this.activeEditor.editor.cm.state.doc.length-1)? ' ': this.activeEditor.editor.cm.state.sliceDoc(toB,toB+1);
+                    const subseqChB = (toB == this.activeEditor.editor.cm.state.doc.length - 1) ? ' ' : this.activeEditor.editor.cm.state.sliceDoc(toB, toB + 1);
 
                     const addedWords = this.addWordsCt(theOther, prevChA, subseqChA);
                     const deletedWords = this.deleteWordsCt(inserted, prevChB, subseqChB);
-//console.log('Do added:', addedWords, '\nDo deleted:', deletedWords, 'total:', (addedWords + deletedWords))
-if (DEBUG){
-    console.log(`Do adding texts: "${theOther}" from ${fromA} to ${toA} in current document, \ndo deleting texts: "${inserted}" from ${fromB} to ${toB} in current document.`);
-    console.log("prevChA: ", prevChA, "subseqChA: ", subseqChA);
-}
+                    //console.log('Do added:', addedWords, '\nDo deleted:', deletedWords, 'total:', (addedWords + deletedWords))
+                    if (DEBUG) {
+                        console.log(`Do adding texts: "${theOther}" from ${fromA} to ${toA} in current document, \ndo deleting texts: "${inserted}" from ${fromB} to ${toB} in current document.`);
+                        console.log("prevChA: ", prevChA, "subseqChA: ", subseqChA);
+                    }
 
                     this.editedWords += (addedWords + deletedWords);
                     this.addedWords += addedWords;
                     this.deletedWords += deletedWords;
-                    this.changedWords += (addedWords - deletedWords);                    
+                    this.changedWords += (addedWords - deletedWords);
                 });
             }
 
             this.editedTimes += (doneDiff + historyCleared); // multiple changes should be counted only one time.
-        }	
+        }
 
         // done | when fixed doneDiff is detected minus, and done events is added to undone.
-        if ((doneDiff + historyCleared < 0)&&((undoneDiff + doneDiff + historyCleared) == 0 )){
-            history.undone[currentUndone-1].changes.iterChanges((fromA:Number, toA:Number, fromB:Number, toB:Number, inserted: string | Text ) => { // inserted is Text in cm, string|Text in Obsidian               
+        if ((doneDiff + historyCleared < 0) && ((undoneDiff + doneDiff + historyCleared) == 0)) {
+            history.undone[currentUndone - 1].changes.iterChanges((fromA: Number, toA: Number, fromB: Number, toB: Number, inserted: string | Text) => { // inserted is Text in cm, string|Text in Obsidian               
                 // @ts-expect-error
-                const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA,toA);
+                const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA, toA);
                 inserted = inserted.toString();
                 // @ts-expect-error
-                const prevChA = (fromA == 0)? ' ': this.activeEditor.editor.cm.state.sliceDoc(fromA-1,fromA);
+                const prevChA = (fromA == 0) ? ' ' : this.activeEditor.editor.cm.state.sliceDoc(fromA - 1, fromA);
                 // @ts-expect-error
-                const subseqChA = (toA == this.activeEditor.editor.cm.state.doc.length-1)? ' ': this.activeEditor.editor.cm.state.sliceDoc(toA,toA+1);
+                const subseqChA = (toA == this.activeEditor.editor.cm.state.doc.length - 1) ? ' ' : this.activeEditor.editor.cm.state.sliceDoc(toA, toA + 1);
                 // @ts-expect-error
-                const prevChB = (fromB == 0)? ' ': this.activeEditor.editor.cm.state.sliceDoc(fromB-1,fromB);
+                const prevChB = (fromB == 0) ? ' ' : this.activeEditor.editor.cm.state.sliceDoc(fromB - 1, fromB);
                 // @ts-expect-error
-                const subseqChB = (toB == this.activeEditor.editor.cm.state.doc.length-1)? ' ': this.activeEditor.editor.cm.state.sliceDoc(toB,toB+1);
+                const subseqChB = (toB == this.activeEditor.editor.cm.state.doc.length - 1) ? ' ' : this.activeEditor.editor.cm.state.sliceDoc(toB, toB + 1);
 
                 const deletedWords = this.addWordsCt(inserted, prevChB, subseqChB);
                 const addedWords = this.deleteWordsCt(theOther, prevChA, subseqChA);
-/*                if (DEBUG) {
-                    console.log(`Undo adding texts: "${inserted}" from ${fromB} to ${toB} from previous document, \nundo deleting texts: "${theOther}" from ${fromA} to ${toA} from previous document.`);
-                    console.log("Modified Words: ", (addedWords + deletedWords));	
-                }
-*/                    
+                /*                if (DEBUG) {
+                                    console.log(`Undo adding texts: "${inserted}" from ${fromB} to ${toB} from previous document, \nundo deleting texts: "${theOther}" from ${fromA} to ${toA} from previous document.`);
+                                    console.log("Modified Words: ", (addedWords + deletedWords));	
+                                }
+                */
                 this.editedWords += (addedWords + deletedWords);
                 this.addedWords += addedWords;
                 this.deletedWords += deletedWords;
-                this.changedWords += (addedWords - deletedWords);	
+                this.changedWords += (addedWords - deletedWords);
             });
 
             this.editedTimes += undoneDiff; // multiple changes should be counted only one time.
         }
 
-        
-        
+
+
         this.lastDone = currentDone;
         this.lastUndone = currentUndone;
         if (Number(history.prevTime) !== 0) this.lastModifiedTime = Number(history.prevTime);
         this.countWordsByChanges();
         this.updateStatusBarTracker();
         this.plugin.Widget?.updateCurrentData();
-/*
-console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
-    currentEditedTimes: this.editedTimes,
-    currentEditedWords: this.editedWords,
-    AddedWords: this.addedWords,
-    DeletedWords: this.deletedWords,
-    ChangedWords: this.changedWords,
-    lastRecordedWords: this.docWords,
-    lastModifiedTime: this.lastModifiedTime,
-        });
-*/
+        /*
+        console.log(`DocTracker.trackChanges: [${this.filePath}]:`, {
+            currentEditedTimes: this.editedTimes,
+            currentEditedWords: this.editedWords,
+            AddedWords: this.addedWords,
+            DeletedWords: this.deletedWords,
+            ChangedWords: this.changedWords,
+            lastRecordedWords: this.docWords,
+            lastModifiedTime: this.lastModifiedTime,
+                });
+        */
     }
 }
 

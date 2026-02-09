@@ -1,5 +1,6 @@
 import { DocTracker } from './DocTracker';
 import { DataRecorder } from './DataRecorder';
+import { RecorderManager } from './RecorderManager';
 import { StatusBarManager, updateStatusBarStyle, removeStatusBarStyle } from './StatusBarManager';
 import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, WidgetTab, ReferenceTab } from './settings';
 import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
@@ -18,7 +19,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 	public i18n: I18nManager;
 	public trackerMap: Map<string, DocTracker> = new Map<string, DocTracker>(); // give up nested map
 	public statusBarManager: StatusBarManager;
-	public DocRecorders: DataRecorder[] = [];
+	public recorderManager: RecorderManager;
 	public Widget: WordflowWidgetView | null = null;
 	public executeOnce = executeOnceWithKey();
 
@@ -44,11 +45,13 @@ export default class WordflowTrackerPlugin extends Plugin {
 			}
 		);
 
+
+		this.recorderManager = new RecorderManager(this);
 		const defaultRecorder = new DataRecorder(this, this.trackerMap);
-		this.DocRecorders.push(defaultRecorder);
+		this.recorderManager.addRecorder(defaultRecorder);
 		for (const recorderConfig of this.settings.Recorders) {
 			const recorder = new DataRecorder(this, this.trackerMap, recorderConfig);
-			this.DocRecorders.push(recorder);
+			this.recorderManager.addRecorder(recorder);
 		}
 
 
@@ -62,9 +65,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				// Called when the user clicks the icon.
 				new Notice(this.i18n.t('notices.recordSuccess'), 3000);
 
-				for (const DocRecorder of this.DocRecorders) {
-					await DocRecorder.record();
-				}
+				await this.recorderManager.record();
 			});
 		}
 
@@ -90,9 +91,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			id: 'record-wordflows-from-edited-notes-to-periodic-note',
 			name: this.i18n.t('commands.recordWordflows.name'),
 			callback: async () => {
-				for (const DocRecorder of this.DocRecorders) {
-					await DocRecorder.record();
-				}
+				await this.recorderManager.record();
 				new Notice(this.i18n.t('notices.recordSuccess'), 3000);
 			}
 		});
@@ -207,9 +206,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		if (this.settings.autoRecordInterval && Number(this.settings.autoRecordInterval) != 0) {
 			this.registerInterval(window.setInterval(async () => {
-				for (const DocRecorder of this.DocRecorders) {
-					await DocRecorder.record();
-				}
+				await this.recorderManager.record();
 				new Notice(this.i18n.t('notices.autoRecordSuccess'), 3000);
 			}, Number(this.settings.autoRecordInterval) * 1000));
 		}
@@ -293,10 +290,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 	};
 	private async recordTracker(tracker: DocTracker): Promise<void> {
 		if (tracker.meetThreshold()) {
-			for (const DocRecorder of this.DocRecorders) {
-				await DocRecorder.record(tracker);
-			}
-			new Notice(this.i18n.t('notices.editsRecorded', { filePath: tracker.filePath }), 1000)
+			await this.recorderManager.record(tracker);
 			//if (DEBUG) console.log (`Edits from ${tracker.filePath} are recorded.`);	
 		}
 	};
