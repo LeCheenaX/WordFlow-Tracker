@@ -2,11 +2,15 @@ import { DocTracker } from './DocTracker';
 import { DataRecorder } from './DataRecorder';
 import WordflowTrackerPlugin from './main';
 import { Notice } from 'obsidian';
+import { throttleLeadingEdge } from './Utils/throttle';
 
 export class RecorderManager {
     private recorders: DataRecorder[] = [];
+    private throttledRecord: (tracker?: DocTracker) => Promise<void>;
 
-    constructor(private plugin: WordflowTrackerPlugin) { }
+    constructor(private plugin: WordflowTrackerPlugin) {
+        this.throttledRecord = throttleLeadingEdge(this.execRecord.bind(this), 500);
+    }
 
     public addRecorder(recorder: DataRecorder) {
         this.recorders.push(recorder);
@@ -21,6 +25,10 @@ export class RecorderManager {
     }
 
     public async record(tracker?: DocTracker): Promise<void> {
+        await this.throttledRecord(tracker);
+    }
+
+    private async execRecord(tracker?: DocTracker): Promise<void> {
         if (tracker) {
             // Record specific tracker
             if (!tracker.meetThreshold()) return;
