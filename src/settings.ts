@@ -454,6 +454,11 @@ export class RecordersTab extends WordflowSubSettingsTab {
         const recorder = new DataRecorder(this.plugin, this.plugin.trackerMap, newRecorder);
         this.plugin.recorderManager.addRecorder(recorder);
         
+        // Update widget dropdown to reflect new recorder
+        if (this.plugin.Widget) {
+            await this.plugin.Widget.updateAll();
+        }
+        
         // Switch to the new recorder tab
         this.setActiveRecorder(this.plugin.settings.Recorders.length);
     }	
@@ -466,6 +471,12 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 async (newName) => {
                     this.plugin.settings.name = newName;
                     await this.plugin.saveSettings();
+                    
+                    // Update widget dropdown to reflect renamed recorder
+                    if (this.plugin.Widget) {
+                        await this.plugin.Widget.updateAll();
+                    }
+                    
                     this.display();
                 });
             modal.open();
@@ -475,6 +486,12 @@ export class RecordersTab extends WordflowSubSettingsTab {
             const modal = new RecorderRenameModal(this.app, recorder.name, async (newName) => {
                 this.plugin.settings.Recorders[index].name = newName;
                 await this.plugin.saveSettings();
+                
+                // Update widget dropdown to reflect renamed recorder
+                if (this.plugin.Widget) {
+                    await this.plugin.Widget.updateAll();
+                }
+                
                 this.display();
             });
             modal.open();
@@ -498,6 +515,11 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     this.activeRecorderIndex = 0;
                 }
                 
+                // Update widget dropdown to reflect removed recorder
+                if (this.plugin.Widget) {
+                    await this.plugin.Widget.updateAll();
+                }
+
                 await this.plugin.saveSettings();
                 this.display();
             }

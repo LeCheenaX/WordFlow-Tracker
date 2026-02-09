@@ -17,7 +17,7 @@ export class RecorderManager {
     }
 
     public removeRecorder(index: number) {
-        if (index >= 0 && index < this.recorders.length) {
+        if (index > 0 && index < this.recorders.length) { // delete default recorder (index = 0) is not allowed
             this.recorders.splice(index, 1);
         } else {
             console.error(`RecorderManager.removeRecorder: Invalid index ${index}. Valid range: 0-${this.recorders.length - 1}`);
