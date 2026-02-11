@@ -5,6 +5,7 @@ import { moment, normalizePath } from 'obsidian';
 import { SupportedLocale, I18nManager, getI18n } from './i18n';
 import { updateStatusBarStyle, removeStatusBarStyle } from './StatusBarManager';
 import { TagColorConfig } from './Utils/TagColorManager';
+import { getDateValidationErrorResult } from './Utils/dateFormatValidator';
 import { error } from 'console';
 
 // Obsidian supports only string and boolean for settings. numbers are not supported. 
@@ -13,6 +14,7 @@ export interface WordflowRecorderConfigs {
     enableDynamicFolder: boolean;
     periodicNoteFolder: string;
     periodicNoteFormat: string;
+    periodicNoteType: string;
     templatePlugin: string;
     templateFilePath: string;
     templateDateFormat: string;
@@ -89,6 +91,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 	enableDynamicFolder: false,
 	periodicNoteFolder: '',
 	periodicNoteFormat: 'YYYY-MM-DD',
+	periodicNoteType: 'daily note',
     templatePlugin:  'none',
     templateFilePath: '',
     templateDateFormat: 'YYYY-MM-DD',
@@ -432,6 +435,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             enableDynamicFolder: DEFAULT_SETTINGS.enableDynamicFolder,
             periodicNoteFolder: DEFAULT_SETTINGS.periodicNoteFolder,
             periodicNoteFormat: DEFAULT_SETTINGS.periodicNoteFormat,
+            periodicNoteType: DEFAULT_SETTINGS.periodicNoteType,
             templatePlugin: DEFAULT_SETTINGS.templatePlugin,
             templateFilePath: DEFAULT_SETTINGS.templateFilePath,
             templateDateFormat: DEFAULT_SETTINGS.templateDateFormat,
@@ -475,7 +479,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     
                     // Update widget dropdown to reflect renamed recorder
                     if (this.plugin.Widget) {
-                        await this.plugin.Widget.updateAll();
+                        await this.plugin.Widget.updateUIandData();
                     }
                     
                     this.display();
@@ -490,7 +494,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 
                 // Update widget dropdown to reflect renamed recorder
                 if (this.plugin.Widget) {
-                    await this.plugin.Widget.updateAll();
+                    await this.plugin.Widget.updateUIandData();
                 }
                 
                 this.display();
@@ -632,14 +636,37 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 periodicNoteFormatPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // add custom CSS class
                 });
-                periodicNoteFormatPreviewText.setText(moment().format(settings.periodicNoteFormat) + '.md');
+                const validationError = getDateValidationErrorResult(settings.periodicNoteFormat, this.plugin.i18n);
+                periodicNoteFormatPreviewText.setText(validationError || moment().format(settings.periodicNoteFormat) + '.md');
             }))
             .addText(text => text
                 .setPlaceholder('YYYY-MM-DD')
                 .setValue(settings.periodicNoteFormat)
                 .onChange(async (value) => {
                     settings.periodicNoteFormat = (value !== '')? value: DEFAULT_SETTINGS.periodicNoteFormat;
-                    periodicNoteFormatPreviewText.setText(moment().format(settings.periodicNoteFormat) + '.md');
+                    
+                    // Validate format and show error if invalid
+                    const validationError = getDateValidationErrorResult(settings.periodicNoteFormat, this.plugin.i18n);
+                    periodicNoteFormatPreviewText.setText(validationError || moment().format(settings.periodicNoteFormat) + '.md');
+                    
+                    await this.plugin.saveSettings();
+                    recorderInstance.loadSettings();
+                })
+            );
+
+        new Setting(container)
+            .setName(this.i18n.t('settings.recorders.periodicNote.type.name'))
+            .setDesc(this.i18n.t('settings.recorders.periodicNote.type.desc'))
+            .addDropdown(dropdown => dropdown
+                .addOption('daily note', this.i18n.t('settings.recorders.periodicNote.type.options.daily'))
+                .addOption('weekly note', this.i18n.t('settings.recorders.periodicNote.type.options.weekly'))
+                .addOption('monthly note', this.i18n.t('settings.recorders.periodicNote.type.options.monthly'))
+                .addOption('quarterly note', this.i18n.t('settings.recorders.periodicNote.type.options.quarterly'))
+                .addOption('semesterly note', this.i18n.t('settings.recorders.periodicNote.type.options.semesterly'))
+                .addOption('yearly note', this.i18n.t('settings.recorders.periodicNote.type.options.yearly'))
+                .setValue(settings.periodicNoteType?? DEFAULT_SETTINGS.periodicNoteType)
+                .onChange(async (value) => {
+                    settings.periodicNoteType = value;
                     await this.plugin.saveSettings();
                     recorderInstance.loadSettings();
                 })
@@ -743,14 +770,19 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 templateDateFormatPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // add custom CSS class
                 });
-                templateDateFormatPreviewText.setText(moment().format(settings.templateDateFormat));
+                const validationError = getDateValidationErrorResult(settings.templateDateFormat, this.plugin.i18n);
+                templateDateFormatPreviewText.setText(validationError || moment().format(settings.templateDateFormat));
             }))
             .addText(text => text
                 .setPlaceholder('YYYY-MM-DD')
                 .setValue(settings.templateDateFormat)
                 .onChange(async (value) => {
                     settings.templateDateFormat = (value != '')? value: DEFAULT_SETTINGS.templateDateFormat;
-                    templateDateFormatPreviewText.setText(moment().format(settings.templateDateFormat));
+                    
+                    // Validate format and show error if invalid
+                    const validationError = getDateValidationErrorResult(settings.templateDateFormat, this.plugin.i18n);
+                    templateDateFormatPreviewText.setText(validationError || moment().format(settings.templateDateFormat));
+                    
                     await this.plugin.saveSettings();
                     recorderInstance.loadSettings();
                 })
@@ -767,14 +799,19 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 templateTimeFormatPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // 添加自定义CSS类
                 });
-                templateTimeFormatPreviewText.setText(moment().format(settings.templateTimeFormat));
+                const validationError = getDateValidationErrorResult(settings.templateTimeFormat, this.plugin.i18n);
+                templateTimeFormatPreviewText.setText(validationError || moment().format(settings.templateTimeFormat));
             }))
             .addText(text => text
                 .setPlaceholder('HH:mm')
                 .setValue(settings.templateTimeFormat)
                 .onChange(async (value) => {
                     settings.templateTimeFormat = (value != '')? value: DEFAULT_SETTINGS.templateTimeFormat;
-                    templateTimeFormatPreviewText.setText(moment().format(settings.templateTimeFormat));
+                    
+                    // Validate format and show error if invalid
+                    const validationError = getDateValidationErrorResult(settings.templateTimeFormat, this.plugin.i18n);
+                    templateTimeFormatPreviewText.setText(validationError || moment().format(settings.templateTimeFormat));
+                    
                     await this.plugin.saveSettings();
                     recorderInstance.loadSettings();
                 })
@@ -1020,14 +1057,19 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 mTimeFormatPreviewText = f.createEl('span', {
                     cls: 'wordflow-setting-previewText' // add custom CSS class
                 });
-                mTimeFormatPreviewText.setText(moment().format(settings.timeFormat));
+                const validationError = getDateValidationErrorResult(settings.timeFormat, this.plugin.i18n);
+                mTimeFormatPreviewText.setText(validationError || moment().format(settings.timeFormat));
             }))
             .addText(text => text
                 .setPlaceholder('YYYY-MM-DD | hh:mm')
                 .setValue(settings.timeFormat)
                 .onChange(async (value) => {
                     settings.timeFormat = (value != '')? value: DEFAULT_SETTINGS.timeFormat;
-                    mTimeFormatPreviewText.setText(moment().format(settings.timeFormat));
+                    
+                    // Validate format and show error if invalid
+                    const validationError = getDateValidationErrorResult(settings.timeFormat, this.plugin.i18n);
+                    mTimeFormatPreviewText.setText(validationError || moment().format(settings.timeFormat));
+                    
                     await this.plugin.saveSettings();
                     recorderInstance.loadSettings();
                 })
@@ -1452,7 +1494,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     text.onChange(async (value) => {
                         mappings[index].key = value;
                         await this.plugin.saveSettings();
-                        this.plugin.Widget?.updateAll();
+                        this.plugin.Widget?.updateUIandData();
                     });
                 })
                 .addButton(button => {
@@ -1462,7 +1504,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                         mappings.splice(index, 1);
                         await this.plugin.saveSettings();
                         // 刷新侧栏组件以更新字段显示名称
-                        this.plugin.Widget?.updateAll();
+                        this.plugin.Widget?.updateUIandData();
                         this.display(); // Re-render the settings tab to reflect changes
                     });
                 });
@@ -1477,7 +1519,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     mappings.push({ key: '', value: '' }); // Default new mapping
                     await this.plugin.saveSettings();
                     // 刷新侧栏组件以更新字段显示名称
-                    this.plugin.Widget?.updateAll();
+                    this.plugin.Widget?.updateUIandData();
                     this.display(); // Re-render the settings tab to reflect changes
                 });
             });
@@ -1926,11 +1968,9 @@ export class ConfirmationModal extends Modal {
 		  cls: "confirm-title"
 		});
 
-		const messagePara = contentEl.createEl("p", {
-			cls: "confirm-message"
-		});
+		const messagePara = contentEl.createDiv("confirm-message");
 
-		messagePara.textContent = this.message;
+		MarkdownRenderer.render(this.app, this.message, messagePara, '', new Component());
 
 		const buttonContainer = contentEl.createDiv("confirm-cancel-buttons");
 

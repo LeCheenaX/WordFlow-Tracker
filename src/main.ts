@@ -486,6 +486,69 @@ export default class WordflowTrackerPlugin extends Plugin {
 		// Initialize i18n with the loaded locale setting
 		this.i18n = initI18n(this.settings.locale);
 		updateStatusBarStyle(this.settings);
+		
+		// Validate date formats after i18n is initialized
+		await this.validateDateFormats();
+	}
+	
+	/**
+	 * Validate date formats for all recorders and show errors if any
+	 */
+	private async validateDateFormats(): Promise<void> {
+		const errors: string[] = [];
+		
+		// Check default recorder
+		const defaultRecorderName = this.settings.name;
+		this.checkRecorderDateFormats(defaultRecorderName, this.settings, errors);
+		
+		// Check additional recorders
+		if (this.settings.Recorders && Array.isArray(this.settings.Recorders)) {
+			for (const recorder of this.settings.Recorders) {
+				this.checkRecorderDateFormats(recorder.name, recorder, errors);
+			}
+		}
+		
+		// Show confirmation modal if there are errors
+		if (errors.length > 0) {
+			const { ConfirmationModal } = await import('./settings');
+			const title = this.i18n.t('settings.momentValidation.title');
+			const instruction = this.i18n.t('settings.momentValidation.instruction');
+			const message = `> [!warning] ${title}\n> ${instruction}\n\n${errors.join('\n')}`;
+			new ConfirmationModal(
+				this.app,
+				message,
+				async () => {} // onConfirm - just close
+			).open();
+		}
+	}
+	
+	/**
+	 * Check date formats for a single recorder
+	 */
+	private checkRecorderDateFormats(recorderName: string, config: any, errors: string[]): void {
+		const { getDateValidationErrorResult } = require('./Utils/dateFormatValidator');
+		
+		const fieldsToCheck = [
+			{ key: 'periodicNoteFormat', i18nKey: 'settings.recorders.periodicNote.format.name' },
+			{ key: 'timeFormat', i18nKey: 'settings.recorders.recordingContents.timeFormat.name' },
+			{ key: 'templateDateFormat', i18nKey: 'settings.recorders.templatePlugin.dateFormat.name' },
+			{ key: 'templateTimeFormat', i18nKey: 'settings.recorders.templatePlugin.timeFormat.name' }
+		];
+		
+		const issuedRecorderLabel = this.i18n.t('settings.momentValidation.issuedRecorder');
+		const issuedSettingLabel = this.i18n.t('settings.momentValidation.issuedSetting');
+		const errorDescriptionLabel = this.i18n.t('settings.momentValidation.errorDescription');
+		
+		for (const field of fieldsToCheck) {
+			const value = config[field.key];
+			if (value) {
+				const error = getDateValidationErrorResult(value, this.i18n);
+				if (error) {
+					const settingName = this.i18n.t(field.i18nKey);
+					errors.push(`- ${issuedRecorderLabel}: **${recorderName}**\n  - ${issuedSettingLabel}: ${settingName}\n  - ${errorDescriptionLabel}: ${error}`);
+				}
+			}
+		}
 	}
 
 	/**

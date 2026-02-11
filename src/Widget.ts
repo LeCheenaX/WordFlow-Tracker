@@ -6,9 +6,28 @@ import { DocTracker } from "./DocTracker";
 import { ConfirmationModal } from "./settings"
 import { UniqueColorGenerator } from "./Utils/UniqueColorGenerator";
 import { TagColorManager } from "./Utils/TagColorManager";
-import { DropdownComponent, IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon, setTooltip } from "obsidian";
+import { DropdownComponent, IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon, setTooltip, TFile, TFolder } from "obsidian";
 
 export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
+
+// Readonly maps for periodic note type display names
+const PRESENT_DISPLAY_MAP: ReadonlyMap<string, string> = new Map([
+    ['daily note', 'Today'],
+    ['weekly note', 'This Week'],
+    ['monthly note', 'This Month'],
+    ['quarterly note', 'This Quarter'],
+    ['semesterly note', 'This Semester'],
+    ['yearly note', 'This Year']
+]);
+
+const PREVIOUS_DISPLAY_MAP: ReadonlyMap<string, string> = new Map([
+    ['daily note', 'Yesterday'],
+    ['weekly note', 'Last Week'],
+    ['monthly note', 'Last Month'],
+    ['quarterly note', 'Last Quarter'],
+    ['semesterly note', 'Last Semester'],
+    ['yearly note', 'Last Year']
+]);
 
 export interface TagGroupData {
     tagName: string;
@@ -38,11 +57,17 @@ export class WordflowWidgetView extends ItemView {
     private currentNoteRow: HTMLDivElement;
     private recordButton: HTMLElement;
     private focusButton: HTMLElement;
+    private periodicNoteNameContainer: HTMLSpanElement;
+    private prevNoteButton: HTMLButtonElement;
+    private nextNoteButton: HTMLButtonElement;
+    private presentButton: HTMLButtonElement;
     private selectedRecorder: DataRecorder | null = null;
     private selectedField: string;
     private dataMap: Map<string, ExistingData> | null = null;
     private totalFieldValue: number = 0;
     private colorMap: Map<string, string>; // <filePath, color>
+    private selectedNoteName: string; // Track the current view filename (avoids moment format issues)
+    private availableNotes: Map<string, moment.Moment>; // Map of filename -> moment object for sorting
 
     constructor(leaf: WorkspaceLeaf, plugin: WordflowTrackerPlugin) {
         super(leaf);
@@ -52,6 +77,8 @@ export class WordflowWidgetView extends ItemView {
                                     this.plugin.settings.colorGroupSaturation
                                 );
         this.tagColorManager = new TagColorManager(this.plugin, this.plugin.settings.tagColors, this.colorGenerator);
+        this.selectedNoteName = ''; // Will be set when recorder is selected
+        this.availableNotes = new Map();
         this.colorMap = new Map<string, string>;
     }
 
@@ -70,29 +97,101 @@ export class WordflowWidgetView extends ItemView {
     public async onOpen() {
         const container = this.containerEl.children[1];
         container.empty();
-        container.createEl("h2", { text: "Wordflow Tracker" });
+
+        // Recorder dropdown as title
+        const titleContainer = container.createDiv({cls: "wordflow-widget-title-container"});
+        const recorderDropdownContainer = titleContainer.createEl("span", {cls: "recorder-dropdown-container"});
+        this.recorderDropdown = new DropdownComponent(recorderDropdownContainer);
+        setTooltip(recorderDropdownContainer, 'Switch the recorder', {
+            placement: 'top',
+            delay: 300
+        });
 
         this.currentNoteDataContainer = container.createDiv({cls: "wordflow-widget-current-note-data"});
         this.currentNoteRow = this.currentNoteDataContainer.createDiv({ cls: 'wordflow-widget-current-note-row' });
 
         const controls = container.createDiv({cls: "wordflow-widget-control-container"});
 
-        const leftGroup = controls.createDiv({cls: "wordflow-widget-control-leftgroup-container"})
-        const recorderDropdownContainer = leftGroup.createEl("span", {cls: "recorder-dropdown-container"});
-        this.recorderDropdown = new DropdownComponent(recorderDropdownContainer);
-        setTooltip(recorderDropdownContainer, 'Switch the recorder', {
+        // Left group: periodic note navigation
+        const leftGroup = controls.createDiv({cls: "wordflow-widget-control-leftgroup-container"});
+        
+        this.prevNoteButton = leftGroup.createEl("button", {cls: "wordflow-widget-nav-button", text: "<"});
+        setTooltip(this.prevNoteButton, 'previous', {
             placement: 'top',
             delay: 300
-        })
+        });
+        this.prevNoteButton.addEventListener('click', () => {
+            this.navigateToPrevious();
+        });
+
+        this.periodicNoteNameContainer = leftGroup.createEl("span", {cls: "periodic-note-name-container"});
         
-        const rightGroup = controls.createDiv({cls: "wordflow-widget-control-rightgroup-container"})
+        // Add click handler for periodic note name (similar to fileEntry)
+        this.periodicNoteNameContainer.addEventListener('click', async (evt: MouseEvent) => {
+            const noteExists = this.periodicNoteNameContainer.dataset.noteExists === 'true';
+            
+            if (noteExists) {
+                // Note exists, open it
+                const filePath = this.periodicNoteNameContainer.dataset.filePath;
+                if (!filePath) return;
+                
+                const inNewTab: boolean = evt.ctrlKey || evt.metaKey;
+                this.plugin.app.workspace.openLinkText(filePath, filePath, inNewTab);
+            } else {
+                // Note doesn't exist, show confirmation modal
+                const targetDate = parseInt(this.periodicNoteNameContainer.dataset.targetDate || '0');
+                if (!targetDate || !this.selectedRecorder) return;
+                
+                const recorder = this.selectedRecorder; // Capture for closure
+                const displayName = this.getPeriodicNoteDisplayName(); // Get the display name
+                
+                const confirmModal = new ConfirmationModal(
+                    this.app,
+                    this.plugin.i18n.t('notices.noteCreateConfirm', { displayName }),
+                    async () => {
+                        // User confirmed, create the note
+                        const createdNote = await recorder.createRecordNoteIfNotExists(targetDate);
+                        if (createdNote) {
+                            // Open the newly created note
+                            const inNewTab: boolean = evt.ctrlKey || evt.metaKey;
+                            this.plugin.app.workspace.openLinkText(createdNote.path, createdNote.path, inNewTab);
+                            
+                            // Update the UI to reflect the note now exists
+                            await this.updateNotesMap();
+                            this.updatePeriodicNoteName();
+                        }
+                    }
+                );
+                confirmModal.open();
+            }
+        });
+        
+        this.nextNoteButton = leftGroup.createEl("button", {cls: "wordflow-widget-nav-button", text: ">"});
+        setTooltip(this.nextNoteButton, 'next', {
+            placement: 'top',
+            delay: 300
+        });
+        this.nextNoteButton.addEventListener('click', () => {
+            this.navigateToNext();
+        });
+
+        this.presentButton = leftGroup.createEl("button", {cls: "wordflow-widget-nav-button", text: "↺"});
+        setTooltip(this.presentButton, 'back to present', {
+            placement: 'top',
+            delay: 300
+        });
+        this.presentButton.addEventListener('click', () => {
+            this.navigateToToday();
+        });
+        
+        const rightGroup = controls.createDiv({cls: "wordflow-widget-control-rightgroup-container"});
         const fieldDropdownContainer = rightGroup.createEl("span", {cls: "field-dropdown-container"});
         this.fieldDropdown = new DropdownComponent(fieldDropdownContainer);
         fieldDropdownContainer.insertAdjacentText("afterend", ':');
         setTooltip(fieldDropdownContainer, 'switch data to display from recording syntax', {
             placement: 'top',
             delay: 300
-        })
+        });
 
         this.totalDataContainer = rightGroup.createEl("span", {cls: "totalDataContainer"});
 
@@ -131,7 +230,7 @@ export class WordflowWidgetView extends ItemView {
                 {
                     const tempMessage = new ConfirmationModal(
                         this.app, 
-                        'Caution: There\'s no reading time property in recording syntax of the selected recorder. \n\nTo make use of this feature, it\'s recommended to click "cancel" button, and switch to a recorder that has the reading time peroperty. \n\nIf you are not sure which recorder has, kindly add "${readTime}" or "${readEditTime}" in recording syntax of your table/bullet-list recorder. \n\nAre you sure to turn on focus mode? This will do no harm but the focused time will not be recorded.', 
+                        this.plugin.i18n.t('widget.confirmations.focusModeNoReadTime'), 
                         async ()=>{
                             this.startFocus();
                     });
@@ -237,6 +336,240 @@ export class WordflowWidgetView extends ItemView {
         setTooltip(this.recordButton, 'quit focusing and record');
         this.focusPaused = true;
     }
+    public updatePeriodicNoteName() {
+        if (!this.selectedRecorder) return;
+        
+        const displayText = this.getPeriodicNoteDisplayName();
+        this.periodicNoteNameContainer.setText(displayText);
+        
+        // Get the full note path for the current view
+        const viewDate = this.availableNotes.get(this.selectedNoteName);
+        if (viewDate) {
+            const recordNote = this.selectedRecorder.getRecordNote(viewDate.valueOf());
+            
+            // Always show tooltip with the note name, regardless of whether it exists
+            const recordNoteName = moment(viewDate).format(this.selectedRecorder.periodicNoteFormat);
+            setTooltip(this.periodicNoteNameContainer, recordNoteName, {
+                placement: 'top',
+                delay: 300
+            });
+            
+            if (recordNote) {
+                // Store the file path in dataset for click handler
+                this.periodicNoteNameContainer.dataset.filePath = recordNote.path;
+                this.periodicNoteNameContainer.dataset.noteExists = 'true';
+            } else {
+                // Note doesn't exist, store the target date for creation
+                this.periodicNoteNameContainer.dataset.filePath = '';
+                this.periodicNoteNameContainer.dataset.noteExists = 'false';
+                this.periodicNoteNameContainer.dataset.targetDate = viewDate.valueOf().toString();
+            }
+        }
+    }
+
+    private getPeriodicNoteDisplayName(): string {
+        if (!this.selectedRecorder) return '';
+        
+        const presentFileName = moment().format(this.selectedRecorder.periodicNoteFormat);
+        const isPresent = this.selectedNoteName === presentFileName;
+        const noteType = this.selectedRecorder.periodicNoteType;
+        
+        // If viewing present, show mapped name
+        if (isPresent) {
+            return PRESENT_DISPLAY_MAP.get(noteType) || this.selectedNoteName;
+        }
+        
+        // Check if it's the previous period
+        const sortedFileNames = Array.from(this.availableNotes.keys()).sort((a, b) => {
+            const dateA = this.availableNotes.get(a)!;
+            const dateB = this.availableNotes.get(b)!;
+            return dateA.valueOf() - dateB.valueOf();
+        });
+        
+        const currentIndex = sortedFileNames.indexOf(this.selectedNoteName);
+        const presentIndex = sortedFileNames.indexOf(presentFileName);
+        
+        // If it's exactly one position before present, check if it's the previous period
+        if (currentIndex === presentIndex - 1) {
+            const currentMoment = this.availableNotes.get(this.selectedNoteName);
+            const presentMoment = moment();
+            
+            if (currentMoment) {
+                let isPreviousPeriod = false;
+                
+                switch (noteType) {
+                    case 'daily note':
+                        isPreviousPeriod = currentMoment.isSame(presentMoment.clone().subtract(1, 'day'), 'day');
+                        break;
+                    case 'weekly note':
+                        isPreviousPeriod = currentMoment.isSame(presentMoment.clone().subtract(1, 'week'), 'week');
+                        break;
+                    case 'monthly note':
+                        isPreviousPeriod = currentMoment.isSame(presentMoment.clone().subtract(1, 'month'), 'month');
+                        break;
+                    case 'quarterly note':
+                        isPreviousPeriod = currentMoment.isSame(presentMoment.clone().subtract(3, 'months'), 'month');
+                        break;
+                    case 'semesterly note':
+                        isPreviousPeriod = currentMoment.isSame(presentMoment.clone().subtract(6, 'months'), 'month');
+                        break;
+                    case 'yearly note':
+                        isPreviousPeriod = currentMoment.isSame(presentMoment.clone().subtract(1, 'year'), 'year');
+                        break;
+                }
+                
+                if (isPreviousPeriod) {
+                    return PREVIOUS_DISPLAY_MAP.get(noteType) || this.selectedNoteName;
+                }
+            }
+        }
+        
+        // Otherwise show the actual filename
+        return this.selectedNoteName;
+    }
+
+    private async updateNotesMap(): Promise<void> {
+        if (!this.selectedRecorder) return;
+        
+        this.availableNotes.clear();
+        const format = this.selectedRecorder.periodicNoteFormat;
+        
+        if (this.selectedRecorder.enableDynamicFolder) {
+            // Dynamic folder: find folders matching the pattern
+            const folderPattern = this.selectedRecorder.periodicNoteFolder;
+            const allFolders = this.plugin.app.vault.getAllFolders();
+            
+            // Parse folder names to get dates and sort
+            const folderDates: Array<{folder: TFolder, date: moment.Moment}> = [];
+            for (const folder of allFolders) {
+                const folderName = folder.name;
+                const parsedDate = moment(folderName, folderPattern, true);
+                if (parsedDate.isValid()) {
+                    folderDates.push({folder, date: parsedDate});
+                }
+            }
+            
+            // Sort by date
+            folderDates.sort((a, b) => b.date.valueOf() - a.date.valueOf());
+            
+            // Find notes in all matching folders
+            for (const {folder} of folderDates) {
+                const files = folder.children.filter(f => f instanceof TFile && f.extension === 'md') as TFile[];
+                for (const file of files) {
+                    const fileName = file.basename;
+                    const parsedDate = moment(fileName, format, true);
+                    if (parsedDate.isValid()) {
+                        this.availableNotes.set(fileName, parsedDate);
+                    }
+                }
+            }
+        } else {
+            // Static folder: find all notes in the specified folder
+            const folderPath = this.selectedRecorder.parseRecordNoteFolderPath();
+            const folder = folderPath === '' 
+                ? this.plugin.app.vault.getRoot() 
+                : this.plugin.app.vault.getFolderByPath(folderPath);
+            
+            if (folder) {
+                const files = folder.children.filter(f => f instanceof TFile && f.extension === 'md') as TFile[];
+                
+                for (const file of files) {
+                    const fileName = file.basename;
+                    const parsedDate = moment(fileName, format, true);
+                    if (parsedDate.isValid()) {
+                        this.availableNotes.set(fileName, parsedDate);
+                    }
+                }
+            }
+        }
+        
+        // Always add today to the list (even if the note doesn't exist)
+        const today = moment();
+        const todayFileName = today.format(format);
+        
+        if (!this.availableNotes.has(todayFileName)) {
+            this.availableNotes.set(todayFileName, today);
+        }
+        
+        // Initialize currentViewFileName if not set
+        if (!this.selectedNoteName) {
+            this.selectedNoteName = todayFileName;
+        }
+    }
+
+    private updateNavigationButtons(): void {
+        if (!this.selectedRecorder) return;
+        
+        // Sort by the moment values
+        const sortedFileNames = Array.from(this.availableNotes.keys()).sort((a, b) => {
+            const dateA = this.availableNotes.get(a)!;
+            const dateB = this.availableNotes.get(b)!;
+            return dateA.valueOf() - dateB.valueOf();
+        });
+        
+        const currentIndex = sortedFileNames.indexOf(this.selectedNoteName);
+        
+        const hasPrevious = currentIndex > 0;
+        const hasNext = currentIndex >= 0 && currentIndex < sortedFileNames.length - 1;
+        const todayFileName = moment().format(this.selectedRecorder.periodicNoteFormat);
+        const isToday = this.selectedNoteName === todayFileName;
+        
+        this.prevNoteButton.style.display = hasPrevious ? '' : 'none';
+        this.nextNoteButton.style.display = hasNext ? '' : 'none';
+        this.presentButton.style.display = isToday ? 'none' : '';
+    }
+
+    private async navigateToPrevious(): Promise<void> {
+        if (!this.selectedRecorder) return;
+        
+        const sortedFileNames = Array.from(this.availableNotes.keys()).sort((a, b) => {
+            const dateA = this.availableNotes.get(a)!;
+            const dateB = this.availableNotes.get(b)!;
+            return dateA.valueOf() - dateB.valueOf();
+        });
+        const currentIndex = sortedFileNames.indexOf(this.selectedNoteName);
+        
+        if (currentIndex > 0) {
+            const prevFileName = sortedFileNames[currentIndex - 1];
+            this.selectedNoteName = prevFileName;
+            
+            this.updatePeriodicNoteName();
+            this.updateNavigationButtons();
+            await this.updateData();
+        }
+    }
+
+    private async navigateToNext(): Promise<void> {
+        if (!this.selectedRecorder) return;
+        
+        const sortedFileNames = Array.from(this.availableNotes.keys()).sort((a, b) => {
+            const dateA = this.availableNotes.get(a)!;
+            const dateB = this.availableNotes.get(b)!;
+            return dateA.valueOf() - dateB.valueOf();
+        });
+        const currentIndex = sortedFileNames.indexOf(this.selectedNoteName);
+        
+        if (currentIndex >= 0 && currentIndex < sortedFileNames.length - 1) {
+            const nextFileName = sortedFileNames[currentIndex + 1];
+            this.selectedNoteName = nextFileName;
+            
+            this.updatePeriodicNoteName();
+            this.updateNavigationButtons();
+            await this.updateData();
+        }
+    }
+
+    private async navigateToToday(): Promise<void> {
+        if (!this.selectedRecorder) return;
+        
+        this.selectedNoteName = moment().format(this.selectedRecorder.periodicNoteFormat);
+        
+        this.updatePeriodicNoteName();
+        await this.updateNotesMap();
+        this.updateNavigationButtons();
+        await this.updateData();
+    }
+
 
     public updateButtons_Quit(){
         setIcon(this.recordButton, 'file-clock');
@@ -257,8 +590,17 @@ export class WordflowWidgetView extends ItemView {
     public async updateAll() {
         if (!this.dataContainer) return;
 
+        await this.updateNotesMap();
+        await this.updateUIandData();
+    }
+
+    public async updateUIandData() {
+        if (!this.dataContainer) return;
+
         this.initRecorderDropdown();
         await this.initFieldDropDown();
+        this.updatePeriodicNoteName();
+        this.updateNavigationButtons();
     }
 
     /**
@@ -403,11 +745,13 @@ export class WordflowWidgetView extends ItemView {
         if (!this.selectedRecorder) {
             const defaultIndex = 0;
             this.selectedRecorder = recorders[defaultIndex];
+            this.selectedNoteName = moment().format(this.selectedRecorder.periodicNoteFormat);
             this.recorderDropdown.setValue(defaultIndex.toString());
         }
 
         this.recorderDropdown.onChange(async (value) => {
             this.selectedRecorder = recorders[parseInt(value)];
+            this.selectedNoteName = moment().format(this.selectedRecorder.periodicNoteFormat);
             await this.updateAll(); // Redraw the entire widget when recorder changes
             this.recorderDropdown.setValue(value); // put after draw to render correct selection
         });
@@ -449,7 +793,7 @@ export class WordflowWidgetView extends ItemView {
 
     private async renderData(field: string | null) {
         this.dataContainer.empty();
-        if (!this.dataMap || !field) {
+        if (!this.dataMap || !field || this.dataMap.size === 0) {
             this.dataContainer.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noData'), cls: 'wordflow-widget-no-data-message'});
             this.totalDataContainer.textContent = (field === 'editTime' || field === 'readTime' || field === 'readEditTime')
                 ? formatTime(0)
@@ -1172,19 +1516,20 @@ export class WordflowWidgetView extends ItemView {
             return null;
         }
 
-        const recordNoteName = moment().format(this.selectedRecorder.periodicNoteFormat);
-        const recordNoteFolder = (this.selectedRecorder.enableDynamicFolder)? moment().format(this.selectedRecorder.periodicNoteFolder): this.selectedRecorder.periodicNoteFolder;
-        const isRootFolder: boolean = (recordNoteFolder.trim() == '')||(recordNoteFolder.trim() == '/');
-        let recordNotePath = (isRootFolder)? '': recordNoteFolder+'/';
-        recordNotePath += recordNoteName + '.md';
+        // Get the moment object for the current view from the availableNotes map
+        const viewDate = this.availableNotes.get(this.selectedNoteName);
         
-        const recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
+        if (!viewDate) {
+            return null;
+        }
+
+        const recordNote = this.selectedRecorder.getRecordNote(viewDate.valueOf());
 
         if (!recordNote) {
             return null;
         }
         
-        return await this.selectedRecorder.getParser().extractData(recordNote);;
+        return await this.selectedRecorder.getParser().extractData(recordNote);
     }
 
     private async startFocus():Promise<void>{

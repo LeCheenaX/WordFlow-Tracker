@@ -4,7 +4,7 @@ import { DocTracker } from './DocTracker';
 import { TableParser } from './TableParser';
 import { BulletListParser } from './ListParser';
 import { MetaDataParser } from "./MetaDataParser";
-import { moment, Notice, TFile } from 'obsidian';
+import { moment, Notice, TFile, TFolder } from 'obsidian';
 import { stat } from "fs";
 
 export class DataRecorder {
@@ -13,6 +13,7 @@ export class DataRecorder {
     public enableDynamicFolder: boolean;
     public periodicNoteFolder: string;
     public periodicNoteFormat: string;
+    public periodicNoteType: string;
     public recordType: string;
     public timeFormat: string;
     public sortBy: string;
@@ -41,6 +42,7 @@ export class DataRecorder {
             this.enableDynamicFolder = this.plugin.settings.enableDynamicFolder;
             this.periodicNoteFolder = this.plugin.settings.periodicNoteFolder;
             this.periodicNoteFormat = this.plugin.settings.periodicNoteFormat;
+            this.periodicNoteType = this.plugin.settings.periodicNoteType;
             this.recordType = this.plugin.settings.recordType;
             this.timeFormat = this.plugin.settings.timeFormat;
             this.sortBy = this.plugin.settings.sortBy;
@@ -55,6 +57,7 @@ export class DataRecorder {
             this.enableDynamicFolder = this.config.enableDynamicFolder;
             this.periodicNoteFolder = this.config.periodicNoteFolder;
             this.periodicNoteFormat = this.config.periodicNoteFormat;
+            this.periodicNoteType = this.config.periodicNoteType;
             this.recordType = this.config.recordType;
             this.timeFormat = this.config.timeFormat;
             this.sortBy = this.config.sortBy;
@@ -154,27 +157,61 @@ export class DataRecorder {
         }
     }
 
-    private async getOrCreateRecordNote(targetDate?: number): Promise<TFile | null> {
+    public parseRecordNoteFolderPath(targetDate?: number): string {
+        const recordNoteFolder = (this.enableDynamicFolder) 
+            ? (targetDate ? moment(targetDate).format(this.periodicNoteFolder) : moment().format(this.periodicNoteFolder))
+            : this.periodicNoteFolder;
+        
+        // Normalize path following Obsidian's normalizePath convention
+        const trimmed = recordNoteFolder.trim();
+        if (trimmed === '' || trimmed === '/' || trimmed === '.') {
+            return '';
+        }
+        return trimmed.replace(/^\/+|\/+$/g, ''); // Remove leading/trailing slashes
+    }
+
+    public getRecordNote(targetDate?: number): TFile | null {
         const recordNoteName = targetDate ? moment(targetDate).format(this.periodicNoteFormat) : moment().format(this.periodicNoteFormat);
-        const recordNoteFolder = (this.enableDynamicFolder) ? moment().format(this.periodicNoteFolder) : this.periodicNoteFolder;
-        const isRootFolder: boolean = (recordNoteFolder.trim() == '') || (recordNoteFolder.trim() == '/');
-        let recordNotePath = (isRootFolder) ? '' : recordNoteFolder + '/';
-        recordNotePath += recordNoteName + '.md';
-        let recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
-        //console.log('recordNotePath:',recordNotePath)
+        const recordNoteFolder = this.parseRecordNoteFolderPath(targetDate);
+        const recordNotePath = recordNoteFolder ? recordNoteFolder + '/' + recordNoteName + '.md' : recordNoteName + '.md';
+        return this.plugin.app.vault.getFileByPath(recordNotePath);
+    }
+
+    public async createRecordNoteIfNotExists(targetDate?: number): Promise<TFile | null> {
+        return await this.getOrCreateRecordNote(targetDate);
+    }
+
+    private getRecordNoteFolder(targetDate?: number): TFolder | null {
+        const normalizedPath = this.parseRecordNoteFolderPath(targetDate);
+        if (normalizedPath === '') {
+            return this.plugin.app.vault.getRoot();
+        }
+        return this.plugin.app.vault.getFolderByPath(normalizedPath);
+    }
+
+    private async createRecordNoteFolder(targetDate?: number): Promise<void> {
+        const recordNoteFolderPath = this.parseRecordNoteFolderPath(targetDate);
+        if (recordNoteFolderPath === '' || this.getRecordNoteFolder(targetDate)) {
+            return;
+        }
+        
+        await this.plugin.app.vault.createFolder(recordNoteFolderPath);
+        new Notice(this.plugin.i18n.t('notices.folderCreated', { folder: recordNoteFolderPath }), 3000);
+    }
+
+    private async getOrCreateRecordNote(targetDate?: number): Promise<TFile | null> {
+        let recordNote = this.getRecordNote(targetDate);
+        
         if (!recordNote) {
             try {
-                if (!isRootFolder && !this.plugin.app.vault.getFolderByPath(recordNoteFolder.trim())) {
-                    try {
-                        await this.plugin.app.vault.createFolder(recordNoteFolder.trim())
-                        new Notice(this.plugin.i18n.t('notices.folderCreated', { folder: recordNoteFolder.trim() }), 3000)
-                    } catch (error) {
-                        new Notice(this.plugin.i18n.t('notices.folderCreateFailed', { error: error }), 0);
-                        console.error("⚠️ Failed to create record note folder:", error);
-                        await this.backUpData();
-                        return null;
-                    }
+                if (!this.getRecordNoteFolder(targetDate)) {
+                    await this.createRecordNoteFolder(targetDate);
                 }
+                
+                const recordNoteName = targetDate ? moment(targetDate).format(this.periodicNoteFormat) : moment().format(this.periodicNoteFormat);
+                const recordNoteFolder = this.parseRecordNoteFolderPath(targetDate);
+                const recordNotePath = recordNoteFolder ? recordNoteFolder + '/' + recordNoteName + '.md' : recordNoteName + '.md';
+                
                 await this.createRecordNote(recordNotePath);
                 // Wait for file creation to complete
                 await new Promise(resolve => setTimeout(resolve, 2000));
@@ -182,9 +219,9 @@ export class DataRecorder {
                 new Notice(this.plugin.i18n.t('notices.noteCreated', {
                     notePath: recordNotePath,
                     folder: this.periodicNoteFolder
-                }), 3000)
+                }), 3000);
             } catch (error) {
-                new Notice(this.plugin.i18n.t('notices.noteCreateFailed', { error: error }), 0)
+                new Notice(this.plugin.i18n.t('notices.noteCreateFailed', { error: error }), 0);
                 console.error("❌ Failed to create record note:", error);
                 await this.backUpData();
                 return null;

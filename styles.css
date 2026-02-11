@@ -576,6 +576,37 @@
     background-color: var(--background-modifier-hover);
 }
 
+.wordflow-widget-title-container {
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+.wordflow-widget-title-container .recorder-dropdown-container select.dropdown {
+    background-image: none;
+    background-blend-mode: normal;
+    background-color: unset;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding-left: 0px;
+    padding-right: 4px;
+    font-size: var(--h2-size);
+    font-weight: var(--h2-weight);
+    line-height: var(--h2-line-height);
+    flex-shrink: 1;
+    min-width: 0;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--h2-color);
+}
+
+.wordflow-widget-title-container .recorder-dropdown-container select.dropdown:hover {
+    cursor: pointer;
+    background-color: hsla(var(--interactive-hover),0.2);
+}
+
 .wordflow-widget-control-container {
     display: flex;
     justify-content: space-between;
@@ -589,25 +620,75 @@
     color: var(--text-accent-hover);
 }
 
-.wordflow-widget-control-container .wordflow-widget-control-leftgroup-container *> select.dropdown {
+.wordflow-widget-control-container .wordflow-widget-control-leftgroup-container {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.wordflow-widget-control-container .wordflow-widget-control-leftgroup-container .wordflow-widget-nav-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    outline: none;
+    box-shadow: none;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.wordflow-widget-control-container .wordflow-widget-control-leftgroup-container .wordflow-widget-nav-button svg {
+    width: auto;
+    height: 18px;
+    display: block;
+}
+
+.wordflow-widget-control-container .wordflow-widget-control-leftgroup-container .wordflow-widget-nav-button:hover {
+    color: var(--text-normal);
+    background: none;
+    border: none;
+}
+
+.wordflow-widget-control-container .wordflow-widget-control-leftgroup-container .wordflow-widget-nav-button:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.wordflow-widget-control-container .wordflow-widget-control-leftgroup-container .periodic-note-name-container {
     background-image: none;
     background-blend-mode: normal;
     background-color: unset;
     background: none;
     border: none;
     box-shadow: none;
-    padding-left: 0px; /*set to 0*/
+    padding-left: 4px;
     padding-right: 4px;
     font-size: 20px;
-
     flex-shrink: 1;
     min-width: 0;
-    width: 100%;
-    overflow:hidden;
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--text-accent);
     font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.wordflow-widget-control-container .wordflow-widget-control-leftgroup-container .periodic-note-name-container:hover {
+    background-color: hsla(var(--interactive-hover),0.2);
+    color: var(--text-accent-hover);
 }
 
 .wordflow-widget-control-container .wordflow-widget-control-rightgroup-container {
@@ -1024,14 +1105,14 @@
     margin: 0 auto;
 }
 
-.wordflow-confirm-modal .modal-content {
-    display: flex;
-    flex-direction: column;
+.wordflow-confirm-modal .confirm-message ul {
+    margin: 0;
+    padding-left: 20px;
 }
 
-.wordflow-confirm-modal .confirm-message {
-    white-space: pre-wrap;
-    overflow-wrap: break-word;
+.wordflow-confirm-modal .confirm-message ul ul {
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 .wordflow-confirm-modal .confirm-cancel-buttons button {
