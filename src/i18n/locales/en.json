@@ -472,6 +472,7 @@
       "noRecorder": "No available recorder",
       "noField": "No available field for this recorder",
       "noData": "No available data in this field",
+      "noDataForField": "All data of selected field is zero",
       "noFieldinSyntax": "No available field in wordflow recording syntax to display.",
       "unconfiguredTags": "Unconfigured Tags"
     },

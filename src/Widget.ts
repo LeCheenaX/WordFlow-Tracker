@@ -6,6 +6,7 @@ import { DocTracker } from "./DocTracker";
 import { ConfirmationModal } from "./settings"
 import { UniqueColorGenerator } from "./Utils/UniqueColorGenerator";
 import { TagColorManager } from "./Utils/TagColorManager";
+import { DynamicDropdown } from "./Utils/DynamicDropdown";
 import { DropdownComponent, IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon, setTooltip, TFile, TFolder } from "obsidian";
 
 export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
@@ -49,8 +50,8 @@ export class WordflowWidgetView extends ItemView {
     public tagColorManager: TagColorManager;
     public onFocusMode: boolean = false;
     public focusPaused: boolean = true;
-    private recorderDropdown: DropdownComponent;
-    private fieldDropdown: DropdownComponent;
+    private recorderDropdown: DynamicDropdown;
+    private fieldDropdown: DynamicDropdown;
     private totalDataContainer: HTMLSpanElement;
     private dataContainer: HTMLDivElement;
     private currentNoteDataContainer: HTMLDivElement;
@@ -101,7 +102,7 @@ export class WordflowWidgetView extends ItemView {
         // Recorder dropdown as title
         const titleContainer = container.createDiv({cls: "wordflow-widget-title-container"});
         const recorderDropdownContainer = titleContainer.createEl("span", {cls: "recorder-dropdown-container"});
-        this.recorderDropdown = new DropdownComponent(recorderDropdownContainer);
+        this.recorderDropdown = new DynamicDropdown(recorderDropdownContainer);
         setTooltip(recorderDropdownContainer, 'Switch the recorder', {
             placement: 'top',
             delay: 300
@@ -186,7 +187,7 @@ export class WordflowWidgetView extends ItemView {
         
         const rightGroup = controls.createDiv({cls: "wordflow-widget-control-rightgroup-container"});
         const fieldDropdownContainer = rightGroup.createEl("span", {cls: "field-dropdown-container"});
-        this.fieldDropdown = new DropdownComponent(fieldDropdownContainer);
+        this.fieldDropdown = new DynamicDropdown(fieldDropdownContainer, 'right');
         fieldDropdownContainer.insertAdjacentText("afterend", ':');
         setTooltip(fieldDropdownContainer, 'switch data to display from recording syntax', {
             placement: 'top',
@@ -719,7 +720,7 @@ export class WordflowWidgetView extends ItemView {
     }
 
     private initRecorderDropdown() {
-        this.recorderDropdown.selectEl.empty();
+        this.recorderDropdown.clear();
         let availableRecorders = 0;
         const recorders = this.plugin.recorderManager.getRecorders();
 
@@ -760,7 +761,8 @@ export class WordflowWidgetView extends ItemView {
     private async initFieldDropDown(){
         const fieldOptions = this.getFieldOptions();
 
-        this.fieldDropdown.selectEl.empty();
+        // Clear and rebuild options
+        this.fieldDropdown.clear();
         fieldOptions.forEach(option => {
             this.fieldDropdown.addOption(option, this.getFieldDisplayName(option));
         });
@@ -780,7 +782,6 @@ export class WordflowWidgetView extends ItemView {
         await this.updateData();
 
         this.fieldDropdown.onChange(async (value) => {
-            this.fieldDropdown.setValue(value);
             this.selectedField = value;
             await this.renderData(value);
             this.updateCurrentData();
@@ -808,6 +809,15 @@ export class WordflowWidgetView extends ItemView {
         sortedData.forEach(rowData => {
                 this.totalFieldValue += this.getFieldValue(rowData, field);
         });
+
+        // check if selected field has value but all zero
+        if (this.totalFieldValue === 0) {
+            this.dataContainer.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noDataForField'), cls: 'wordflow-widget-no-data-message'});
+            this.totalDataContainer.textContent = (field === 'editTime' || field === 'readTime' || field === 'readEditTime')
+                ? formatTime(0)
+                : "0";
+            return;
+        }
 
         this.totalDataContainer.textContent = (field == 'editTime' || field == 'readTime' || field == 'readEditTime')
             ? formatTime(this.totalFieldValue)

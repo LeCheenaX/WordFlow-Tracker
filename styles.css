@@ -579,6 +579,15 @@
 .wordflow-widget-title-container {
     margin-top: 16px;
     margin-bottom: 16px;
+    display: inline-block;
+    width: fit-content;
+    max-width: 75%;
+}
+
+.wordflow-widget-title-container .recorder-dropdown-container {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .wordflow-widget-title-container .recorder-dropdown-container select.dropdown {
@@ -602,7 +611,42 @@
     color: var(--h2-color);
 }
 
+.wordflow-widget-title-container .recorder-dropdown-container .wordflow-dynamic-dropdown-container {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.wordflow-widget-title-container .recorder-dropdown-container .wordflow-dynamic-dropdown-button {
+    background-image: none !important;
+    background-blend-mode: normal !important;
+    background-color: unset !important;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    padding-left: 0px !important;
+    padding-right: 4px !important;
+    margin: 0 !important;
+    font-size: var(--h2-size) !important;
+    font-weight: var(--h2-weight) !important;
+    line-height: var(--h2-line-height) !important;
+    color: var(--h2-color) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    text-align: left !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    display: block !important;
+}
+
 .wordflow-widget-title-container .recorder-dropdown-container select.dropdown:hover {
+    cursor: pointer;
+    background-color: hsla(var(--interactive-hover),0.2);
+}
+
+.wordflow-widget-title-container .recorder-dropdown-container .wordflow-dynamic-dropdown-button:hover {
     cursor: pointer;
     background-color: hsla(var(--interactive-hover),0.2);
 }
@@ -1223,3 +1267,51 @@
     background-color: #00CC66;
     border-radius: 0 6px 6px 0;
 }
+
+/* ========================== */
+/*  Dynamic Dropdown Component */
+/* ========================== */
+
+.wordflow-dynamic-dropdown-container {
+    display: inline-block;
+}
+
+.wordflow-dynamic-dropdown-button {
+    display: inline;
+    padding: 0;
+    background: none;
+    background-color: transparent !important;
+    border: none;
+    box-shadow: none !important;
+    color: var(--text-normal) !important;
+    font-size: inherit !important;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.wordflow-dynamic-dropdown-button::after {
+    display: none;
+}
+
+.wordflow-dynamic-dropdown-button:hover:not(.is-disabled),
+.wordflow-dynamic-dropdown-button:focus,
+.wordflow-dynamic-dropdown-button:active {
+    background: none;
+    border: none;
+    outline: none;
+}
+
+.wordflow-dynamic-dropdown-button.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.menu.wordflow-dynamic-dropdown-menu-right-aligned .menu-item {
+    flex-direction: row-reverse !important;
+}
+
+.menu.wordflow-dynamic-dropdown-menu-right-aligned .menu-item-title {
+    text-align: right !important;
+    flex: 1 !important;
+}
+

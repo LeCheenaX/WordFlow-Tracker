@@ -472,6 +472,7 @@
       "noRecorder": "无可用的记录器",
       "noField": "该记录器没有配置需要记录的属性",
       "noData": "未在周期笔记中找到该属性的数据",
+      "noDataForField": "所选属性的数据全为零",
       "noFieldinSyntax": "Wordflow 记录语法中没有支持的属性.",
       "unconfiguredTags": "未配置的标签"
     },
