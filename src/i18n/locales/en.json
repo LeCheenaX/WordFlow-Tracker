@@ -355,6 +355,15 @@
         "tagPlaceholder": "Enter tag name (without #)",
         "groupNamePlaceholder": "Tag group name (optional)",
         "maxLimit": "Maximum 10 tag colors allowed"
+      },
+      "heatmapView": "Heatmap view",
+      "heatmapBaseColor": {
+        "name": "Heatmap base color",
+        "desc": "Select the base color for the heatmap. The heatmap will generate gradients based on the hue (H) of this color."
+      },
+      "heatmapGradientLevels": {
+        "name": "Heatmap gradient levels",
+        "desc": "Set the number of gradient levels for the heatmap (4-8 levels). More levels provide finer color distinctions."
       }
     },
     "momentValidation": {

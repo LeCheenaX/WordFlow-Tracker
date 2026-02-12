@@ -125,6 +125,7 @@ export class WordflowWidgetView extends ItemView {
         setIcon(tagViewBtn, "tags");
         setTooltip(tagViewBtn, this.plugin.i18n.t('widget.viewSwitcher.tagListView'), {placement: 'top', delay: 300});
         
+        // Heatmap button - will be shown/hidden based on recorder type
         const heatmapViewBtn = this.viewSwitcher.createEl("button", {cls: `view-switch-btn${this.currentView === 'heatmap' ? ' active' : ''}`, attr: {"data-view": "heatmap"}});
         setIcon(heatmapViewBtn, "flame");
         setTooltip(heatmapViewBtn, this.plugin.i18n.t('widget.viewSwitcher.heatmapView'), {placement: 'top', delay: 300});
@@ -640,6 +641,58 @@ export class WordflowWidgetView extends ItemView {
         await this.initFieldDropDown();
         this.updatePeriodicNoteName();
         this.updateNavigationButtons();
+        await this.updateViewSwitcher();
+    }
+
+    /**
+     * Update view switcher buttons visibility based on recorder type
+     */
+    private async updateViewSwitcher() {
+        if (!this.viewSwitcher || !this.selectedRecorder) return;
+        
+        const heatmapBtn = this.viewSwitcher.querySelector('[data-view="heatmap"]') as HTMLElement;
+        if (!heatmapBtn) return;
+        
+        // Only show heatmap button for daily notes
+        const isDailyNote = this.selectedRecorder.periodicNoteType === 'daily note';
+        
+        let needsRerender = false;
+        
+        if (isDailyNote) {
+            heatmapBtn.style.display = '';
+        } else {
+            heatmapBtn.style.display = 'none';
+            // If currently in heatmap view, switch to file-list view
+            if (this.currentView === 'heatmap') {
+                this.currentView = 'file-list';
+                this.viewSwitcher.querySelectorAll('.view-switch-btn').forEach(b => b.removeClass('active'));
+                const fileViewBtn = this.viewSwitcher.querySelector('[data-view="file-list"]') as HTMLElement;
+                if (fileViewBtn) {
+                    fileViewBtn.addClass('active');
+                }
+                needsRerender = true;
+            }
+        }
+        
+        // Update last-visible class for proper border radius
+        const allButtons = this.viewSwitcher.querySelectorAll('.view-switch-btn') as NodeListOf<HTMLElement>;
+        let lastVisibleBtn: HTMLElement | null = null;
+        
+        allButtons.forEach(btn => {
+            btn.removeClass('last-visible');
+            if (btn.style.display !== 'none') {
+                lastVisibleBtn = btn;
+            }
+        });
+        
+        if (lastVisibleBtn) {
+            (lastVisibleBtn as HTMLElement).addClass('last-visible');
+        }
+        
+        // Re-render if view was changed
+        if (needsRerender && this.selectedField) {
+            await this.renderData(this.selectedField);
+        }
     }
 
     /**
@@ -832,11 +885,35 @@ export class WordflowWidgetView extends ItemView {
 
     private async renderData(field: string | null) {
         this.dataContainer.empty();
-        if (!this.dataMap || !field || this.dataMap.size === 0) {
-            this.dataContainer.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noData'), cls: 'wordflow-widget-no-data-message'});
+        if (!this.dataMap || !field) {
+            // Only show no data message for non-heatmap views
+            if (this.currentView !== 'heatmap') {
+                this.dataContainer.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noData'), cls: 'wordflow-widget-no-data-message'});
+            }
             this.totalDataContainer.textContent = (field === 'editTime' || field === 'readTime' || field === 'readEditTime')
                 ? formatTime(0)
                 : "0";
+            
+            // Render empty heatmap if in heatmap view
+            if (this.currentView === 'heatmap') {
+                await this.renderHeatmap(field || 'editedWords');
+            }
+            return;
+        }
+
+        if (this.dataMap.size === 0) {
+            // Only show no data message for non-heatmap views
+            if (this.currentView !== 'heatmap') {
+                this.dataContainer.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noData'), cls: 'wordflow-widget-no-data-message'});
+            }
+            this.totalDataContainer.textContent = (field === 'editTime' || field === 'readTime' || field === 'readEditTime')
+                ? formatTime(0)
+                : "0";
+            
+            // Render empty heatmap if in heatmap view
+            if (this.currentView === 'heatmap') {
+                await this.renderHeatmap(field);
+            }
             return;
         }
 
@@ -850,10 +927,18 @@ export class WordflowWidgetView extends ItemView {
 
         // check if selected field has value but all zero
         if (this.totalFieldValue === 0) {
-            this.dataContainer.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noDataForField'), cls: 'wordflow-widget-no-data-message'});
+            // Only show no data message for non-heatmap views
+            if (this.currentView !== 'heatmap') {
+                this.dataContainer.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noDataForField'), cls: 'wordflow-widget-no-data-message'});
+            }
             this.totalDataContainer.textContent = (field === 'editTime' || field === 'readTime' || field === 'readEditTime')
                 ? formatTime(0)
                 : "0";
+            
+            // Render empty heatmap if in heatmap view
+            if (this.currentView === 'heatmap') {
+                await this.renderHeatmap(field);
+            }
             return;
         }
 
@@ -870,8 +955,7 @@ export class WordflowWidgetView extends ItemView {
                 this.renderDualLayerProgressBar(sortedData, field);
                 break;
             case 'heatmap':
-                // TODO: Implement trending view (for now, use file view)
-                this.renderSingleLayerProgressBar(sortedData, field);
+                await this.renderHeatmap(field);
                 break;
         }
     }
@@ -1601,5 +1685,224 @@ export class WordflowWidgetView extends ItemView {
             await this.renderData(newField);
             this.updateCurrentData();
         }
+    }
+
+    /**
+     * Render heatmap view - GitHub-style calendar heatmap
+     */
+    private async renderHeatmap(field: string) {
+        if (!this.selectedRecorder) return;
+
+        const heatmapContainer = this.dataContainer.createDiv({ cls: 'wordflow-widget-heatmap-container' });
+
+        // Calculate date range (last 12 weeks by default)
+        const weeksToShow = 12;
+        const today = moment();
+        const endDate = moment(today).endOf('week'); // End at the end of current week
+        const startDate = moment(endDate).subtract(weeksToShow - 1, 'weeks').startOf('week'); // Start 12 weeks ago
+
+        // Collect all data for the date range
+        const heatmapData = await this.collectHeatmapData(startDate, endDate, field);
+
+        // Render month labels
+        const monthLabelsContainer = heatmapContainer.createDiv({ cls: 'wordflow-heatmap-month-labels' });
+        this.renderMonthLabels(monthLabelsContainer, startDate, weeksToShow);
+
+        // Create main heatmap grid container
+        const gridContainer = heatmapContainer.createDiv({ cls: 'wordflow-heatmap-grid-container' });
+
+        // Render weekday labels
+        const weekdayLabelsContainer = gridContainer.createDiv({ cls: 'wordflow-heatmap-weekday-labels' });
+        this.renderWeekdayLabels(weekdayLabelsContainer);
+
+        // Render heatmap cells
+        const cellsContainer = gridContainer.createDiv({ cls: 'wordflow-heatmap-cells' });
+        this.renderHeatmapCells(cellsContainer, startDate, weeksToShow, heatmapData, field);
+
+        // Render legend
+        const legendContainer = heatmapContainer.createDiv({ cls: 'wordflow-heatmap-legend' });
+        this.renderHeatmapLegend(legendContainer, heatmapData, field);
+    }
+
+    /**
+     * Collect heatmap data for the specified date range
+     */
+    private async collectHeatmapData(startDate: moment.Moment, endDate: moment.Moment, field: string): Promise<Map<string, number>> {
+        if (!this.selectedRecorder) return new Map();
+
+        const heatmapData = new Map<string, number>();
+        const currentDate = moment(startDate);
+
+        while (currentDate.isSameOrBefore(endDate, 'day')) {
+            const dateKey = currentDate.format('YYYY-MM-DD');
+            const noteFileName = currentDate.format(this.selectedRecorder.periodicNoteFormat);
+            
+            // Check if note exists for this date
+            if (this.availableNotes.has(noteFileName)) {
+                const noteMoment = this.availableNotes.get(noteFileName);
+                if (noteMoment) {
+                    const recordNote = this.selectedRecorder.getRecordNote(noteMoment.valueOf());
+                    if (recordNote) {
+                        const dataMap = await this.selectedRecorder.getParser().extractData(recordNote);
+                        if (dataMap) {
+                            // Calculate total value for this date
+                            let totalValue = 0;
+                            dataMap.forEach(data => {
+                                totalValue += this.getFieldValue(data, field);
+                            });
+                            heatmapData.set(dateKey, totalValue);
+                        }
+                    }
+                }
+            }
+
+            currentDate.add(1, 'day');
+        }
+
+        return heatmapData;
+    }
+
+    /**
+     * Render month labels above the heatmap
+     */
+    private renderMonthLabels(container: HTMLElement, startDate: moment.Moment, weeks: number) {
+        const monthsShown = new Set<string>();
+        const currentDate = moment(startDate);
+
+        for (let week = 0; week < weeks; week++) {
+            const monthKey = currentDate.format('MMM');
+            const isFirstWeekOfMonth = currentDate.date() <= 7;
+
+            if (isFirstWeekOfMonth && !monthsShown.has(monthKey)) {
+                const monthLabel = container.createEl('span', {
+                    cls: 'wordflow-heatmap-month-label',
+                    text: monthKey
+                });
+                monthLabel.style.gridColumn = `${week + 1}`;
+                monthsShown.add(monthKey);
+            }
+
+            currentDate.add(1, 'week');
+        }
+    }
+
+    /**
+     * Render weekday labels on the left side
+     */
+    private renderWeekdayLabels(container: HTMLElement) {
+        const weekdays = ['Mon', 'Wed', 'Fri'];
+        const weekdayIndices = [1, 3, 5]; // Monday, Wednesday, Friday
+
+        weekdayIndices.forEach((dayIndex, index) => {
+            const label = container.createEl('span', {
+                cls: 'wordflow-heatmap-weekday-label',
+                text: weekdays[index]
+            });
+            label.style.gridRow = `${dayIndex + 1}`;
+        });
+    }
+
+    /**
+     * Render heatmap cells
+     */
+    private renderHeatmapCells(container: HTMLElement, startDate: moment.Moment, weeks: number, data: Map<string, number>, field: string) {
+        const currentDate = moment(startDate);
+        const maxValue = Math.max(...Array.from(data.values()), 1);
+        const today = moment();
+        const todayKey = today.format('YYYY-MM-DD');
+        
+        // Get selected note date
+        const selectedDate = this.availableNotes.get(this.selectedNoteName);
+        const selectedDateKey = selectedDate ? selectedDate.format('YYYY-MM-DD') : null;
+
+        for (let week = 0; week < weeks; week++) {
+            for (let day = 0; day < 7; day++) {
+                const dateKey = currentDate.format('YYYY-MM-DD');
+                const value = data.get(dateKey) || 0;
+                const intensity = maxValue > 0 ? value / maxValue : 0;
+                const isFuture = currentDate.isAfter(today, 'day');
+                const isToday = dateKey === todayKey;
+                const isSelected = dateKey === selectedDateKey && !isToday;
+
+                const cell = container.createDiv({ cls: 'wordflow-heatmap-cell' });
+                cell.style.gridColumn = `${week + 1}`;
+                cell.style.gridRow = `${day + 1}`;
+
+                // Mark today's date
+                if (isToday) {
+                    cell.addClass('wordflow-heatmap-today');
+                }
+                
+                // Mark selected date (if not today)
+                if (isSelected) {
+                    cell.addClass('wordflow-heatmap-selected');
+                }
+
+                // Mark future dates
+                if (isFuture) {
+                    cell.addClass('wordflow-heatmap-future');
+                } else {
+                    // Set color intensity for past/present dates
+                    const level = this.getHeatmapLevel(intensity);
+                    cell.addClass(`wordflow-heatmap-level-${level}`);
+                }
+
+                // Add tooltip
+                const formattedValue = this.formatValue(value, field);
+                const dateDisplay = currentDate.format('MMM D, YYYY');
+                const tooltipText = isFuture ? `${dateDisplay}: Future date` : `${dateDisplay}: ${formattedValue}`;
+                setTooltip(cell, tooltipText, {
+                    placement: 'top',
+                    delay: 300
+                });
+
+                // Add click handler to navigate to that date (only for non-future dates)
+                if (!isFuture) {
+                    const cellDate = moment(currentDate); // Capture current date in closure
+                    cell.addEventListener('click', async () => {
+                        const noteFileName = cellDate.format(this.selectedRecorder!.periodicNoteFormat);
+                        this.selectedNoteName = noteFileName;
+                        await this.updateNotesMap();
+                        this.updatePeriodicNoteName();
+                        this.updateNavigationButtons();
+                        await this.updateData();
+                    });
+                }
+
+                currentDate.add(1, 'day');
+            }
+        }
+    }
+
+    /**
+     * Get heatmap intensity level (0-4)
+     */
+    private getHeatmapLevel(intensity: number): number {
+        if (intensity === 0) return 0;
+        if (intensity < 0.25) return 1;
+        if (intensity < 0.5) return 2;
+        if (intensity < 0.75) return 3;
+        return 4;
+    }
+
+    /**
+     * Render heatmap legend
+     */
+    private renderHeatmapLegend(container: HTMLElement, data: Map<string, number>, field: string) {
+        const legendLabel = container.createEl('span', {
+            cls: 'wordflow-heatmap-legend-label',
+            text: 'Less'
+        });
+
+        for (let level = 0; level <= 4; level++) {
+            const legendCell = container.createDiv({
+                cls: `wordflow-heatmap-legend-cell wordflow-heatmap-level-${level}`
+            });
+        }
+
+        const legendLabelMore = container.createEl('span', {
+            cls: 'wordflow-heatmap-legend-label',
+            text: 'More'
+        });
     }
 }
