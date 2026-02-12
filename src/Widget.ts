@@ -69,6 +69,8 @@ export class WordflowWidgetView extends ItemView {
     private colorMap: Map<string, string>; // <filePath, color>
     private selectedNoteName: string; // Track the current view filename (avoids moment format issues)
     private availableNotes: Map<string, moment.Moment>; // Map of filename -> moment object for sorting
+    private viewSwitcher: HTMLDivElement;
+    private currentView: string;
 
     constructor(leaf: WorkspaceLeaf, plugin: WordflowTrackerPlugin) {
         super(leaf);
@@ -79,6 +81,7 @@ export class WordflowWidgetView extends ItemView {
                                 );
         this.tagColorManager = new TagColorManager(this.plugin, this.plugin.settings.tagColors, this.colorGenerator);
         this.selectedNoteName = ''; // Will be set when recorder is selected
+        this.currentView = this.plugin.settings.defaultViewOnOpen;
         this.availableNotes = new Map();
         this.colorMap = new Map<string, string>;
     }
@@ -99,13 +102,48 @@ export class WordflowWidgetView extends ItemView {
         const container = this.containerEl.children[1];
         container.empty();
 
+        // Title and view switcher row
+        const titleRow = container.createDiv({cls: "wordflow-widget-title-row"});
+        
         // Recorder dropdown as title
-        const titleContainer = container.createDiv({cls: "wordflow-widget-title-container"});
+        const titleContainer = titleRow.createDiv({cls: "wordflow-widget-title-container"});
         const recorderDropdownContainer = titleContainer.createEl("span", {cls: "recorder-dropdown-container"});
         this.recorderDropdown = new DynamicDropdown(recorderDropdownContainer);
         setTooltip(recorderDropdownContainer, 'Switch the recorder', {
             placement: 'top',
             delay: 300
+        });
+
+        // View switcher buttons (outside titleContainer)
+        this.viewSwitcher = titleRow.createDiv({cls: "wordflow-widget-view-switcher"});
+        
+        const fileViewBtn = this.viewSwitcher.createEl("button", {cls: `view-switch-btn${this.currentView === 'file-list' ? ' active' : ''}`, attr: {"data-view": "file-list"}});
+        setIcon(fileViewBtn, "file-text");
+        setTooltip(fileViewBtn, this.plugin.i18n.t('widget.viewSwitcher.fileListView'), {placement: 'top', delay: 300});
+        
+        const tagViewBtn = this.viewSwitcher.createEl("button", {cls: `view-switch-btn${this.currentView === 'tag-list' ? ' active' : ''}`, attr: {"data-view": "tag-list"}});
+        setIcon(tagViewBtn, "tags");
+        setTooltip(tagViewBtn, this.plugin.i18n.t('widget.viewSwitcher.tagListView'), {placement: 'top', delay: 300});
+        
+        const heatmapViewBtn = this.viewSwitcher.createEl("button", {cls: `view-switch-btn${this.currentView === 'heatmap' ? ' active' : ''}`, attr: {"data-view": "heatmap"}});
+        setIcon(heatmapViewBtn, "flame");
+        setTooltip(heatmapViewBtn, this.plugin.i18n.t('widget.viewSwitcher.heatmapView'), {placement: 'top', delay: 300});
+
+        // Add click handlers for view switching
+        this.viewSwitcher.addEventListener('click', async (evt: MouseEvent) => {
+            const target = evt.target as HTMLElement;
+            const btn = target.closest('.view-switch-btn') as HTMLElement;
+            if (btn) {
+                const view = btn.dataset.view as 'file-list' | 'tag-list' | 'heatmap';
+                if (view && view !== this.currentView) {
+                    this.currentView = view;
+                    // Update active state
+                    this.viewSwitcher.querySelectorAll('.view-switch-btn').forEach(b => b.removeClass('active'));
+                    btn.addClass('active');
+                    // Re-render data with new view
+                    await this.renderData(this.selectedField);
+                }
+            }
         });
 
         this.currentNoteDataContainer = container.createDiv({cls: "wordflow-widget-current-note-data"});
@@ -823,11 +861,18 @@ export class WordflowWidgetView extends ItemView {
             ? formatTime(this.totalFieldValue)
             : this.totalFieldValue.toString();
 
-        // Check if dual-layer display is enabled
-        if (this.plugin.settings.enableTagGroupBasedDataDisplay) {
-            this.renderDualLayerProgressBar(sortedData, field);
-        } else {
-            this.renderSingleLayerProgressBar(sortedData, field);
+        // Render based on current view mode
+        switch (this.currentView) {
+            case 'file-list':
+                this.renderSingleLayerProgressBar(sortedData, field);
+                break;
+            case 'tag-list':
+                this.renderDualLayerProgressBar(sortedData, field);
+                break;
+            case 'heatmap':
+                // TODO: Implement trending view (for now, use file view)
+                this.renderSingleLayerProgressBar(sortedData, field);
+                break;
         }
     }
 

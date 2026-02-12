@@ -55,12 +55,12 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
     // Widget setting tab
     enableWidgetOnLoad: boolean;
     showWidgetRibbonIcon: boolean;
+    defaultViewOnOpen: string;
     switchToFieldOnFocus: string;
     fieldAlias: { key: string, value: string }[];
     colorGroupLightness: string; // required to restart widget or plugin
     colorGroupSaturation: number[]; // required to restart widget or plugin
     tagColors: TagColorConfig[]; // tag-based color configurations
-    enableTagGroupBasedDataDisplay: boolean; // enable dual-layer tracker bar
 
     // Status bar setting tab
     enableMobileStatusBar: boolean;
@@ -115,11 +115,11 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     // Widget setting tab
     enableWidgetOnLoad: true,
     showWidgetRibbonIcon: true,
+    defaultViewOnOpen: 'file-list',
     switchToFieldOnFocus: 'disabled',
     colorGroupLightness: '66',
     colorGroupSaturation: [60, 85],
     tagColors: [], // 修改为支持完整颜色的数组结构
-    enableTagGroupBasedDataDisplay: false, // 默认关闭
     fieldAlias: [],
 
 
@@ -1369,6 +1369,20 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     this.plugin.settings.showWidgetRibbonIcon = value;
                     await this.plugin.saveSettings();
                 }));
+        
+        new Setting(tabContent)
+            .setName(this.i18n.t('settings.widget.defaultViewOnOpen.name'))
+            .setDesc(this.createMultiLineDesc('settings.widget.defaultViewOnOpen.desc'))
+            .addDropdown(d => d
+                .addOption('file-list', this.i18n.t('widget.viewSwitcher.fileListView'))
+                .addOption('tag-list', this.i18n.t('widget.viewSwitcher.tagListView'))
+                .addOption('heatmap', this.i18n.t('widget.viewSwitcher.heatmapView'))
+                .setValue(this.plugin.settings.defaultViewOnOpen)
+                .onChange( async (value) => {
+                    this.plugin.settings.defaultViewOnOpen = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.Widget?.updateData();
+            }));
 
         let switchToFieldOnFocusPreviewText: HTMLSpanElement
         new Setting(tabContent)
@@ -1448,18 +1462,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     colorGroupSaturationPreviewText.setText(this.i18n.t('settings.widget.colorGroupSaturation.preview') + this.numArrayToString(this.plugin.settings.colorGroupSaturation))
                 }));
         
-        new Setting(tabContent).setName(this.i18n.t('settings.widget.displayBasedOnTags')).setHeading();
-
-        new Setting(tabContent)
-            .setName(this.i18n.t('settings.widget.enableTagGroupBasedDataDisplay.name'))
-            .setDesc(this.createMultiLineDesc('settings.widget.enableTagGroupBasedDataDisplay.desc'))
-            .addToggle(t => t
-                .setValue(this.plugin.settings.enableTagGroupBasedDataDisplay)
-                .onChange(async (value) => {
-                    this.plugin.settings.enableTagGroupBasedDataDisplay = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.Widget?.updateData();
-                }));
+        new Setting(tabContent).setName(this.i18n.t('settings.widget.tagListView')).setHeading();
 
         new Setting(tabContent)
             .setName(this.i18n.t('settings.widget.tagColors.name'))

@@ -576,12 +576,23 @@
     background-color: var(--background-modifier-hover);
 }
 
-.wordflow-widget-title-container {
+/* Title row container - holds title and view switcher side by side */
+.wordflow-widget-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 12px;
     margin-top: 16px;
     margin-bottom: 16px;
+}
+
+.wordflow-widget-title-container {
     display: inline-block;
     width: fit-content;
-    max-width: 75%;
+    max-width: 80%;
+    flex-shrink: 1;
+    min-width: 0;
 }
 
 .wordflow-widget-title-container .recorder-dropdown-container {
@@ -651,6 +662,61 @@
     background-color: hsla(var(--interactive-hover),0.2);
 }
 
+/* View switcher styles */
+.wordflow-widget-view-switcher {
+    display: flex;
+    background-color: transparent;
+    padding: 0;
+    gap: 0;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.wordflow-widget-view-switcher .view-switch-btn {
+    background: none;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 14px;
+    line-height: 1;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    margin: 0;
+    position: relative;
+}
+
+.wordflow-widget-view-switcher .view-switch-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.wordflow-widget-view-switcher .view-switch-btn:first-child {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.wordflow-widget-view-switcher .view-switch-btn:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.wordflow-widget-view-switcher .view-switch-btn:hover {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.wordflow-widget-view-switcher .view-switch-btn.active {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-weight: 600;
+}
+
 .wordflow-widget-control-container {
     display: flex;
     justify-content: space-between;
@@ -670,13 +736,13 @@
     gap: 0;
     flex-shrink: 1;
     min-width: 0;
+    position: relative; /* 作为绝对定位的参考点 */
 }
 
 .wordflow-widget-control-container .wordflow-widget-control-leftgroup-container .wordflow-widget-nav-button {
-    background: none;
     border: none;
     cursor: pointer;
-    padding: 0;
+    padding: 4px 0px;
     margin: 0;
     display: flex;
     align-items: center;
@@ -688,8 +754,37 @@
     min-width: 0;
     outline: none;
     box-shadow: none;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1;
+    position: absolute; /* 绝对定位，脱离文档流 */
+    opacity: 0; /* 默认隐藏 */
+    transition: opacity 0.2s ease, color 0.2s ease; /* 平滑过渡 */
+    pointer-events: none; /* 隐藏时不响应鼠标事件 */
+    z-index: 10; /* 确保在文字上方 */
+    background: var(--background-secondary) !important;
+    border-radius: 0% !important
+}
+
+/* 前一个按钮：右边界对齐容器左边界 */
+.wordflow-widget-control-container .wordflow-widget-control-leftgroup-container .wordflow-widget-nav-button[aria-label="previous"] {
+    right: calc(100% - 2px);
+}
+
+/* 下一个按钮：左边界对齐容器右边界 */
+.wordflow-widget-control-container .wordflow-widget-control-leftgroup-container .wordflow-widget-nav-button[aria-label="next"] {
+    left: calc(100% - 2px);
+    padding-right: 4px;
+}
+
+/* 回到现在按钮：紧跟在 next 按钮右边 */
+.wordflow-widget-control-container .wordflow-widget-control-leftgroup-container .wordflow-widget-nav-button[aria-label="back to present"] {
+    left: calc(100% + 12px); 
+}
+
+/* 悬浮时显示按钮 */
+.wordflow-widget-control-container .wordflow-widget-control-leftgroup-container:hover .wordflow-widget-nav-button {
+    opacity: 1;
+    pointer-events: auto; /* 显示时响应鼠标事件 */
 }
 
 .wordflow-widget-control-container .wordflow-widget-control-leftgroup-container .wordflow-widget-nav-button svg {
@@ -700,8 +795,8 @@
 
 .wordflow-widget-control-container .wordflow-widget-control-leftgroup-container .wordflow-widget-nav-button:hover {
     color: var(--text-normal);
-    background: none;
-    border: none;
+    background-color: hsla(var(--interactive-hover), 0.3); /* 添加背景色以提高可见性 */
+    border-radius: 4px;
 }
 
 .wordflow-widget-control-container .wordflow-widget-control-leftgroup-container .wordflow-widget-nav-button:focus {

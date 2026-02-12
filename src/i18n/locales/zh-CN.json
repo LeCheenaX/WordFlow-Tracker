@@ -296,6 +296,13 @@
         "name": "在功能区显示侧边栏组件按钮",
         "desc": "添加一个功能区按钮来启用侧边栏组件或刷新组件内容。"
       },
+      "defaultViewOnOpen": {
+        "name": "默认视图",
+        "desc": [
+          "加载侧栏组件时的默认视图。",
+          "未来将支持更多视图。"
+        ]
+      },
       "switchToFieldOnFocus": {
         "name": "专注模式下自动切换到此时间属性",
         "desc": [
@@ -335,15 +342,7 @@
         ],
         "preview": "当前饱和度选项："
       },
-      "displayBasedOnTags": "基于标签展示每日数据",
-      "enableTagGroupBasedDataDisplay": {
-        "name": "启用基于标签的数据视图",
-        "desc": [
-          "默认关闭时，每条数据对应一个文件。",
-          "启用后，每条数据对应一个标签组；",
-          "如果一个文件包含多个标签（标签需在下一条设置中配置过），该文件会同时出现在多个标签的数据中。"
-        ]
-      },
+      "tagListView": "标签列表视图",
       "tagColors": {
         "name": "设定标签的颜色",
         "desc": [
@@ -458,7 +457,15 @@
     "title": "Wordflow Tracker",
     "tooltips": {
       "switchRecorder": "切换记录器",
-      "switchField": "从记录语法中切换要显示的数据"
+      "switchField": "从记录语法中切换要显示的数据",
+      "previousNote": "上个",
+      "nextNote": "下个",
+      "backToPresent": "回到现在"
+    },
+    "viewSwitcher": {
+      "fileListView": "文件列表",
+      "tagListView": "标签列表",
+      "heatmapView": "热力图"
     },
     "buttons": {
       "record": "记录所有数据",

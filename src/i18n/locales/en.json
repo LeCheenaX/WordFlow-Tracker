@@ -296,6 +296,13 @@
         "name": "Show widget reveal button in ribbon",
         "desc": "Add a ribbon icon to reveal widget and refresh the widget content."
       },
+      "defaultViewOnOpen": {
+        "name": "Default view to open",
+        "desc": [
+          "Default view when widget loads",
+          "More views will be supported in the future."
+        ]
+      },
       "switchToFieldOnFocus": {
         "name": "Switch to this field on focus mode",
         "desc": [
@@ -335,15 +342,7 @@
         ],
         "preview": "Current saturation options: "
       },
-      "displayBasedOnTags": "Tag-based daily data display",
-      "enableTagGroupBasedDataDisplay": {
-        "name": "Enable tag-based view",
-        "desc": [
-          "By default, data rows are displayed by file entries. ",
-          "If enabled, data rows will be displayed by tag entries;",
-          "If a file matches multiple tag groups, which have colors configured in the following setting, this file will appear in multiple tag rows."
-        ]
-      },
+      "tagListView": "Tag list view",
       "tagColors": {
         "name": "Configure colors for tags",
         "desc": [
@@ -458,7 +457,15 @@
     "title": "Wordflow Tracker",
     "tooltips": {
       "switchRecorder": "Switch the recorder",
-      "switchField": "switch data to display from recording syntax"
+      "switchField": "switch data to display from recording syntax",
+      "previousNote": "previous",
+      "nextNote": "next",
+      "backToPresent": "back to present"
+    },
+    "viewSwitcher": {
+      "fileListView": "file list",
+      "tagListView": "tag list",
+      "heatmapView": "heatmap"
     },
     "buttons": {
       "record": "Record",
