@@ -6,6 +6,7 @@ import { DocTracker } from "./DocTracker";
 import { ConfirmationModal } from "./settings"
 import { UniqueColorGenerator } from "./Utils/UniqueColorGenerator";
 import { TagColorManager } from "./Utils/TagColorManager";
+import { HeatmapColorManager } from "./Utils/HeatmapColorManager";
 import { DynamicDropdown } from "./Utils/DynamicDropdown";
 import { DropdownComponent, IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon, setTooltip, TFile, TFolder } from "obsidian";
 
@@ -1693,6 +1694,7 @@ export class WordflowWidgetView extends ItemView {
     private async renderHeatmap(field: string) {
         if (!this.selectedRecorder) return;
 
+        this.dataContainer.empty();
         const heatmapContainer = this.dataContainer.createDiv({ cls: 'wordflow-widget-heatmap-container' });
 
         // Calculate date range (last 12 weeks by default)
@@ -1806,84 +1808,127 @@ export class WordflowWidgetView extends ItemView {
      * Render heatmap cells
      */
     private renderHeatmapCells(container: HTMLElement, startDate: moment.Moment, weeks: number, data: Map<string, number>, field: string) {
-        const currentDate = moment(startDate);
-        const maxValue = Math.max(...Array.from(data.values()), 1);
-        const today = moment();
-        const todayKey = today.format('YYYY-MM-DD');
-        
-        // Get selected note date
-        const selectedDate = this.availableNotes.get(this.selectedNoteName);
-        const selectedDateKey = selectedDate ? selectedDate.format('YYYY-MM-DD') : null;
+            const currentDate = moment(startDate);
+            const today = moment();
+            const todayKey = today.format('YYYY-MM-DD');
 
-        for (let week = 0; week < weeks; week++) {
-            for (let day = 0; day < 7; day++) {
-                const dateKey = currentDate.format('YYYY-MM-DD');
-                const value = data.get(dateKey) || 0;
-                const intensity = maxValue > 0 ? value / maxValue : 0;
-                const isFuture = currentDate.isAfter(today, 'day');
-                const isToday = dateKey === todayKey;
-                const isSelected = dateKey === selectedDateKey && !isToday;
+            // Get selected note date
+            const selectedDate = this.availableNotes.get(this.selectedNoteName);
+            const selectedDateKey = selectedDate ? selectedDate.format('YYYY-MM-DD') : null;
 
-                const cell = container.createDiv({ cls: 'wordflow-heatmap-cell' });
-                cell.style.gridColumn = `${week + 1}`;
-                cell.style.gridRow = `${day + 1}`;
+            // Collect all non-zero values for intelligent color mapping
+            const allValues = Array.from(data.values()).filter(v => v > 0);
 
-                // Mark today's date
-                if (isToday) {
-                    cell.addClass('wordflow-heatmap-today');
-                }
-                
-                // Mark selected date (if not today)
-                if (isSelected) {
-                    cell.addClass('wordflow-heatmap-selected');
-                }
+            // Create HeatmapColorManager with user settings
+            const heatmapColorManager = new HeatmapColorManager(
+                this.plugin.settings.heatmapBaseColor,
+                this.plugin.settings.heatmapGradientLevels
+            );
 
-                // Mark future dates
-                if (isFuture) {
-                    cell.addClass('wordflow-heatmap-future');
-                } else {
-                    // Set color intensity for past/present dates
-                    const level = this.getHeatmapLevel(intensity);
-                    cell.addClass(`wordflow-heatmap-level-${level}`);
-                }
+            for (let week = 0; week < weeks; week++) {
+                for (let day = 0; day < 7; day++) {
+                    const dateKey = currentDate.format('YYYY-MM-DD');
+                    const value = data.get(dateKey) || 0;
+                    const isFuture = currentDate.isAfter(today, 'day');
+                    const isToday = dateKey === todayKey;
+                    const isSelected = dateKey === selectedDateKey && !isToday;
 
-                // Add tooltip
-                const formattedValue = this.formatValue(value, field);
-                const dateDisplay = currentDate.format('MMM D, YYYY');
-                const tooltipText = isFuture ? `${dateDisplay}: Future date` : `${dateDisplay}: ${formattedValue}`;
-                setTooltip(cell, tooltipText, {
-                    placement: 'top',
-                    delay: 300
-                });
+                    const cell = container.createDiv({ cls: 'wordflow-heatmap-cell' });
+                    cell.style.gridColumn = `${week + 1}`;
+                    cell.style.gridRow = `${day + 1}`;
 
-                // Add click handler to navigate to that date (only for non-future dates)
-                if (!isFuture) {
-                    const cellDate = moment(currentDate); // Capture current date in closure
-                    cell.addEventListener('click', async () => {
-                        const noteFileName = cellDate.format(this.selectedRecorder!.periodicNoteFormat);
-                        this.selectedNoteName = noteFileName;
-                        await this.updateNotesMap();
-                        this.updatePeriodicNoteName();
-                        this.updateNavigationButtons();
-                        await this.updateData();
+                    // Mark today's date
+                    if (isToday) {
+                        cell.addClass('wordflow-heatmap-today');
+                    }
+
+                    // Mark selected date (if not today)
+                    if (isSelected) {
+                        cell.addClass('wordflow-heatmap-selected');
+                    }
+
+                    // Mark future dates
+                    if (isFuture) {
+                        cell.addClass('wordflow-heatmap-future');
+                    } else {
+                        // Set color dynamically based on value
+                        if (value === 0) {
+                            cell.style.backgroundColor = 'var(--background-modifier-hover)';
+                            cell.style.opacity = '0.6';
+                        } else {
+                            const color = heatmapColorManager.getColorForValue(value, allValues);
+                            cell.style.backgroundColor = color;
+                        }
+                    }
+
+                    // Add tooltip
+                    const formattedValue = this.formatValue(value, field);
+                    const dateDisplay = currentDate.format('MMM D, YYYY');
+                    const tooltipText = isFuture ? `${dateDisplay}: Future date` : `${dateDisplay}: ${formattedValue}`;
+                    setTooltip(cell, tooltipText, {
+                        placement: 'top',
+                        delay: 300
                     });
-                }
 
-                currentDate.add(1, 'day');
+                    // Add click handler to open or create note (only for non-future dates)
+                    if (!isFuture) {
+                        const cellDate = moment(currentDate); // Capture current date in closure
+                        cell.addEventListener('click', async (evt: MouseEvent) => {
+                            if (!this.selectedRecorder) return;
+
+                            const targetDate = cellDate.valueOf();
+                            const noteFileName = cellDate.format(this.selectedRecorder.periodicNoteFormat);
+                            const recordNote = this.selectedRecorder.getRecordNote(targetDate);
+
+                            if (recordNote) {
+                                // Note exists, open it and switch to it
+                                const inNewTab: boolean = evt.ctrlKey || evt.metaKey;
+                                this.plugin.app.workspace.openLinkText(recordNote.path, recordNote.path, inNewTab);
+                                
+                                // Switch selectedNoteName to the clicked date
+                                this.selectedNoteName = noteFileName;
+                                this.updatePeriodicNoteName();
+                                this.updateNavigationButtons();
+                                // Re-render heatmap to update visual state (selected date highlight)
+                                await this.renderHeatmap(field);
+                            } else {
+                                // Note doesn't exist, show confirmation modal
+                                const displayName = noteFileName; // Use the filename as display name
+                                const recorder = this.selectedRecorder; // Capture for closure
+
+                                const confirmModal = new ConfirmationModal(
+                                    this.app,
+                                    this.plugin.i18n.t('notices.noteCreateConfirm', { displayName }),
+                                    async () => {
+                                        // User confirmed, create the note
+                                        const createdNote = await recorder.createRecordNoteIfNotExists(targetDate);
+                                        if (createdNote) {
+                                            // Open the newly created note
+                                            const inNewTab: boolean = evt.ctrlKey || evt.metaKey;
+                                            this.plugin.app.workspace.openLinkText(createdNote.path, createdNote.path, inNewTab);
+                                            
+                                            // Update the notes map to include the newly created note
+                                            await this.updateNotesMap();
+                                            
+                                            // Switch selectedNoteName to the newly created note
+                                            this.selectedNoteName = noteFileName;
+                                            this.updatePeriodicNoteName();
+                                            this.updateNavigationButtons();
+                                            // Update data since a new note was created
+                                            await this.updateData();
+                                        }
+                                    }
+                                );
+                                confirmModal.open();
+                            }
+                        });
+                    }
+
+                    currentDate.add(1, 'day');
+                }
             }
         }
-    }
 
-    /**
-     * Get heatmap intensity level (0-4)
-     */
-    private getHeatmapLevel(intensity: number): number {
-        if (intensity === 0) return 0;
-        if (intensity < 0.25) return 1;
-        if (intensity < 0.5) return 2;
-        if (intensity < 0.75) return 3;
-        return 4;
-    }
 
     /**
      * Render heatmap legend
@@ -1894,10 +1939,32 @@ export class WordflowWidgetView extends ItemView {
             text: 'Less'
         });
 
-        for (let level = 0; level <= 4; level++) {
+        // Get all non-zero values for color mapping
+        const allValues = Array.from(data.values()).filter(v => v > 0);
+        
+        // Create HeatmapColorManager with user settings
+        const heatmapColorManager = new HeatmapColorManager(
+            this.plugin.settings.heatmapBaseColor,
+            this.plugin.settings.heatmapGradientLevels
+        );
+        
+        // Get color scale
+        const colorScale = heatmapColorManager.getColorScale();
+        
+        // Render legend cells based on gradient levels
+        // Level 0 (no data)
+        const legendCell0 = container.createDiv({
+            cls: 'wordflow-heatmap-legend-cell'
+        });
+        legendCell0.style.backgroundColor = 'var(--background-modifier-hover)';
+        legendCell0.style.opacity = '0.6';
+        
+        // Render gradient levels
+        for (let i = 0; i < colorScale.length; i++) {
             const legendCell = container.createDiv({
-                cls: `wordflow-heatmap-legend-cell wordflow-heatmap-level-${level}`
+                cls: 'wordflow-heatmap-legend-cell'
             });
+            legendCell.style.backgroundColor = colorScale[i];
         }
 
         const legendLabelMore = container.createEl('span', {

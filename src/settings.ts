@@ -62,7 +62,7 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
     colorGroupSaturation: number[]; // required to restart widget or plugin
     tagColors: TagColorConfig[]; // tag-based color configurations
     heatmapBaseColor: string; // base color for heatmap (hex format)
-    heatmapGradientLevels: number; // number of gradient levels (4-8)
+    heatmapGradientLevels: number; // number of gradient levels (4-10)
 
     // Status bar setting tab
     enableMobileStatusBar: boolean;
@@ -123,8 +123,8 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     colorGroupSaturation: [60, 85],
     tagColors: [], // 修改为支持完整颜色的数组结构
     fieldAlias: [],
-    heatmapBaseColor: '#0f8643ff',
-    heatmapGradientLevels: 6,
+    heatmapBaseColor: '#33C15E',
+    heatmapGradientLevels: 5,
 
 
     // Status bar setting tab
@@ -1492,7 +1492,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
             .setName(this.i18n.t('settings.widget.heatmapGradientLevels.name'))
             .setDesc(this.i18n.t('settings.widget.heatmapGradientLevels.desc'))
             .addSlider(slider => {
-                slider.setLimits(4, 8, 1);
+                slider.setLimits(4, 10, 1);
                 slider.setValue(this.plugin.settings.heatmapGradientLevels || 6);
                 slider.setDynamicTooltip();
                 slider.onChange(async (value) => {

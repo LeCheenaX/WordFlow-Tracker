@@ -363,7 +363,7 @@
       },
       "heatmapGradientLevels": {
         "name": "Heatmap gradient levels",
-        "desc": "Set the number of gradient levels for the heatmap (4-8 levels). More levels provide finer color distinctions."
+        "desc": "Set the number of gradient levels for the heatmap (4-10 levels). More levels provide finer color distinctions."
       }
     },
     "momentValidation": {
