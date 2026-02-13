@@ -11,28 +11,30 @@ WordFlow Tracker is a lite plugin that tracks your focused time and edit statist
 ![wordflow155](https://github.com/user-attachments/assets/84446e86-da99-47fe-b282-ff559e53d265)
 
 ### Core Features
-- Tracking the focused time, number of edits, edited words per note. Customize status bar content with field aliases for personalized display.
-  
-  ![image](https://github.com/user-attachments/assets/51ce15a6-a935-46c2-9676-5525bd6b092f)
-  
-  ![image](https://github.com/user-attachments/assets/8422a96d-0ab5-417a-a474-7a838825de1e)
-- Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes.
-- Display the changes in the side pane widget. Switch between three view modes: file list, tag list, and heatmap (daily note recorder only).
-  
-  ![Pasted image 20250706223743](https://github.com/user-attachments/assets/6edc1be0-f262-4054-8803-1b1b37caeec7)
-- Display changes in a bar style to show the portion of original contents(yellow) v.s. modified contents(red: deleted words, green: added words).
-
-  ![image](https://github.com/user-attachments/assets/6c977b5f-0aba-4481-847b-f0fda6c5cd98)
+- Tracking the focused time, number of edits, edited words per note.
 - Display the portions of statistics with multiple views:
     - file list view:
 
       <img width="410" height="240" alt="image" src="https://github.com/user-attachments/assets/afd8a8c7-45bb-43ab-b84a-96f3de4d08e0" />
     - tag list view: *with collapsible groups and dual-layer progress bars*
 
-      <img width="409" height="341" alt="image" src="https://github.com/user-attachments/assets/cbef9fff-6eaf-4c5b-accd-d70b44b0264d" />
-    - heatmap view with custom color gradients and note navigation:
+      <img width="345" height="240" alt="image" src="https://github.com/user-attachments/assets/26644820-ee18-4938-9c68-47b54a01abb8" />
+
+    - heatmap view: *with custom color gradients and note navigation*
 
 	  <img width="349" height="319" alt="image" src="https://github.com/user-attachments/assets/90ed17df-e5c1-4578-b186-b46baaef1067" />
+- Customize status bar content with field aliases for personalized display.
+  
+  ![image](https://github.com/user-attachments/assets/51ce15a6-a935-46c2-9676-5525bd6b092f)
+  
+  ![image](https://github.com/user-attachments/assets/8422a96d-0ab5-417a-a474-7a838825de1e)
+- Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes.
+- Display the changes in the side pane widget. 
+  
+  ![Pasted image 20250706223743](https://github.com/user-attachments/assets/6edc1be0-f262-4054-8803-1b1b37caeec7)
+- Display changes in a bar style to show the portion of original contents(yellow) v.s. modified contents(red: deleted words, green: added words).
+
+  ![image](https://github.com/user-attachments/assets/6c977b5f-0aba-4481-847b-f0fda6c5cd98)
 
 - Record edited statistics such as total words you edited today, to the YAML(Frontmatter) of daily note. Other plugins could use these metadata to generate analysis.
 - Customization of which data to be recorded with ${dataName}, see [Supported String Interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/docs/Settings%20Documentation.md#supported-string-interpolations). 
