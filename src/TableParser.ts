@@ -48,7 +48,7 @@ export class TableParser{
 
                     for (const row of dataRows) {
                         if (row.trim().startsWith('|') && row.trim().endsWith('|')) {
-                            const parsedData = this.parseTableRow(row, headerRow, headerVarMapping, recordNote.path);
+                            const parsedData = this.parseTableRow(row, headerRow, headerVarMapping, recordNote.name);
                             if (parsedData) {
                                 existingDataMap.set(parsedData.filePath, parsedData);
                             }
@@ -261,7 +261,7 @@ export class TableParser{
         }
 
 
-    private parseTableRow(row: string, headerRow: string, headerVarMapping: Record<string, string>, recordNotePath?: string): ExistingData | null {
+    private parseTableRow(row: string, headerRow: string, headerVarMapping: Record<string, string>, recordNotePath: string): ExistingData | null {
         const entry = new ExistingData();
         
         // fetch heading and data rows from table syntax
@@ -289,7 +289,7 @@ export class TableParser{
                     entry.filePath = normalizeObsidianLinkPath(this.plugin.app, match[1]);
                     entry.fileName = match[2];
                 } else {
-                    const noteInfo = recordNotePath ? ` in note "${recordNotePath}"` : '';
+                    const noteInfo = ` in note "${recordNotePath}"`;
                     console.error('The captured value: ', value, ' could not match the regex:', "/^\[\[([^\]]+)\\\|([^\]]+)\]\]$/")
                     new Notice(this.plugin.i18n.t('notices.aliasMatchFailed'), 0)
                     throw new Error (`❌Var template with note alias is not matched${noteInfo}!\nConsider checking if table syntax contains "\\|" in the first coloumn, or if table in periodic note is mixed with notes with alias and notes without alias`)
