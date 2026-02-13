@@ -18,7 +18,7 @@ WordFlow Tracker 是一个轻量级插件，可以跟踪每个笔记的专注时
       <img width="410" height="240" alt="image" src="https://github.com/user-attachments/assets/afd8a8c7-45bb-43ab-b84a-96f3de4d08e0" />
     - 标签列表视图：*支持可折叠分组和双层进度条*
 
-      <img width="409" height="341" alt="image" src="https://github.com/user-attachments/assets/cbef9fff-6eaf-4c5b-accd-d70b44b0264d" />
+      <img width="345" height="240" alt="image" src="https://github.com/user-attachments/assets/8ddd63b3-ab07-48fa-ac86-eb9407add280" />
     - 热力图视图：*支持自定义颜色渐变和笔记导航*
 
 	  <img width="349" height="319" alt="image" src="https://github.com/user-attachments/assets/90ed17df-e5c1-4578-b186-b46baaef1067" />
