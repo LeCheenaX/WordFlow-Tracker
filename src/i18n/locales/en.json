@@ -433,7 +433,7 @@
     }
   },
   "notices": {
-    "aliasMatchFailed": "❌Var template with note alias is not matched!",
+    "aliasMatchFailed": "❌Var template with note alias is not matched in {noteInfo}!",
     "crossDayRecordsDetected": "Cross-day records detected. Try recording to correct note.",
     "editsRecorded": "Edits from {filePath} are recorded.",
     "fieldSwitchUnavailable": "No available time field to switch in current recorder. \nStay on current field.",

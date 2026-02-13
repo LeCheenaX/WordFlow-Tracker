@@ -1,4 +1,4 @@
-export const currentPluginVersion = '1.8.0';
+export const currentPluginVersion = '2.0.0';
 
 export const changelog = {
 'en': 
@@ -37,16 +37,17 @@ export const changelog = {
 - Heatmap view: *available for daily note recorder only*
     - Custom color and gradient levels is supported
     - dynamically adapt gradient thresholds to different properties based on existing data in daily notes, which ensures the note will be distributed on all levels for better visual hierarchy
+        - hover on the legend to show detailed range
     - consistent behaviors from Obsidian: 
-        - click the legend to open note
-        - press ctrl + click on legend to open in new tab
-        - press ctrl and hover on legend to preview daily note content
+        - click the cell to open note
+        - press ctrl + click on cell to open in new tab
+        - press ctrl and hover on cell to preview daily note content
 - Navigate panel: 
     - hidden by default, hover on the date in widget to show up
     - mark label based on date: today, yesterday, this week, last week, etc.
     - consistent behaviors from Obsidian: 
-        - click the legend to open note
-        - press ctrl + click on legend to open in new tab
+        - click the cell to open note
+        - press ctrl + click on cell to open in new tab
 
 🐛 **Bug Fixed:**
 - No information is displayed is selected field has data but all data is zero
@@ -55,6 +56,7 @@ export const changelog = {
 - Decoupling the function \`getOrCreateRecordNote\` into separate functions
 - Improve folder creation logic with better error handling and validation
 - Complete missing notification messages translations
+- Error notifications will inform which note has issues
 
 🎨 **UI Reworked:**
 - New style for dropdown component
@@ -127,24 +129,26 @@ export const changelog = {
 - 热力图视图：*仅适用于日记*
     - 支持自定义颜色及渐变等级。
     - 根据日记笔记中的现有数据动态调整渐变阈值，确保笔记分布在各等级，以获得更佳的视觉层次。
+        - 鼠标悬浮在图例上可查看具体范围
     - 与 Obsidian 一致的操作行为：
-        - 点击图例可打开笔记；
-        - 按住 Ctrl 并点击图例可在新标签页中打开；
-        - 按住 Ctrl 并悬停图例可预览日记笔记内容。
+        - 点击单元格可打开笔记；
+        - 按住 Ctrl 并点击单元格可在新标签页中打开；
+        - 按住 Ctrl 并悬停单元格可预览日记笔记内容。
 - 导航面板：
     - 默认隐藏，将鼠标悬停于小部件日期上方时显示。
     - 基于日期的标签标记：今天、昨天、本周、上周等。
     - 与 Obsidian 一致的操作行为：
-        - 点击图例可打开笔记；
-        - 按住 Ctrl 并点击图例可在新标签页中打开。
+        - 点击单元格可打开笔记；
+        - 按住 Ctrl 并点击单元格可在新标签页中打开。
 
 🐛 **问题修复：**
 - 修复了当所选字段存在数据但所有数据均为零时，无信息显示的问题。
 
-⚡️ **功能增强：**
+⚡️ **功能强化：**
 - 将 \`getOrCreateRecordNote\` 函数解耦为多个独立函数。
 - 改进文件夹创建逻辑，增强错误处理与验证。
 - 补全缺失的通知消息翻译。
+- 报错通知会显示哪个笔记出现了问题。
 
 🎨 **界面重构：**
 - 下拉组件新样式。

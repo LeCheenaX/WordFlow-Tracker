@@ -1863,8 +1863,8 @@ export class WordflowWidgetView extends ItemView {
 
                     // Add tooltip
                     const formattedValue = this.formatValue(value, field);
-                    const dateDisplay = currentDate.format('MMM D, YYYY');
-                    const tooltipText = isFuture ? `${dateDisplay}: Future date` : `${dateDisplay}: ${formattedValue}`;
+                    const noteName = this.selectedRecorder ? currentDate.format(this.selectedRecorder.periodicNoteFormat) : currentDate.format('YYYY-MM-DD');
+                    const tooltipText = isFuture ? `${noteName}: Future date` : `${noteName}: ${formattedValue}`;
                     setTooltip(cell, tooltipText, {
                         placement: 'top',
                         delay: 300
@@ -1955,42 +1955,102 @@ export class WordflowWidgetView extends ItemView {
      * Render heatmap legend
      */
     private renderHeatmapLegend(container: HTMLElement, data: Map<string, number>, field: string) {
-        const legendLabel = container.createEl('span', {
-            cls: 'wordflow-heatmap-legend-label',
-            text: 'Less'
-        });
+            const legendLabel = container.createEl('span', {
+                cls: 'wordflow-heatmap-legend-label',
+                text: 'Less'
+            });
 
-        // Get all non-zero values for color mapping
-        const allValues = Array.from(data.values()).filter(v => v > 0);
-        
-        // Create HeatmapColorManager with user settings
-        const heatmapColorManager = new HeatmapColorManager(
-            this.plugin.settings.heatmapBaseColor,
-            this.plugin.settings.heatmapGradientLevels
-        );
-        
-        // Get color scale
-        const colorScale = heatmapColorManager.getColorScale();
-        
-        // Render legend cells based on gradient levels
-        // Level 0 (no data)
-        const legendCell0 = container.createDiv({
-            cls: 'wordflow-heatmap-legend-cell'
-        });
-        legendCell0.style.backgroundColor = 'var(--background-modifier-hover)';
-        legendCell0.style.opacity = '0.6';
-        
-        // Render gradient levels
-        for (let i = 0; i < colorScale.length; i++) {
-            const legendCell = container.createDiv({
+            // Get all non-zero values for color mapping
+            const allValues = Array.from(data.values()).filter(v => v > 0);
+
+            // Create HeatmapColorManager with user settings
+            const heatmapColorManager = new HeatmapColorManager(
+                this.plugin.settings.heatmapBaseColor,
+                this.plugin.settings.heatmapGradientLevels
+            );
+
+            // Get color scale
+            const colorScale = heatmapColorManager.getColorScale();
+
+            // Calculate value ranges for each color level
+            let minValue: number;
+            let maxValue: number;
+
+            if (allValues.length === 0) {
+                minValue = 0;
+                maxValue = 0;
+            } else if (allValues.length === 1) {
+                minValue = allValues[0];
+                maxValue = allValues[0];
+            } else {
+                const sortedValues = [...allValues].sort((a, b) => a - b);
+                if (sortedValues.length <= 6) {
+                    minValue = sortedValues[0];
+                    maxValue = sortedValues[sortedValues.length - 1];
+                } else {
+                    minValue = sortedValues[3];
+                    maxValue = sortedValues[sortedValues.length - 4];
+                }
+            }
+
+            // Render legend cells based on gradient levels
+            // Level 0 (no data)
+            const legendCell0 = container.createDiv({
                 cls: 'wordflow-heatmap-legend-cell'
             });
-            legendCell.style.backgroundColor = colorScale[i];
+            legendCell0.style.backgroundColor = 'var(--background-modifier-hover)';
+            legendCell0.style.opacity = '0.6';
+
+            // Add tooltip for zero value
+            setTooltip(legendCell0, 'no data or 0', {
+                placement: 'bottom',
+                delay: 300
+            });
+
+            // Render gradient levels with tooltips
+            for (let i = 0; i < colorScale.length; i++) {
+                const legendCell = container.createDiv({
+                    cls: 'wordflow-heatmap-legend-cell'
+                });
+                legendCell.style.backgroundColor = colorScale[i];
+
+                // Calculate the value range for this color level
+                if (allValues.length > 0 && minValue !== maxValue) {
+                    const rangeStart = minValue + (maxValue - minValue) * (i / (colorScale.length - 1));
+                    const rangeEnd = minValue + (maxValue - minValue) * ((i + 1) / (colorScale.length - 1));
+
+                    // Round to integers and format the range values
+                    const formattedStart = this.formatValue(Math.floor(rangeStart), field);
+                    const formattedEnd = this.formatValue(Math.floor(rangeEnd), field);
+
+                    // Create tooltip text
+                    let tooltipText: string;
+                    if (i === colorScale.length - 1) {
+                        // Last level: show "≥ value"
+                        tooltipText = `≥ ${formattedStart}`;
+                    } else {
+                        // Other levels: show range
+                        tooltipText = `${formattedStart} - ${formattedEnd}`;
+                    }
+
+                    setTooltip(legendCell, tooltipText, {
+                        placement: 'bottom',
+                        delay: 300
+                    });
+                } else {
+                    // If no valid range, show the single value or a generic message
+                    const tooltipText = allValues.length > 0 ? this.formatValue(Math.floor(minValue), field) : 'No data';
+                    setTooltip(legendCell, tooltipText, {
+                        placement: 'bottom',
+                        delay: 300
+                    });
+                }
+            }
+
+            const legendLabelMore = container.createEl('span', {
+                cls: 'wordflow-heatmap-legend-label',
+                text: 'More'
+            });
         }
 
-        const legendLabelMore = container.createEl('span', {
-            cls: 'wordflow-heatmap-legend-label',
-            text: 'More'
-        });
-    }
 }

@@ -433,7 +433,7 @@
     }
   },
   "notices": {
-    "aliasMatchFailed": "❌带有笔记别名的变量模板不匹配！",
+    "aliasMatchFailed": "❌{noteInfo}中带有笔记别名的变量模板不匹配！",
     "crossDayRecordsDetected": "检测到跨日记录。尝试记录到正确的笔记。",
     "editsRecorded": "来自 {filePath} 的编辑已记录。",
     "fieldSwitchUnavailable": "当前记录器中没有可切换的时间字段。\n保持当前字段。",
