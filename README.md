@@ -8,7 +8,8 @@
 ## Introduction
 WordFlow Tracker is a lite plugin that tracks your focused time and edit statistics on each note and automatically records to your daily note or periodic notes. 
 
-![wordflow155](https://github.com/user-attachments/assets/84446e86-da99-47fe-b282-ff559e53d265)
+![wordflow202](https://github.com/user-attachments/assets/7fad517c-a86e-4c4b-aa75-fcf168af29a4)
+
 
 ### Core Features
 - Tracking the focused time, number of edits, edited words per note.
