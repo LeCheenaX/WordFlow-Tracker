@@ -31,12 +31,11 @@ WordFlow Tracker is a lite plugin that tracks your focused time and edit statist
 
       <img width="409" height="341" alt="image" src="https://github.com/user-attachments/assets/cbef9fff-6eaf-4c5b-accd-d70b44b0264d" />
     - heatmap view with custom color gradients and note navigation:
-    
 
-- Record edited statistics such as total words you edited today, to the YAML(Frontmatter) of daily note. Other plugins such as heatmap could use these metadata to generate analysis.
+	  <img width="349" height="319" alt="image" src="https://github.com/user-attachments/assets/90ed17df-e5c1-4578-b186-b46baaef1067" />
 
-  ![image](https://github.com/user-attachments/assets/1e5bbe85-a943-4d10-b81c-ecef5e6b15bb)
-- Customization of which data to be recorded with ${dataName}, see in [Supported String Interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) below. 
+- Record edited statistics such as total words you edited today, to the YAML(Frontmatter) of daily note. Other plugins could use these metadata to generate analysis.
+- Customization of which data to be recorded with ${dataName}, see [Supported String Interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/docs/Settings%20Documentation.md#supported-string-interpolations). 
 - Customization of how the data to be recorded, like inserting a table or a list to the specified position of your note. Preview recording syntax before applying changes. 
 ### How does this plugin collect data?
 
@@ -74,24 +73,14 @@ If your newly created notes will be renamed by other plugins, such as **Template
 In wordflow recording syntax, you can add or delete the data in one of the following formats:
 
 - **Table:**
+	Specify the name in heading for ${modifiedNote} in markdown table format, such as "Document words" and add "${docWords}" to the row. Available properties are listed in [supported string interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/docs/Settings%20Documentation.md#supported-string-interpolations).
 
-    Open any note in Obsidian, and add a blank table with:
-  
-	| |
-	|-|
-	| |
+	<img width="1030" height="444" alt="image" src="https://github.com/user-attachments/assets/40a9a731-948e-4e28-b543-3ccbf8f50cfc" />
 
-    Then, specify the name in heading for ${modifiedNote}, such as "Note Name" and add "${modifiedNote}" to the row.
-  
-    ![image](https://github.com/user-attachments/assets/de0e8909-727e-44d2-9cec-c647d51af48c)
+	After completing the markdown table in the syntax, you can preview the result below and will be prompted to confirm changes:
 
-    Now click the 'add column after' button, and specify the new heading names and any [string interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) you would like.
+	<img width="1016" height="316" alt="image" src="https://github.com/user-attachments/assets/ae4e1874-85a7-4c8a-b3ff-79cd59b9d7dd" />
 
-    ![image](https://github.com/user-attachments/assets/0027b8f9-49f9-4f25-a8b4-38d369c6a115)
-
-    Lastly, select and copy the whole table, and paste it into Wordflow Tracker settings.
-
-	![image](https://github.com/user-attachments/assets/de26aee0-e051-42b6-8fc1-e18e41db2f60)
 
     Note: ${modifiedNote} must exist in the table syntax, or the recorder will have trouble merging the existing data of note with the new data
 
@@ -99,15 +88,19 @@ In wordflow recording syntax, you can add or delete the data in one of the follo
 
     Add a linebreak, press the tab key for proper spacing, and specify any name you expect for this data. 
 	
-    Lastly, add a [string interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) like "${docWords}"
+    Lastly, add a [string interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) like "${docWords}".
+    You can preview the result below and will be prompted to confirm changes:
 
-    ![image](https://github.com/user-attachments/assets/288f6fa4-1d0a-4187-aa9d-4b6b7e90e7bc)
+    <img width="1037" height="691" alt="image" src="https://github.com/user-attachments/assets/2a0db911-db45-402c-b3e8-af98c4889fe4" />
 
     Note: ${modifiedNote} must exist in the bullet list syntax, or the recorder will have trouble merging the existing data of note with the new data
 	
 - **Metadata:**
 
     Just like adding a metadata in "source mode", you can add a property name ends with ':', and a [string interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) after it, like "${totalWords}"
+  
+  	<img width="1018" height="509" alt="image" src="https://github.com/user-attachments/assets/fb5aa570-3e54-4435-ad8d-eab27948b60f" />
+
 
 #### Record edit stats to both note content and yaml(frontmatter)
 In plugin settings, create a recorder by clicking the add button:
