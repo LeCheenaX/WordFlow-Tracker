@@ -11,18 +11,7 @@ WordFlow Tracker 是一个轻量级插件，可以跟踪每个笔记的专注时
 ![wordflow155](https://github.com/user-attachments/assets/84446e86-da99-47fe-b282-ff559e53d265)
 
 ### 核心功能
-- 跟踪每个笔记的专注时间、编辑次数和编辑字数。支持通过字段别名自定义状态栏显示内容。
-  
-  ![image](https://github.com/user-attachments/assets/51ce15a6-a935-46c2-9676-5525bd6b092f)
-  
-  ![image](https://github.com/user-attachments/assets/8422a96d-0ab5-417a-a474-7a838825de1e)
-- 在笔记关闭时自动记录修改的数据。或者，使用命令或按钮记录所有笔记。
-- 在侧栏组件中展示更改。支持三种视图模式切换：文件列表、标签列表和热力图（仅限日记记录器）。
-  
-  ![Pasted image 20250706223743](https://github.com/user-attachments/assets/6edc1be0-f262-4054-8803-1b1b37caeec7)
-- 以比例条样式显示更改，展示原始内容(黄色)与修改内容(红色：删除的字数，绿色：添加的字数)的比例。
-
-  ![image](https://github.com/user-attachments/assets/6c977b5f-0aba-4481-847b-f0fda6c5cd98)
+- 跟踪每个笔记的专注时间、编辑次数和编辑字数。
 - 通过多种视图显示统计数据比例：
     - 文件列表视图：
 
@@ -30,9 +19,21 @@ WordFlow Tracker 是一个轻量级插件，可以跟踪每个笔记的专注时
     - 标签列表视图：*支持可折叠分组和双层进度条*
 
       <img width="409" height="341" alt="image" src="https://github.com/user-attachments/assets/cbef9fff-6eaf-4c5b-accd-d70b44b0264d" />
-    - 热力图视图：支持自定义颜色渐变和笔记导航
+    - 热力图视图：*支持自定义颜色渐变和笔记导航*
 
 	  <img width="349" height="319" alt="image" src="https://github.com/user-attachments/assets/90ed17df-e5c1-4578-b186-b46baaef1067" />
+- 支持通过字段别名自定义状态栏显示内容。
+  
+  ![image](https://github.com/user-attachments/assets/51ce15a6-a935-46c2-9676-5525bd6b092f)
+  
+  ![image](https://github.com/user-attachments/assets/8422a96d-0ab5-417a-a474-7a838825de1e)
+- 在笔记关闭时自动记录修改的数据。或者，使用命令或按钮记录所有笔记。
+- 在侧栏组件中展示更改。
+  
+  ![Pasted image 20250706223743](https://github.com/user-attachments/assets/6edc1be0-f262-4054-8803-1b1b37caeec7)
+- 以比例条样式显示更改，展示原始内容(黄色)与修改内容(红色：删除的字数，绿色：添加的字数)的比例。
+
+  ![image](https://github.com/user-attachments/assets/6c977b5f-0aba-4481-847b-f0fda6c5cd98)
 
 - 将编辑统计数据（例如你今天编辑的总字数）记录到日记的 YAML（Frontmatter）中。其他插件可以使用这些元数据生成分析。
 - 自定义要记录的数据，使用 ${dataName} 语法，详见[支持的字符串插值](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/docs/%E8%AE%BE%E7%BD%AE%E6%96%87%E6%A1%A3.md#%E6%94%AF%E6%8C%81%E7%9A%84%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%8F%92%E5%80%BC)。
