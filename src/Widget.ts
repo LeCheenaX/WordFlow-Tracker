@@ -1922,6 +1922,27 @@ export class WordflowWidgetView extends ItemView {
                                 confirmModal.open();
                             }
                         });
+
+                        // Add hover handler for Ctrl+hover preview (only for existing notes)
+                        cell.addEventListener('mouseover', (evt: MouseEvent) => {
+                            if (!this.selectedRecorder) return;
+                            if (!(evt.ctrlKey || evt.metaKey)) return;
+
+                            const targetDate = cellDate.valueOf();
+                            const recordNote = this.selectedRecorder.getRecordNote(targetDate);
+
+                            if (recordNote) {
+                                // Trigger Obsidian's hover preview
+                                this.plugin.app.workspace.trigger('hover-link', {
+                                    event: evt,
+                                    source: 'wordflow-widget',
+                                    hoverParent: this,
+                                    targetEl: cell,
+                                    linktext: recordNote.path,
+                                    sourcePath: recordNote.path
+                                });
+                            }
+                        });
                     }
 
                     currentDate.add(1, 'day');

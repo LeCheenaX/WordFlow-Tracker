@@ -1,8 +1,65 @@
-export const currentPluginVersion = '1.7.5';
+export const currentPluginVersion = '1.8.0';
 
 export const changelog = {
 'en': 
 `
+### 2.0.0 updates
+
+>[!caution]
+>Weekly note, monthly note users should be careful:
+>- if the periodic note title format is not a safe usecase of \`moment.js\`, you will be prompted to change title format or revert to 1.7.x version.
+>- you should assign a property to mark your recorder as non-daily-note for best compatibility
+>	- this feature is introduced in 2.0.0, in plugin settings > recorders > periodic note to record > periodic note type.
+
+>[!important]
+>Thanks for the companion and feedbacks in the previous 33 versions of this plugin since 1.0.0. In the future, this plugin will mainly focus on the following functions:
+>1. **data analysis** and **periodic summary**
+>2. **AI integration**
+>
+>Any idea or new notion will be warm welcomed by [raising an issue](https://github.com/LeCheenaX/WordFlow-Tracker/issues). You can also fetch the upcoming features in [developing roadmap](https://github.com/LeCheenaX/WordFlow-Tracker/wiki/Development-RoadMap).
+>
+>If you enjoy WordFlow Tracker, please consider giving it a star ⭐ on GitHub. 
+> Your support is the greatest encouragement for me to keep improving this plugin.  
+>👉 [Star WordFlow Tracker on GitHub](https://github.com/LeCheenaX/WordFlow-Tracker)
+>
+>— _LeCheenaX_  
+>Thank you for being part of this journey! 🙏
+
+🚀 **Key Insights:**
+- New view: heatmap view is available for daily note recorder
+- UI and control panel is completely reworked:
+    - add view switch button with three modes (file list, tag list, heatmap)
+    - add note navigation support for reviewing previous data
+    - recorder switching panel is moved to the top of the widget
+- Depreciated: \`enable tag-based view\` is replaced by \`default view on open\` in widget settings.
+
+🔥 **Major Updates:**
+- Heatmap view: *available for daily note recorder only*
+    - Custom color and gradient levels is supported
+    - dynamically adapt gradient thresholds to different properties based on existing data in daily notes, which ensures the note will be distributed on all levels for better visual hierarchy
+    - consistent behaviors from Obsidian: 
+        - click the legend to open note
+        - press ctrl + click on legend to open in new tab
+        - press ctrl and hover on legend to preview daily note content
+- Navigate panel: 
+    - hidden by default, hover on the date in widget to show up
+    - mark label based on date: today, yesterday, this week, last week, etc.
+    - consistent behaviors from Obsidian: 
+        - click the legend to open note
+        - press ctrl + click on legend to open in new tab
+
+🐛 **Bug Fixed:**
+- No information is displayed is selected field has data but all data is zero
+
+⚡️ **Enhancements:**
+- Decoupling the function \`getOrCreateRecordNote\` into separate functions
+- Improve folder creation logic with better error handling and validation
+- Complete missing notification messages translations
+
+🎨 **UI Reworked:**
+- New style for dropdown component
+- Switching note support with navigation buttons
+
 ### 1.7.5 updates
 ✨ **New Features:**
 - Preview the result of recording syntax.
@@ -33,57 +90,66 @@ export const changelog = {
 🎨 **UI Optimization:**
 - File name will ellipse correctly in tag based view. 
 - Files with no tag, which has a configured color, will have coordinate style with other files.
-
-### 1.7.3 updates
-🐛 **Bug Fixed:**
-- Race condition issues while recording ([Issue 11](https://github.com/LeCheenaX/WordFlow-Tracker/issues/11)).
-- Widget silently collapses when data is corrupted by unexpected file rename or migration.
-
-⚡️ **Enhancements:**
-- Safeguarding the color updating mechanism to prevent racing issues.
-
-### 1.7.2 updates
-✨ **New Features:**
--  Custom tag group labels (optional)
-
-🐛 **Bug Fixed:**
-- Setting validation is incorrect.
-- Widget timing will unexpectedly display seconds.
-
-🎨 **UI Optimization:**
-- Uniform font styles in the tag based view.
-- Correcting setting styling when width is not enough.
-
-### 1.7.1 updates
-🐛 **Bug Fixed:**
-- Tag colors are not saved correctly.
-
-🎨 **UI Optimization:**
-- Fixed mobile color picker distortion in tag color settings.
-
-### 1.7.0 updates
-🔥 **Major Updates:**
-- Tag-based colors. Instead of randomly generated colors for file displaying in the widget, supports custom colors based on the file tags. 
-- Tag-based data View: Hierarchical list view with collapsible tag groups and dual-layer progress bar for better data organization.
-
-✨ **New Features:**
-- Option to automatically resume focus mode after idle pause
-
-🐛 **Bug Fixed:**
-- Metadata of the notes may sometimes be duplicated in YAML frontmatter
-- Status bar occasionally displaying incorrect content in reading mode
-- Fixed settings page auto-closing when plugin is disabled while widget view is active
-
-⚡️ **Enhancements:**
-- Improved YAML frontmatter handling using Obsidian's metadataCache API for more reliable metadata operations
-- Optimized plugin loading & unloading process to prevent UI conflicts
-
-🎨 **UI Optimization:**
-- Realigned the setting pages for clarity.
-- More tooltips and hover behaviors. 
 `,
 'zh-CN': 
 `
+### 2.0.0 更新内容
+
+>[!caution]
+>每周笔记、每月笔记用户请注意：
+>- 如果周期笔记的标题格式不是 \`moment.js\` 的安全用例，系统会提示您修改标题格式，或回退至 1.7.x 版本。
+>- 为获得最佳兼容性，您应为记录器指定一个属性，将其标记为非日记笔记。
+>	- 此功能于 2.0.0 版本引入，路径：插件设置 > 记录器 > 需记录的周期性笔记 > 周期性笔记类型。
+
+>[!important]
+>感谢您自 1.0.0 以来在之前的 33 个版本中给予的陪伴与反馈。未来，本插件将主要聚焦于以下功能：
+>1. **数据分析**与**周期性总结**
+>2. **AI 集成**
+>
+>任何想法或新概念，都欢迎通过[提交 Issue](https://github.com/LeCheenaX/WordFlow-Tracker/issues) 与我们分享。您也可以在[开发路线图](https://github.com/LeCheenaX/WordFlow-Tracker/wiki/Development-RoadMap)中了解即将推出的功能。
+>
+>如果您喜欢 WordFlow Tracker，不妨在 GitHub 上为我们点亮一颗星星 ⭐。  
+>您的支持是我持续改进插件的最大动力。  
+>👉 [在 GitHub 上为 WordFlow Tracker 点星](https://github.com/LeCheenaX/WordFlow-Tracker)
+>
+>— _LeCheenaX_  
+>感谢您一路同行！ 🙏
+
+🚀 **核心亮点：**
+- 新增视图：日记记录器现已支持热力图视图。
+- 界面与控制面板完全重构：
+    - 增加视图切换按钮，提供三种模式（文件列表、标签列表、热力图）。
+    - 增加笔记导航支持，便于回顾历史数据。
+    - 记录器切换面板移至组件顶部。
+- 弃用：\`启用基于标签的视图\' 已被替换为小部件设置中的 \'打开时默认视图\'.
+
+🔥 **主要更新：**
+- 热力图视图：*仅适用于日记*
+    - 支持自定义颜色及渐变等级。
+    - 根据日记笔记中的现有数据动态调整渐变阈值，确保笔记分布在各等级，以获得更佳的视觉层次。
+    - 与 Obsidian 一致的操作行为：
+        - 点击图例可打开笔记；
+        - 按住 Ctrl 并点击图例可在新标签页中打开；
+        - 按住 Ctrl 并悬停图例可预览日记笔记内容。
+- 导航面板：
+    - 默认隐藏，将鼠标悬停于小部件日期上方时显示。
+    - 基于日期的标签标记：今天、昨天、本周、上周等。
+    - 与 Obsidian 一致的操作行为：
+        - 点击图例可打开笔记；
+        - 按住 Ctrl 并点击图例可在新标签页中打开。
+
+🐛 **问题修复：**
+- 修复了当所选字段存在数据但所有数据均为零时，无信息显示的问题。
+
+⚡️ **功能增强：**
+- 将 \`getOrCreateRecordNote\` 函数解耦为多个独立函数。
+- 改进文件夹创建逻辑，增强错误处理与验证。
+- 补全缺失的通知消息翻译。
+
+🎨 **界面重构：**
+- 下拉组件新样式。
+- 支持通过导航按钮切换笔记。
+
 ### 1.7.5 更新
 ✨ **新功能：**
 - 预览记录语法的结果。
@@ -114,53 +180,5 @@ export const changelog = {
 🎨 **界面优化：**
 - 修复标签视图模式下文件名超长时的省略显示问题。
 - 没有标签但配置了颜色的文件，现在会与其他文件保持协调的样式。
-
-### 1.7.3 更新
-🐛 **错误修复：**
-- 侧栏组件静默崩溃，当文件被意外重命名或迁移导致数据污染后。
-- 记录器触发竞态条件导致的记录失败 （[Issue 11](https://github.com/LeCheenaX/WordFlow-Tracker/issues/11)）。
-
-⚡️ **性能增强：**
-- 优化颜色更新机制，防止竞态问题
-
-### 1.7.2 更新
-✨ **新功能：**
-- 自定义标签组标签（可选）
-
-🐛 **错误修复：**
-- 设置验证的结果显示与实际不符
-- 侧栏组件计时会意外显示秒数
-
-🎨 **界面优化：**
-- 统一基于标签视图中的字体样式
-- 修正宽度不足时的设置样式
-
-### 1.7.1 更新
-🐛 **错误修复：**
-- 标签颜色无法正确保存
-
-🎨 **界面优化：**
-- 修复移动端标签颜色设置中颜色选择器变形
-
-### 1.7.0 更新
-🔥 **核心功能：**
-- 基于自定义标签的颜色。侧栏组件中显示的数据可以根据笔记的标签指定显示颜色，让分类更清晰。
-- 基于标签的层级化列表视图。支持标签组折叠和双层进度条，让数据组织更清晰。
-
-✨ **新特性：**
-- 新增设置：专注模式因闲置暂停后，回到文档可以自动恢复专注（默认关闭）
-
-🐛 **错误修复：**
-- YAML 前置元数据有时会被重复添加的问题
-- 状态栏在阅读模式下有时会错误显示内容的问题
-- 修复了在侧栏组件处于活动状态时禁用插件导致设置页面自动关闭的问题
-
-⚡️ **性能增强：**
-- 使用 Obsidian 的 metadataCache API 改进 YAML 前置元数据处理，提高元数据操作的可靠性
-- 优化插件加载、卸载流程，防止界面冲突
-
-🎨 **界面优化：**
-- 重新整理设置页面，展示更清晰。
-- 增加鼠标悬浮效果和提示。
 `
 };
