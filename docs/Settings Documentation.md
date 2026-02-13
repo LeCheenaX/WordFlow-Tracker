@@ -4,9 +4,11 @@
 	- Require edits means you should at least type anything or delete anything, even just a space.
 	- Require focus time means you should leave the note under edit mode over 1 minute.
 	- If require none above, the recorder will track all files you opened under edit mode.
- - **Notes to record while quiting editing mode**: Select the behavior when switching a note from editing mode to reading mode.
+- **Notes to record while quitting editing mode**: Select the behavior when switching a note from editing mode to reading mode.
 	- Editing mode includes live preview and source mode.
-	- If recording current note only, other notes may not be automactically recorded if you don\'t manually record.
+	- If recording current note only, other notes may not be automatically recorded if you don't manually record.
+- **Quick Reference**: Access essential plugin documentation and string interpolation reference directly from the settings page for quick lookup while configuring your recorders.
+- **Link Format Compliance**: Newly generated links now follow your Obsidian link format settings (shortest path, relative path, or absolute path) instead of always using vault absolute paths. This ensures consistency with your vault's link management preferences.
 
 ### Focus Mode
 
@@ -35,6 +37,20 @@ In focus mode, the tracker will not only track the statistics in edit mode, but 
 
 - **Auto-resume after idle pause**: When enabled, focus mode will automatically resume tracking after an idle pause without requiring manual intervention. This ensures continuous time tracking even during brief interruptions or breaks.
 
+### Localization
+
+WordFlow Tracker now supports full localization with complete translations for:
+- All settings and configuration options
+- Notification messages and prompts
+- Commands and UI elements
+- Changelog and update logs
+
+Currently supported languages:
+- English
+- Chinese (Simplified)
+
+The plugin automatically detects your Obsidian language setting and displays the appropriate translation.
+
 ### Recorder
 - **Create**: Create a new recorder so that the edit stats in tracker will be additionally recorded. Common usages are as followed:
 	- Create a recorder for another periodic note: current recorder will record to daily note, and you create an additional one to record to monthly note. 
@@ -61,7 +77,10 @@ In focus mode, the tracker will not only track the statistics in edit mode, but 
 - **Record content type:** Select a type of content to record on specified notes. Currently, table and bullet list are supported.
 	- Note: when using a table format, the modified note must be at the first column.  
 - **Insert to position:** If using a custom position, the start position and end position must exist and be unique in periodic note! Make sure your template is correctly applied while creating new periodic note.
-- **Wordflow recording syntax:** Used for customizaing recording content. The regular expressions are supported with '${modifiedNote}', you can also generate link to the note by using a '[[${modifiedNote}]]'.
+- **Wordflow recording syntax:** Used for customizing recording content. Regular expressions are supported with '${modifiedNote}', you can also generate links to notes by using '[[${modifiedNote}]]'.
+- **Preview Recording Syntax**: Before applying changes to your recording syntax, you can preview how the result will look. This helps validate your configuration and ensures the output matches your expectations.
+- **Adapt Existing Records**: When you change your recording syntax, the plugin can prompt you to adapt existing records in your periodic notes to match the new format. A preview is shown before applying changes, giving you full control over the migration.
+- **Auto-clear Records for Deleted Files**: When enabled, the plugin will automatically remove records for files that have been deleted from your vault, keeping your periodic notes clean and up-to-date.
 
 #### Supported String Interpolations
 
@@ -90,6 +109,77 @@ In focus mode, the tracker will not only track the statistics in edit mode, but 
 
 ### Widget
 
-- **Tag Group Based Colors**: Instead of randomly generated colors for files displayed in the widget, you can now configure custom colors based on file tags. This allows for better visual organization and identification of different types of notes in the widget display.
+The widget provides three view modes that you can switch between using the view switch button at the top:
 
-- **Tag Group Based Data View**: The widget now supports grouping and displaying data based on file tags, providing a more organized view of your tracked notes categorized by their assigned tags.
+#### View Modes
+
+1. **File List View**: Displays all edited files with their individual statistics
+2. **Tag List View**: Groups files by tags with collapsible sections and hierarchical progress bars
+3. **Heatmap View**: Visual calendar representation of your productivity (available for daily note recorder only)
+
+#### Widget Settings
+
+- **Default View on Open**: Choose which view mode the widget opens with (File List, Tag List, or Heatmap)
+
+- **Field Aliases**: Customize how field names appear in the widget display
+  - Create more readable labels for technical field names
+  - Support for multiple languages
+  - Improve widget usability with personalized terminology
+
+#### Random Color Generation
+
+These settings control how colors are automatically generated for files that don't have tag-based colors configured. Colors are generated using the HSL (Hue, Saturation, Lightness) color model.
+
+- **Random Color Group Lightness**: Controls the brightness of generated colors (0-100)
+  - Lower values (e.g., 30-50): Darker colors, better for light themes
+  - Medium values (e.g., 50-70): Balanced colors, works well in most themes
+  - Higher values (e.g., 70-90): Lighter colors, better for dark themes
+  - Default: 66
+  - Recommended examples:
+    - Dark theme: 65-75
+    - Light theme: 40-55
+    - High contrast: 30 or 80
+
+- **Random Color Group Saturation**: Controls the color intensity (0-100)
+  - You can specify multiple values separated by spaces to create color variety
+  - Lower values (e.g., 20-40): Muted, pastel colors
+  - Medium values (e.g., 50-70): Balanced, natural colors
+  - Higher values (e.g., 80-100): Vibrant, intense colors
+  - Default: 60 85
+  - Recommended examples:
+    - Subtle palette: 30 45
+    - Balanced palette: 60 85 (default)
+    - Vibrant palette: 75 90
+    - Wide variety: 40 60 80
+
+How it works: The plugin randomly selects hue values (0-360°) and picks one saturation value from your list for each file, creating visually distinct colors while maintaining consistent lightness. Multiple saturation values help differentiate files with similar hues.
+
+Note: Changes take effect after refreshing the widget or reloading the plugin.
+
+#### Heatmap View (Daily Note Recorder Only)
+
+The heatmap view provides a visual calendar representation of your productivity:
+
+- **Custom Colors and Gradients**: Configure color schemes and gradient levels to match your preferences
+- **Dynamic Thresholds**: Automatically adapts gradient levels based on your actual data distribution, ensuring notes are distributed across all visual levels for better hierarchy
+- **Interactive Navigation**:
+  - Click legend to open the note
+  - Ctrl+Click to open in a new tab
+  - Ctrl+Hover to preview note content
+- **Date Navigation Panel**: 
+  - Hidden by default, hover over the date in widget to reveal
+  - Shows contextual labels: "today", "yesterday", "this week", "last week", etc.
+  - Navigate through your history with intuitive controls
+
+#### Tag-Based Colors
+
+Configure custom colors for specific tags to override random color generation:
+
+- **Configure Colors for Tags**: Assign specific colors to files based on their tags
+  - Compatible with both file-based view and tag-based view
+  - Files with multiple tags will have colors blended
+  - Different files with the same tag will auto-distinguish by saturation variations
+  - Custom group labels for tag groups (optional)
+  - Maximum 10 tag color configurations allowed
+
+When tag-based colors are configured, those files will use the assigned colors. Files without configured tags will use the random color generation settings described above.

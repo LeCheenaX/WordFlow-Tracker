@@ -279,7 +279,7 @@
         ]
       },
       "useSecondInWidget": {
-        "name": "Show second in widget pane (beta)",
+        "name": "Show second in widget pane",
         "desc": [
           "Display seconds together with minute in the widget pane.",
           "Will not affect existing data currently.",
