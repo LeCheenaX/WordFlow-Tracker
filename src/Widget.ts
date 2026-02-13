@@ -1889,8 +1889,8 @@ export class WordflowWidgetView extends ItemView {
                                 this.selectedNoteName = noteFileName;
                                 this.updatePeriodicNoteName();
                                 this.updateNavigationButtons();
-                                // Re-render heatmap to update visual state (selected date highlight)
-                                await this.renderHeatmap(field);
+                                // Update data to refresh totalDataContainer with new note's data
+                                await this.updateData();
                             } else {
                                 // Note doesn't exist, show confirmation modal
                                 const displayName = noteFileName; // Use the filename as display name
