@@ -6,36 +6,38 @@
 ![image](https://github.com/user-attachments/assets/7a39fcb6-d660-4fd2-a658-b1a1076ddcf3)
 
 ## Introduction
-WordFlow Tracker is a lite plugin that track your focused time and edits statistics on each note and automatically record to your daily note or periodic notes. 
+WordFlow Tracker is a lite plugin that tracks your focused time and edit statistics on each note and automatically records to your daily note or periodic notes. 
 
 ![wordflow155](https://github.com/user-attachments/assets/84446e86-da99-47fe-b282-ff559e53d265)
 
 ### Core Features
-- Tracking the focused time, number of edits, editied words per note. This will reflect on the status bar at the bottom of note.
+- Tracking the focused time, number of edits, edited words per note. Customize status bar content with field aliases for personalized display.
   
   ![image](https://github.com/user-attachments/assets/51ce15a6-a935-46c2-9676-5525bd6b092f)
   
   ![image](https://github.com/user-attachments/assets/8422a96d-0ab5-417a-a474-7a838825de1e)
 - Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes.
-- Display the changes in the side pane widget, such as the previous reading time of a note today, and your current reading time.
+- Display the changes in the side pane widget. Switch between three view modes: file list, tag list, and heatmap (daily note recorder only).
   
   ![Pasted image 20250706223743](https://github.com/user-attachments/assets/6edc1be0-f262-4054-8803-1b1b37caeec7)
-- Display changes in a bar style to show the portion of original contents v.s. modified contents.
+- Display changes in a bar style to show the portion of original contents(yellow) v.s. modified contents(red: deleted words, green: added words).
 
   ![image](https://github.com/user-attachments/assets/6c977b5f-0aba-4481-847b-f0fda6c5cd98)
-- Display the portions of statistics based on files or tags.
-    - file view:
+- Display the portions of statistics with multiple views:
+    - file list view:
 
       <img width="410" height="240" alt="image" src="https://github.com/user-attachments/assets/afd8a8c7-45bb-43ab-b84a-96f3de4d08e0" />
-    - tag view:
+    - tag list view: *with collapsible groups and dual-layer progress bars*
 
       <img width="409" height="341" alt="image" src="https://github.com/user-attachments/assets/cbef9fff-6eaf-4c5b-accd-d70b44b0264d" />
+    - heatmap view with custom color gradients and note navigation:
+    
 
 - Record edited statistics such as total words you edited today, to the YAML(Frontmatter) of daily note. Other plugins such as heatmap could use these metadata to generate analysis.
 
   ![image](https://github.com/user-attachments/assets/1e5bbe85-a943-4d10-b81c-ecef5e6b15bb)
 - Customization of which data to be recorded with ${dataName}, see in [Supported String Interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file#supported-string-interpolations) below. 
-- Customization of how the data to be recorded, like inserting a table or a list to the specified position of your note. 
+- Customization of how the data to be recorded, like inserting a table or a list to the specified position of your note. Preview recording syntax before applying changes. 
 ### How does this plugin collect data?
 
 We fetch the edit statistcs by access the history field of Obsidian editor, which is the place to store the undo/redo history of Obsidian. 

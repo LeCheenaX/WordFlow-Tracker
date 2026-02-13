@@ -11,29 +11,33 @@ WordFlow Tracker 是一个实时跟踪每个笔记中的编辑数据的轻量插
 ![wordflow155](https://github.com/user-attachments/assets/84446e86-da99-47fe-b282-ff559e53d265)
 
 ## 核心功能
-- 跟踪每个笔记的专注时间、编辑次数和编辑字数。这将在笔记底部的状态栏中显示。
+- 跟踪每个笔记的专注时间、编辑次数和编辑字数。支持通过字段别名自定义状态栏显示内容。
 
   ![image](https://github.com/user-attachments/assets/51ce15a6-a935-46c2-9676-5525bd6b092f) 
   
   ![Pasted image 20250706224000](https://github.com/user-attachments/assets/8422a96d-0ab5-417a-a474-7a838825de1e)
 
-- 在笔记关闭时自动记录修改的数据。或者，使用命令或按钮记录所有笔记。记录后，跟踪器将重置为0。
-- 在侧栏组件中展示今日更改, 比如今天已阅读某个笔记的时间，和当前正在阅读的时长。
+- 在笔记关闭时自动记录修改的数据。或者，使用命令或按钮记录所有笔记。
+- 在侧栏组件中展示更改。支持三种视图模式切换：文件列表、标签列表和热力图（仅限日记记录器）。
+  
   ![Pasted image 20250706223743](https://github.com/user-attachments/assets/6edc1be0-f262-4054-8803-1b1b37caeec7)
 - 以比例条样式显示更改，展示原始内容(黄色)与修改内容(红色、绿色)的比例。
   ![image](https://github.com/user-attachments/assets/6c977b5f-0aba-4481-847b-f0fda6c5cd98)
-- 基于文件或基于标签，显示不同数据的比例：
-    - 基于文件的视图:
+- 通过多种视图显示统计数据比例：
+    - 文件列表视图：
 
       <img width="410" height="240" alt="image" src="https://github.com/user-attachments/assets/afd8a8c7-45bb-43ab-b84a-96f3de4d08e0" />
-    - 基于标签的视图:
+    - 标签列表视图：*支持可折叠分组和双层进度条*
 
       <img width="409" height="341" alt="image" src="https://github.com/user-attachments/assets/cbef9fff-6eaf-4c5b-accd-d70b44b0264d" />
+    - 热力图视图：支持自定义颜色渐变和笔记导航
+    
+
 - 将编辑统计数据（例如你今天编辑的总字数）记录到日记的 YAML（Frontmatter）中。其他插件（如热图）可以使用这些元数据生成分析。
 
   ![image](https://github.com/user-attachments/assets/1e5bbe85-a943-4d10-b81c-ecef5e6b15bb)
 - 自定义要记录的数据，使用${dataName}语法，详见下方[支持的字符串插值](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/README_ZH_CN.md#%E6%94%AF%E6%8C%81%E7%9A%84%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%8F%92%E5%80%BC)。
-- 自定义数据记录的方式，例如将表格或列表插入到笔记的指定位置。
+- 自定义数据记录的方式，例如将表格或列表插入到笔记的指定位置。应用更改前可预览记录语法。
 
 ### 此插件如何收集数据？
 

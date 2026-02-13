@@ -100,29 +100,38 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     templateTimeFormat: 'HH:mm',
 	recordType: 'table',
 	insertPlace: 'bottom',
-	tableSyntax: `| Note                | Edited Words   | Last Modified Time  | Focused |\n| ------------------- | ---------------- | ------------------ | --------- |\n| [[\${modifiedNote}\\|\${noteTitle}]] | \${editedWords} | \${lastModifiedTime} | \${readEditTime} |`,
+	tableSyntax: `| Note                                              | Edited Words    | Percentage | Focused             | Last Modified Time   |\n| ------------------------------------ | ----------------- | ------------- | ----------------- | ---------------------- |\n| [[\${modifiedNote}\\|\${noteTitle}]] | \${editedWords} | \${statBar}    | \${readEditTime} | \${lastModifiedTime} |`,
 	bulletListSyntax: `- \${modifiedNote}\|\${noteTitle}\n    - Edits: \${editedTimes}\n    - Edited Words: \${editedWords}\n    - Focused Time: \${readEditTime}`,
 	metadataSyntax: `total edits: \${totalEdits}\ntotal words: \${totalWords}\ntotal time: \${totalTime}`,
-	timeFormat: 'YYYY-MM-DD HH:mm',
+	timeFormat: 'HH:mm',
 	sortBy: 'lastModifiedTime',
 	isDescend: true,
 	insertPlaceStart: '',
 	insertPlaceEnd: '',
 
     // Timers setting tab
-    idleInterval: '3',
+    idleInterval: '5',
     autoResumeFocusMode: false, 
-    useSecondInWidget: false, 
+    useSecondInWidget: true, 
 
     // Widget setting tab
     enableWidgetOnLoad: true,
     showWidgetRibbonIcon: true,
     defaultViewOnOpen: 'file-list',
-    switchToFieldOnFocus: 'disabled',
+    switchToFieldOnFocus: 'readEditTime',
+    fieldAlias: [
+        {
+        "key": "words",
+        "value": "editedWords"
+        },
+        {
+        "key": "focused",
+        "value": "readEditTime"
+        }
+    ],
     colorGroupLightness: '66',
     colorGroupSaturation: [60, 85],
     tagColors: [], // 修改为支持完整颜色的数组结构
-    fieldAlias: [],
     heatmapBaseColor: '#33C15E',
     heatmapGradientLevels: 5,
 
