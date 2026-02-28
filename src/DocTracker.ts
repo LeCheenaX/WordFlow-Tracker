@@ -2,7 +2,7 @@ import { wordsCounter } from "./Utils/stats";
 import { conditionalSleep } from "./Utils/conditionalSleep";
 import Timer, { formatTime } from "./Timer";
 import WordflowTrackerPlugin from "./main";
-import { debounce, Editor, EventRef, MarkdownView, MarkdownViewModeType, moment, Notice } from "obsidian";
+import { debounce, Editor, EventRef, MarkdownView, MarkdownViewModeType, moment, Notice, TAbstractFile, TFile } from "obsidian";
 import { historyField } from "@codemirror/commands";
 
 const DEBUG = false as const;
@@ -75,9 +75,17 @@ export class DocTracker {
     };
 
     public async countWordsFullScan() {
-        if (!this.activeEditor?.file || this.activeEditor.file.path !== this.filePath) {
+        let file = this.activeEditor?.file;
+        if (!file || file.path !== this.filePath) {
             // console.warn(`Tracker for ${this.filePath} misattached to another note for switching too quickly! The issues are fixed but recommend not to record immediately after note-switching.`);
-            this.countWordsByChanges(); // no editor attached to this tracker, using the conservative method
+            const abstractFile = this.plugin.app.vault.getAbstractFileByPath(this.filePath);
+            if (abstractFile instanceof TFile) {
+                file = abstractFile; // try fixing file
+            }
+        }
+
+        if (!file) {
+            this.countWordsByChanges();
             return;
         }
 
@@ -88,7 +96,7 @@ export class DocTracker {
             //@ts-expect-error
             this.docWords = totalWordsCt(this.activeEditor?.editor.cm.state.sliceDoc(0));
         } else {
-            const content = await this.plugin.app.vault.read(this.activeEditor.file);
+            const content = await this.plugin.app.vault.read(file);
             this.docWords = totalWordsCt(content);
         }
     }
@@ -203,7 +211,7 @@ export class DocTracker {
         //        if (DEBUG) console.log(`DocTracker.initialize: created for ${this.filePath}`); 
         await this.activate(this.activeEditor?.getMode());
         await sleep(100) // for loading data
-        this.countWordsFullScan();
+        await this.countWordsFullScan();
         this.originalWords = this.docWords;
 
         // Use conditional sleep: 100ms minimum, 900ms maximum, with resource readiness checks
