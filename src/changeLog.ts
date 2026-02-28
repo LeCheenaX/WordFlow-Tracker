@@ -1,8 +1,21 @@
-export const currentPluginVersion = '2.0.0';
+export const currentPluginVersion = '2.0.1';
 
 export const changelog = {
 'en': 
 `
+### 2.0.1 updates
+
+✨ **New Features:**
+- Option to ignore warnings: You can now choose to hide warning messages in settings for a cleaner experience.
+- Heatmap view improvements:
+    - Change time range: Select different time periods to view in the heatmap.
+    - Smart cell sizing: Heatmap cells now automatically adjust to fit your sidebar width perfectly.
+    - Week start day customization: Choose which day your week starts on in the heatmap view (Sunday or Monday).
+
+🐛 **Bug Fixed:**
+- Resolved a rare case where document word count could show negative values([issue #14](https://github.com/LeCheenaX/WordFlow-Tracker/issues/14)).
+- Widget view now updates correctly on first launch when the plugin view is attached to the workspace.
+
 ### 2.0.0 updates
 
 >[!caution]
@@ -73,28 +86,22 @@ export const changelog = {
 ⚡️ **Enhancements:**
 - Ensure the tracker is reset after recording completes.
 - Handle the cross-day editing correctly when multiple notes are edited simultaneously. 
-
-### 1.7.4 updates
-🔥 **Key Insight:**
-- The newly generated links will now obey the Obsidian new link format settings(one of shortest, relative path, absolute path), rather than vault absolute path.
-
-🐛 **Bug Fixed:**
-- Warning messages will repeat too many times in the notification ([Issue 12](https://github.com/LeCheenaX/WordFlow-Tracker/issues/12)).
-- The plugin could not recognize links updated by Obsidian correctly. 
-
-⚡️ **Enhancements:**
-- Rebuilt the renaming and migration logics, to ensure the parsing works for links edited either by Obsdian or by user.
-- Safeguarding the parsing logics for deleted files. 
-
-✨ **New Features:**
-- Option to auto clear the records for deleted files.
-
-🎨 **UI Optimization:**
-- File name will ellipse correctly in tag based view. 
-- Files with no tag, which has a configured color, will have coordinate style with other files.
 `,
 'zh-CN': 
 `
+### 2.0.1 更新内容
+
+✨ **新功能：**
+- 忽略警告选项：您现在可以在设置中选择隐藏警告消息，获得更清爽的使用体验。
+- 热力图视图改进：
+    - 更改时间范围：可选择不同的时间段在热力图中查看。
+    - 智能单元格大小：热力图单元格现在会自动调整以完美适配您的侧边栏宽度。
+    - 自定义每周起始日：在热力图视图中选择您的一周从哪天开始（周日或周一）。
+
+🐛 **问题修复：**
+- 解决了文档字数可能显示为负数的罕见情况([issue #14](https://github.com/LeCheenaX/WordFlow-Tracker/issues/14))。
+- 修复了首次启动时，当插件视图附加到工作区时，组件视图无法正确更新的问题。
+
 ### 2.0.0 更新内容
 
 >[!caution]
@@ -165,24 +172,5 @@ export const changelog = {
 ⚡️ **性能增强：**
 - 确保记录完成后追踪器才被重置。
 - 正确处理多个笔记同时编辑时的跨日编辑情况。
-
-### 1.7.4 更新
-🔥 **核心改进：**
-- 新生成的链接现在会遵循 Obsidian 的新链接格式设置（最短路径、相对路径或绝对路径），而不是固定使用绝对路径。
-
-🐛 **错误修复：**
-- 警告消息会在通知中重复显示过多次（[Issue 12](https://github.com/LeCheenaX/WordFlow-Tracker/issues/12)）。
-- 插件无法正确识别由 Obsidian 更新的链接。
-
-⚡️ **性能增强：**
-- 重构了重命名和迁移逻辑，确保解析功能对 Obsidian 或用户编辑的链接都能正常工作。
-- 重构了对已删除文件的处理逻辑。
-
-✨ **新功能：**
-- 新增选项：自动清除已删除文件的记录。
-
-🎨 **界面优化：**
-- 修复标签视图模式下文件名超长时的省略显示问题。
-- 没有标签但配置了颜色的文件，现在会与其他文件保持协调的样式。
 `
 };
