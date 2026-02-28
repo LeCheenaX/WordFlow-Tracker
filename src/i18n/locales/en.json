@@ -364,6 +364,10 @@
       "heatmapGradientLevels": {
         "name": "Heatmap gradient levels",
         "desc": "Set the number of gradient levels for the heatmap (4-10 levels). More levels provide finer color distinctions."
+      },
+      "heatmapWeeksToShow": {
+        "name": "Heatmap weeks to display",
+        "desc": "Set the number of weeks to display in the heatmap (5-13 weeks). More weeks show more history but smaller cells."
       }
     },
     "momentValidation": {

@@ -64,6 +64,7 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
     tagColors: TagColorConfig[]; // tag-based color configurations
     heatmapBaseColor: string; // base color for heatmap (hex format)
     heatmapGradientLevels: number; // number of gradient levels (4-10)
+    heatmapWeeksToShow: number; // number of weeks to show in heatmap (5-13)
 
     // Status bar setting tab
     enableMobileStatusBar: boolean;
@@ -136,6 +137,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     tagColors: [], // 修改为支持完整颜色的数组结构
     heatmapBaseColor: '#33C15E',
     heatmapGradientLevels: 5,
+    heatmapWeeksToShow: 12, // default 12 weeks
 
 
     // Status bar setting tab
@@ -1508,6 +1510,20 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 slider.setDynamicTooltip();
                 slider.onChange(async (value) => {
                     this.plugin.settings.heatmapGradientLevels = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.Widget?.updateData();
+                });
+            });
+
+        new Setting(tabContent)
+            .setName(this.i18n.t('settings.widget.heatmapWeeksToShow.name'))
+            .setDesc(this.i18n.t('settings.widget.heatmapWeeksToShow.desc'))
+            .addSlider(slider => {
+                slider.setLimits(5, 13, 1);
+                slider.setValue(this.plugin.settings.heatmapWeeksToShow || 12);
+                slider.setDynamicTooltip();
+                slider.onChange(async (value) => {
+                    this.plugin.settings.heatmapWeeksToShow = value;
                     await this.plugin.saveSettings();
                     this.plugin.Widget?.updateData();
                 });

@@ -364,6 +364,10 @@
       "heatmapGradientLevels": {
         "name": "热力图渐变级别",
         "desc": "设置热力图的渐变级别数量（4-10级）。级别越多，颜色区分越细致。"
+      },
+      "heatmapWeeksToShow": {
+        "name": "热力图显示周数",
+        "desc": "设置热力图显示的周数（5-13周）。周数越多显示的历史越长，但单元格越小。"
       }
     },
     "momentValidation": {

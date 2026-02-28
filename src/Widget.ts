@@ -72,6 +72,7 @@ export class WordflowWidgetView extends ItemView {
     private availableNotes: Map<string, moment.Moment>; // Map of filename -> moment object for sorting
     private viewSwitcher: HTMLDivElement;
     private currentView: string;
+    private heatmapResizeObserver: ResizeObserver | null = null; // Observer for heatmap cell size changes
 
     constructor(leaf: WorkspaceLeaf, plugin: WordflowTrackerPlugin) {
         super(leaf);
@@ -285,6 +286,11 @@ export class WordflowWidgetView extends ItemView {
     }
 
     public async onClose() {
+        // Clean up ResizeObserver
+        if (this.heatmapResizeObserver) {
+            this.heatmapResizeObserver.disconnect();
+            this.heatmapResizeObserver = null;
+        }
         this.plugin.Widget = null;
     }
 
@@ -1701,19 +1707,27 @@ export class WordflowWidgetView extends ItemView {
         if (!this.selectedRecorder) return;
 
         this.dataContainer.empty();
+        
+        // Clean up previous ResizeObserver if exists
+        if (this.heatmapResizeObserver) {
+            this.heatmapResizeObserver.disconnect();
+            this.heatmapResizeObserver = null;
+        }
+        
         const heatmapContainer = this.dataContainer.createDiv({ cls: 'wordflow-widget-heatmap-container' });
 
-        // Calculate date range (last 12 weeks by default)
-        const weeksToShow = 12;
+        // Get weeks to show from settings (default 12, range 5-13)
+        const weeksToShow = Math.max(5, Math.min(13, this.plugin.settings.heatmapWeeksToShow || 12));
         const today = moment();
         const endDate = moment(today).endOf('week'); // End at the end of current week
-        const startDate = moment(endDate).subtract(weeksToShow - 1, 'weeks').startOf('week'); // Start 12 weeks ago
+        const startDate = moment(endDate).subtract(weeksToShow - 1, 'weeks').startOf('week');
 
         // Collect all data for the date range
         const heatmapData = await this.collectHeatmapData(startDate, endDate, field);
 
         // Render month labels
         const monthLabelsContainer = heatmapContainer.createDiv({ cls: 'wordflow-heatmap-month-labels' });
+        monthLabelsContainer.style.gridTemplateColumns = `repeat(${weeksToShow}, 1fr)`;
         this.renderMonthLabels(monthLabelsContainer, startDate, weeksToShow);
 
         // Create main heatmap grid container
@@ -1725,11 +1739,35 @@ export class WordflowWidgetView extends ItemView {
 
         // Render heatmap cells
         const cellsContainer = gridContainer.createDiv({ cls: 'wordflow-heatmap-cells' });
+        // Update grid columns dynamically based on weeks to show
+        cellsContainer.style.gridTemplateColumns = `repeat(${weeksToShow}, 1fr)`;
+        cellsContainer.style.aspectRatio = `${weeksToShow} / 7`;
         this.renderHeatmapCells(cellsContainer, startDate, weeksToShow, heatmapData, field);
 
         // Render legend
         const legendContainer = heatmapContainer.createDiv({ cls: 'wordflow-heatmap-legend' });
         this.renderHeatmapLegend(legendContainer, heatmapData, field);
+
+        // Function to sync legend cell size with heatmap cell size
+        const syncLegendCellSize = () => {
+            const firstCell = cellsContainer.querySelector('.wordflow-heatmap-cell') as HTMLElement;
+            if (firstCell) {
+                const cellWidth = firstCell.offsetWidth;
+                const legendCells = legendContainer.querySelectorAll('.wordflow-heatmap-legend-cell');
+                legendCells.forEach((cell: HTMLElement) => {
+                    cell.style.width = `${cellWidth}px`;
+                });
+            }
+        };
+
+        // Initial sync after rendering
+        requestAnimationFrame(syncLegendCellSize);
+
+        // Set up ResizeObserver to sync on container size changes
+        this.heatmapResizeObserver = new ResizeObserver(() => {
+            syncLegendCellSize();
+        });
+        this.heatmapResizeObserver.observe(cellsContainer);
     }
 
     /**
