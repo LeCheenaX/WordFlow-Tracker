@@ -508,18 +508,38 @@ export default class WordflowTrackerPlugin extends Plugin {
 			}
 		}
 		
-		// Show confirmation modal if there are errors
-		if (errors.length > 0) {
-			const { ConfirmationModal } = await import('./settings');
-			const title = this.i18n.t('settings.momentValidation.title');
-			const instruction = this.i18n.t('settings.momentValidation.instruction');
-			const message = `> [!warning] ${title}\n> ${instruction}\n\n${errors.join('\n')}`;
-			new ConfirmationModal(
-				this.app,
-				message,
-				async () => {} // onConfirm - just close
-			).open();
+		// If validation passed, remove 'validateDateFormats' from MsgNeverShowAgain if it exists
+		if (errors.length === 0) {
+			const index = this.settings.MsgNeverShowAgain.indexOf('validateDateFormats');
+			if (index > -1) {
+				this.settings.MsgNeverShowAgain.splice(index, 1);
+				await this.saveSettings();
+			}
+			return;
+		} else if (this.settings.MsgNeverShowAgain.includes('validateDateFormats')) {
+			// If validation failed, check if user chose to never show this warning again
+			return;
 		}
+		
+		// Show confirmation modal with "never show again" checkbox
+		const { ConfirmationModal } = await import('./settings');
+		const title = this.i18n.t('settings.momentValidation.title');
+		const instruction = this.i18n.t('settings.momentValidation.instruction');
+		const message = `> [!warning] ${title}\n> ${instruction}\n\n${errors.join('\n')}`;
+		
+		new ConfirmationModal(
+			this.app,
+			message,
+			async () => {}, // onConfirm - just close
+			true, // showNeverShowAgainCheckbox
+			async (checked: boolean) => {
+				// onNeverShowAgainChange callback
+				if (checked) {
+					this.settings.MsgNeverShowAgain.push('validateDateFormats');
+					await this.saveSettings();
+				}
+			}
+		).open();
 	}
 	
 	/**

@@ -500,7 +500,8 @@
     "confirmation": {
       "title": "⚠️ Confirmation",
       "confirm": "Confirm",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "neverShowAgain": "I understand the risks and insist to use, never show again."
     },
     "renameRecorder": {
       "title": "Rename recorder",

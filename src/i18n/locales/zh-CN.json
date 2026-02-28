@@ -500,7 +500,8 @@
     "confirmation": {
       "title": "⚠️ 确认",
       "confirm": "确认",
-      "cancel": "取消"
+      "cancel": "取消",
+      "neverShowAgain": "我理解风险并坚持使用，不再显示此警告。"
     },
     "renameRecorder": {
       "title": "重命名记录器",

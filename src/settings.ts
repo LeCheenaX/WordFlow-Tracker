@@ -42,6 +42,7 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
     noteToRecord: string;
     autoRecordInterval: string;
     currentVersion: string; // used to determine whether show change logs or not
+    MsgNeverShowAgain: string[]; // messages that user chose to never show again
 
     // Recorders tab for multiple recorders
     Recorders: RecorderConfig[];
@@ -86,6 +87,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     noteToRecord: 'all', // requrie edits only
 	autoRecordInterval: '0', // disable
     currentVersion: '1.4.2',
+    MsgNeverShowAgain: [], // initialize as empty array
 
 	// Recorders tab for multiple recorders
 	Recorders: [],
@@ -1994,10 +1996,14 @@ function makeMultilineTextSetting(setting: Setting) {
 };
 
 export class ConfirmationModal extends Modal {
+    private checkboxState: boolean = false;
+    
     constructor(
 	    app: App,
 		private message: string,
-		private onConfirm: () => Promise<void>
+		private onConfirm: () => Promise<void>,
+		private showNeverShowAgainCheckbox: boolean = false,
+		private onNeverShowAgainChange?: (checked: boolean) => void
 	) {
 		super(app);
 	}
@@ -2016,12 +2022,32 @@ export class ConfirmationModal extends Modal {
 
 		MarkdownRenderer.render(this.app, this.message, messagePara, '', new Component());
 
+		// Add "never show again" checkbox if enabled
+		if (this.showNeverShowAgainCheckbox) {
+			const checkboxContainer = contentEl.createDiv("confirm-checkbox-container");
+			const checkboxText = i18n.t('modals.confirmation.neverShowAgain');
+			const checkboxMarkdown = `- [ ] ${checkboxText}`;
+			
+			MarkdownRenderer.render(this.app, checkboxMarkdown, checkboxContainer, '', new Component());
+			
+			// Make the checkbox interactive
+			const checkbox = checkboxContainer.querySelector('input[type="checkbox"]') as HTMLInputElement;
+			if (checkbox) {
+				checkbox.addEventListener('change', () => {
+					this.checkboxState = checkbox.checked;
+				});
+			}
+		}
+
 		const buttonContainer = contentEl.createDiv("confirm-cancel-buttons");
 
 		new ButtonComponent(buttonContainer)
 		  .setButtonText(i18n.t('modals.confirmation.confirm'))
 		  .setClass("mod-warning")
 		  .onClick(async () => {
+			if (this.showNeverShowAgainCheckbox && this.onNeverShowAgainChange) {
+				this.onNeverShowAgainChange(this.checkboxState);
+			}
 			await this.onConfirm();
 			this.close();
 		  });
