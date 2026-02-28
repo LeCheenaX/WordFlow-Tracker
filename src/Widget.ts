@@ -470,6 +470,12 @@ export class WordflowWidgetView extends ItemView {
     }
 
     private async updateNotesMap(): Promise<void> {
+        // Initialize selectedRecorder if not set yet (fixes mobile startup issue)
+        if (!this.selectedRecorder) {
+            this.initRecorderDropdown();
+        }
+        
+        // Safety check after initialization attempt
         if (!this.selectedRecorder) return;
         
         this.availableNotes.clear();
