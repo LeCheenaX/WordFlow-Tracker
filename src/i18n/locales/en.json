@@ -368,6 +368,12 @@
       "heatmapWeeksToShow": {
         "name": "Heatmap weeks to display",
         "desc": "Set the number of weeks to display in the heatmap (5-13 weeks). More weeks show more history but smaller cells."
+      },
+      "heatmapStartOfWeek": {
+        "name": "Week starts on",
+        "desc": "Set which day the week starts on in the heatmap.",
+        "sunday": "Sunday",
+        "monday": "Monday"
       }
     },
     "momentValidation": {

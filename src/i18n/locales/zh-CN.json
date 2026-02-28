@@ -368,6 +368,12 @@
       "heatmapWeeksToShow": {
         "name": "热力图显示周数",
         "desc": "设置热力图显示的周数（5-13周）。周数越多显示的历史越长，但单元格越小。"
+      },
+      "heatmapStartOfWeek": {
+        "name": "一周起始日",
+        "desc": "设置热力图中一周从哪一天开始。",
+        "sunday": "周日",
+        "monday": "周一"
       }
     },
     "momentValidation": {

@@ -1718,9 +1718,33 @@ export class WordflowWidgetView extends ItemView {
 
         // Get weeks to show from settings (default 12, range 5-13)
         const weeksToShow = Math.max(5, Math.min(13, this.plugin.settings.heatmapWeeksToShow || 12));
+        
+        // Get start of week setting (0 = Sunday, 1 = Monday)
+        const startOfWeek = this.plugin.settings.heatmapStartOfWeek || 0;
+        
         const today = moment();
-        const endDate = moment(today).endOf('week'); // End at the end of current week
-        const startDate = moment(endDate).subtract(weeksToShow - 1, 'weeks').startOf('week');
+        
+        // Calculate the end of the current week based on startOfWeek setting
+        // moment.day() with 0-6 where 0=Sunday, 1=Monday, etc.
+        const currentDayOfWeek = today.day();
+        let daysUntilEndOfWeek: number;
+        
+        if (startOfWeek === 0) {
+            // Week starts on Sunday, ends on Saturday
+            daysUntilEndOfWeek = 6 - currentDayOfWeek;
+        } else {
+            // Week starts on Monday, ends on Sunday
+            if (currentDayOfWeek === 0) {
+                // Today is Sunday, it's the last day of the week
+                daysUntilEndOfWeek = 0;
+            } else {
+                // Days until next Sunday
+                daysUntilEndOfWeek = 7 - currentDayOfWeek;
+            }
+        }
+        
+        const endDate = moment(today).add(daysUntilEndOfWeek, 'days').endOf('day');
+        const startDate = moment(endDate).subtract(weeksToShow * 7 - 1, 'days').startOf('day');
 
         // Collect all data for the date range
         const heatmapData = await this.collectHeatmapData(startDate, endDate, field);
@@ -1735,7 +1759,7 @@ export class WordflowWidgetView extends ItemView {
 
         // Render weekday labels
         const weekdayLabelsContainer = gridContainer.createDiv({ cls: 'wordflow-heatmap-weekday-labels' });
-        this.renderWeekdayLabels(weekdayLabelsContainer);
+        this.renderWeekdayLabels(weekdayLabelsContainer, startOfWeek);
 
         // Render heatmap cells
         const cellsContainer = gridContainer.createDiv({ cls: 'wordflow-heatmap-cells' });
@@ -1816,10 +1840,21 @@ export class WordflowWidgetView extends ItemView {
         const currentDate = moment(startDate);
 
         for (let week = 0; week < weeks; week++) {
-            const monthKey = currentDate.format('MMM');
-            const isFirstWeekOfMonth = currentDate.date() <= 7;
+            // Check if this week contains the 1st day of any month
+            let weekContainsFirstDay = false;
+            let monthKey = '';
+            
+            for (let day = 0; day < 7; day++) {
+                const checkDate = moment(currentDate).add(day, 'days');
+                if (checkDate.date() === 1) {
+                    weekContainsFirstDay = true;
+                    monthKey = checkDate.format('MMM');
+                    break;
+                }
+            }
 
-            if (isFirstWeekOfMonth && !monthsShown.has(monthKey)) {
+            // Display month label if this week contains the 1st and we haven't shown this month yet
+            if (weekContainsFirstDay && !monthsShown.has(monthKey)) {
                 const monthLabel = container.createEl('span', {
                     cls: 'wordflow-heatmap-month-label',
                     text: monthKey
@@ -1835,9 +1870,19 @@ export class WordflowWidgetView extends ItemView {
     /**
      * Render weekday labels on the left side
      */
-    private renderWeekdayLabels(container: HTMLElement) {
-        const weekdays = ['Mon', 'Wed', 'Fri'];
-        const weekdayIndices = [1, 3, 5]; // Monday, Wednesday, Friday
+    private renderWeekdayLabels(container: HTMLElement, startOfWeek: number = 0) {
+        let weekdays: string[];
+        let weekdayIndices: number[];
+        
+        if (startOfWeek === 0) {
+            // Week starts on Sunday: show Mon, Wed, Fri
+            weekdays = ['Mon', 'Wed', 'Fri'];
+            weekdayIndices = [1, 3, 5]; // rows 2, 4, 6
+        } else {
+            // Week starts on Monday: show Mon, Wed, Fri, Sun
+            weekdays = ['Mon', 'Wed', 'Fri', 'Sun'];
+            weekdayIndices = [0, 2, 4, 6]; // rows 1, 3, 5, 7
+        }
 
         weekdayIndices.forEach((dayIndex, index) => {
             const label = container.createEl('span', {
