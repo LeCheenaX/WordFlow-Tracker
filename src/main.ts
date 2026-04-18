@@ -212,8 +212,14 @@ export default class WordflowTrackerPlugin extends Plugin {
 		}
 
 		// Update widget colors when file metadata (tags) changes
-		this.registerEvent(this.app.metadataCache.on('changed', (file) => {
+		// Cache the last-seen tags per file so we only re-render when tags actually change.
+		const lastTagsCache = new Map<string, string>();
+		this.registerEvent(this.app.metadataCache.on('changed', (file, data, cache) => {
 			if (file instanceof TFile && this.Widget) {
+				const newTags = (getAllTags(cache) ?? []).slice().sort().join(',');
+				const oldTags = lastTagsCache.get(file.path) ?? null;
+				lastTagsCache.set(file.path, newTags);
+				if (newTags === oldTags) return; // tags unchanged — skip re-render
 				// Update only tagged colors since metadata changed
 				this.Widget.updateTaggedColorMap();
 				this.Widget.updateData();
