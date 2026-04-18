@@ -1,4 +1,5 @@
 import { wordsCounter } from "./Utils/stats";
+import { isTableChange, tableWordDiff } from "./Utils/tableWordCount";
 import { conditionalSleep } from "./Utils/conditionalSleep";
 import Timer, { formatTime } from "./Timer";
 import WordflowTrackerPlugin from "./main";
@@ -326,8 +327,24 @@ export class DocTracker {
                     // @ts-expect-error
                     const subseqChB = (toB == this.activeEditor.editor.cm.state.doc.length - 1) ? ' ' : this.activeEditor.editor.cm.state.sliceDoc(toB, toB + 1);
 
-                    const addedWords = this.addWordsCt(theOther, prevChA, subseqChA);
-                    const deletedWords = this.deleteWordsCt(inserted, prevChB, subseqChB);
+                    let addedWords: number;
+                    let deletedWords: number;
+
+                    // Markdown table edits require special handling: CM rewrites entire
+                    // cell content, separator rows, or the whole table block rather than
+                    // just the changed characters. Using the standard double-sided sum
+                    // (addedWords + deletedWords) would massively overcount. Instead we
+                    // compute the net word diff. See Utils/tableWordCount.ts for all cases.
+                    if (isTableChange(inserted, theOther, prevChA, subseqChA)) {
+                        const diff = tableWordDiff(inserted, theOther); // inserted = old, theOther = new
+                        addedWords = diff.addedWords;
+                        deletedWords = diff.deletedWords;
+                        //if (DEBUG) console.log(`Do table diff: old="${inserted}" new="${theOther}", diff=`, diff);
+                    } else {
+                        addedWords = this.addWordsCt(theOther, prevChA, subseqChA);
+                        deletedWords = this.deleteWordsCt(inserted, prevChB, subseqChB);
+                    }
+
                     //console.log('Do added:', addedWords, '\nDo deleted:', deletedWords, 'total:', (addedWords + deletedWords))
                     if (DEBUG) {
                         console.log(`Do adding texts: "${theOther}" from ${fromA} to ${toA} in current document, \ndo deleting texts: "${inserted}" from ${fromB} to ${toB} in current document.`);
@@ -359,17 +376,30 @@ export class DocTracker {
                 // @ts-expect-error
                 const subseqChB = (toB == this.activeEditor.editor.cm.state.doc.length - 1) ? ' ' : this.activeEditor.editor.cm.state.sliceDoc(toB, toB + 1);
 
-                const deletedWords = this.addWordsCt(inserted, prevChB, subseqChB);
-                const addedWords = this.deleteWordsCt(theOther, prevChA, subseqChA);
-                /*                if (DEBUG) {
-                                    console.log(`Undo adding texts: "${inserted}" from ${fromB} to ${toB} from previous document, \nundo deleting texts: "${theOther}" from ${fromA} to ${toA} from previous document.`);
-                                    console.log("Modified Words: ", (addedWords + deletedWords));	
-                                }
-                */
-                this.editedWords += (addedWords + deletedWords);
-                this.addedWords += addedWords;
-                this.deletedWords += deletedWords;
-                this.changedWords += (addedWords - deletedWords);
+                let undoDeletedWords: number;
+                let undoAddedWords: number;
+
+                // Markdown table edits — same net diff logic as the do branch (see above).
+                // On undo: theOther = the restored state, inserted = what was there before undo.
+                if (isTableChange(theOther, inserted, prevChA, subseqChA)) {
+                    // On undo: theOther = restored state, inserted = what was there before undo
+                    const diff = tableWordDiff(theOther, inserted);
+                    undoAddedWords = diff.addedWords;
+                    undoDeletedWords = diff.deletedWords;
+                } else {
+                    undoDeletedWords = this.addWordsCt(inserted, prevChB, subseqChB);
+                    undoAddedWords = this.deleteWordsCt(theOther, prevChA, subseqChA);
+                }
+
+                if (DEBUG) {
+                    console.log(`Undo adding texts: "${inserted}" from ${fromB} to ${toB} from previous document, \nundo deleting texts: "${theOther}" from ${fromA} to ${toA} from previous document.`);
+                    console.log("Modified Words: ", (undoAddedWords + undoDeletedWords));	
+                }
+                
+                this.editedWords += (undoAddedWords + undoDeletedWords);
+                this.addedWords += undoAddedWords;
+                this.deletedWords += undoDeletedWords;
+                this.changedWords += (undoAddedWords - undoDeletedWords);
             });
 
             this.editedTimes += undoneDiff; // multiple changes should be counted only one time.
