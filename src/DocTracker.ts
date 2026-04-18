@@ -108,6 +108,7 @@ export class DocTracker {
     }
 
     public meetThreshold(): boolean {
+        if (this.readTime + this.editTime >= 60000) return true; // when focus time is sufficient regardless of other conditions
         switch (this.plugin.settings.noteThreshold) {
             case 't':
                 return this.editTime >= 60000;
