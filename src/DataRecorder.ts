@@ -151,10 +151,6 @@ export class DataRecorder {
                 break;
         }
 
-        if (this.plugin.Widget) {
-            await sleep(50);
-            this.plugin.Widget.updateData();
-        }
     }
 
     public parseRecordNoteFolderPath(targetDate?: number): string {
@@ -500,6 +496,8 @@ export class ExistingData {
     totalEditTime: number;
     totalReadTime: number;
     totalTime: number;
+    /** Stores numeric values of ${property.xxx} columns read back from the record note */
+    noteProperties: Record<string, number | null>;
 
     constructor() {
         this.fileName = 'unknown';
@@ -521,6 +519,7 @@ export class ExistingData {
         this.totalEditTime = 0;
         this.totalReadTime = 0;
         this.totalTime = 0;
+        this.noteProperties = {};
     }
 }
 

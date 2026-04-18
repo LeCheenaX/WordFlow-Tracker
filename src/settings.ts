@@ -1128,6 +1128,10 @@ export class RecordersTab extends WordflowSubSettingsTab {
 					await this.plugin.saveSettings();
 					recorderInstance.loadSettings();
 					new Notice(this.i18n.t('notices.syntaxSaved'));
+					// Refresh widget field dropdown so property.xxx fields re-evaluate
+					if (this.plugin.Widget) {
+						await this.plugin.Widget.updateUIandData();
+					}
 				} else {
 					// User cancelled, revert textarea to original syntax
 					if (this.SyntaxComponent) {
@@ -1185,6 +1189,12 @@ export class RecordersTab extends WordflowSubSettingsTab {
 		Object.entries(sampleData).forEach(([key, value]) => {
 			const regex = new RegExp(`\\$\\{${key}\\}`, 'g');
 			previewText = previewText.replace(regex, value);
+		});
+
+		// Replace ${property.xxx} with a sample value for preview
+		previewText = previewText.replace(/\$\{property\.([\w.]+)\}/g, (_, propKey: string) => {
+			if (propKey === 'tags') return '🏷️example-tag';
+			return `[${propKey}]`;
 		});
 		
 		return previewText;

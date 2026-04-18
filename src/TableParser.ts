@@ -3,6 +3,7 @@ import { formatTime, restoreTimeString } from "./Timer";
 import { moment, Notice, TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
 import { normalizeFilePath, normalizeObsidianLinkPath, resolveLinkToPath } from "./Utils/pathNormalizer";
+import { resolveNoteProperty } from "./Utils/notePropertyResolver";
 
 export class TableParser{
     //private recordType: string;
@@ -164,8 +165,16 @@ export class TableParser{
             })
             .map(data => {
                 return rowTemplate.replace(
-                    /\${(\w+)}/g,
+                    /\$\{([\w.]+)\}/g,
                     (_, varName: string) => {
+                        // Handle ${property.xxx} — look up frontmatter of the tracked note
+                        if (varName.startsWith('property.')) {
+                            const propKey = varName.slice('property.'.length);
+                            const resolved = resolveNoteProperty(this.plugin, data.filePath, propKey);
+                            // Use zero-width space when empty, consistent with comment column convention,
+                            // so filter(Boolean) in parseTableRow does not collapse column alignment.
+                            return resolved === '' ? '\u200B' : resolved;
+                        }
                         switch (varName) {
                             case 'modifiedNote':
                                 // Use Obsidian's fileToLinktext for shortest link text
@@ -295,8 +304,18 @@ export class TableParser{
                     throw new Error (`❌Var template with note alias is not matched in ${noteInfo}!\nConsider checking if table syntax contains "\\|" in the first coloumn, or if table in periodic note is mixed with notes with alias and notes without alias`)
                 }
             } else {
-                const matches = varTemplate.match(/\${(\w+)}/); // single variable matching
+                const matches = varTemplate.match(/\$\{([\w.]+)\}/); // single variable matching (supports property.xxx)
                 const varName = (matches && matches[1])? matches[1]: 'undefined';
+
+                // Handle ${property.xxx} columns — store numeric value keyed by propKey
+                if (varName.startsWith('property.')) {
+                    const propKey = varName.slice('property.'.length);
+                    // Zero-width space means the cell was intentionally left blank (no value)
+                    const trimmed = value.replace(/\u200B/g, '').trim();
+                    const num = parseFloat(trimmed);
+                    entry.noteProperties[propKey] = (trimmed === '' || isNaN(num)) ? null : num;
+                    continue; // filePath not needed here, safe to process in any column order
+                }
 
                 switch (varName) {
                 case 'modifiedNote':

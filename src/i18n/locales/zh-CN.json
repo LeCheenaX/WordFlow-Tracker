@@ -500,7 +500,8 @@
       "noData": "未在周期笔记中找到该属性的数据",
       "noDataForField": "所选属性的数据全为零",
       "noFieldinSyntax": "Wordflow 记录语法中没有支持的属性.",
-      "unconfiguredTags": "未配置的标签"
+      "unconfiguredTags": "未配置的标签",
+      "noProperty": "没有属性"
     },
     "confirmations": {
       "focusModeNoReadTime": "**注意：** 所选记录器的记录语法中没有阅读时间属性。\n\n建议点击\"取消\"按钮，切换到具有阅读时间属性的记录器。\n\n如果不确定哪个记录器有此属性，请在表格/子弹列表记录器的记录语法中添加 `${readTime}` 或 `${readEditTime}`。\n\n确定要开启专注模式吗？这不会造成任何损害，但专注时间将不会被记录。"

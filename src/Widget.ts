@@ -8,6 +8,7 @@ import { UniqueColorGenerator } from "./Utils/UniqueColorGenerator";
 import { TagColorManager } from "./Utils/TagColorManager";
 import { HeatmapColorManager } from "./Utils/HeatmapColorManager";
 import { DynamicDropdown } from "./Utils/DynamicDropdown";
+import { resolveNoteProperty } from "./Utils/notePropertyResolver";
 import { DropdownComponent, IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon, setTooltip, TFile, TFolder } from "obsidian";
 
 export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
@@ -73,6 +74,7 @@ export class WordflowWidgetView extends ItemView {
     private viewSwitcher: HTMLDivElement;
     private currentView: string;
     private heatmapResizeObserver: ResizeObserver | null = null; // Observer for heatmap cell size changes
+    public isRecording: boolean = false; // Guard: block external updateData calls during record+reset cycle
 
     constructor(leaf: WorkspaceLeaf, plugin: WordflowTrackerPlugin) {
         super(leaf);
@@ -295,20 +297,23 @@ export class WordflowWidgetView extends ItemView {
     }
 
     public async updateData() {
+        if (this.isRecording) return; // blocked during record+reset cycle; RecorderManager will call once at the end
         this.dataMap = await this.getDataMap(this.selectedField);
         await this.renderData(this.selectedField); // must use await or the total counting in updateCurrentData will use the old value
         this.updateCurrentData();
     }
 
     public updateCurrentData() {
+        if (this.isRecording) return; // blocked during record+reset cycle，RecorderManager will call once at the end
         // Display current note's data
         const activeFile = this.plugin.app.workspace.getActiveFile();
         if (activeFile) {
             const activeTracker = this.plugin.trackerMap.get(activeFile.path);
             if (activeTracker) {
                 // intitial data counting
-                const currentNoteValue = this.getFieldValueFromTracker(activeTracker, this.selectedField);
-                const existingFieldValue = this.getFieldValue(this.dataMap?.get(activeFile.path), this.selectedField);
+                const currentNoteValue = (activeTracker.isResetting)? 0: this.getFieldValueFromTracker(activeTracker, this.selectedField);
+                // if tracker is reseting, current is 0. Existing value can be old or new but will finally be updated to new value. 
+                const existingFieldValue = this.getFieldValue(this.dataMap?.get(activeFile.path), this.selectedField) ?? 0;
                 const currentTotalValue = currentNoteValue + existingFieldValue;
 
                 const currentValueString = (this.selectedField == 'editTime' || this.selectedField == 'readTime' || this.selectedField == 'readEditTime')
@@ -935,7 +940,7 @@ export class WordflowWidgetView extends ItemView {
         // Calculate the total value for the current field across all entries
         this.totalFieldValue = 0;
         sortedData.forEach(rowData => {
-                this.totalFieldValue += this.getFieldValue(rowData, field);
+                this.totalFieldValue += this.getFieldValue(rowData, field) ?? 0;
         });
 
         // check if selected field has value but all zero
@@ -1016,6 +1021,7 @@ export class WordflowWidgetView extends ItemView {
     private renderProgressBarSegments(container: HTMLElement, sortedData: ExistingData[], field: string) {
         sortedData.forEach(rowData => {
             const value = this.getFieldValue(rowData, field);
+            if (value === null) return; // no property — skip progress bar segment
             let percentage = 0;
             if (this.totalFieldValue > 0) {
                 percentage = (value / this.totalFieldValue) * 100;
@@ -1317,7 +1323,8 @@ export class WordflowWidgetView extends ItemView {
             if (!file) return;
 
             const fileTags = this.tagColorManager.getFileTags(this.plugin.app, file);
-            const fileValue = this.getFieldValue(rowData, field);
+            const fileValue = this.getFieldValue(rowData, field) ?? 0;
+            if (fileValue === 0) return; // skip files with no value or no property
             
             // 找到文件匹配的标签配置组
             const matchingConfigIndices: number[] = [];
@@ -1368,7 +1375,7 @@ export class WordflowWidgetView extends ItemView {
         const fileData: FileData[] = sortedData.map(rowData => {
             const file = this.plugin.app.vault.getFileByPath(rowData.filePath);
             const fileTags = file ? this.tagColorManager.getFileTags(this.plugin.app, file) : [];
-            const fileValue = this.getFieldValue(rowData, field);
+            const fileValue = this.getFieldValue(rowData, field) ?? 0;
             
             // Determine file color (reuse existing color logic)
             const hasConfiguredTags = fileTags.some(tag => {
@@ -1400,7 +1407,8 @@ export class WordflowWidgetView extends ItemView {
         return fileData.sort((a, b) => b.value - a.value);
     }
 
-    private formatValue(value: number, field: string): string {
+    private formatValue(value: number | null, field: string): string {
+        if (value === null) return this.plugin.i18n.t('widget.prompts.noProperty');
         return (field === 'editTime' || field === 'readTime' || field === 'readEditTime')
             ? formatTime(value, false)
             : value.toString();
@@ -1565,7 +1573,16 @@ export class WordflowWidgetView extends ItemView {
                     bVal = b.readEditTime;
                     break;
                 default:
-                    return 0; // just use default sequence 
+                    // property.xxx fields: null (no property) sorts to the end
+                    if (field.startsWith('property.')) {
+                        const aRaw = this.getFieldValue(a, field);
+                        const bRaw = this.getFieldValue(b, field);
+                        if (aRaw === null && bRaw === null) return 0;
+                        if (aRaw === null) return 1;  // a has no property → goes to end
+                        if (bRaw === null) return -1; // b has no property → goes to end
+                        return bRaw - aRaw; // descending
+                    }
+                    return 0; // just use default sequence
             }
 
             return bVal - aVal;
@@ -1573,7 +1590,7 @@ export class WordflowWidgetView extends ItemView {
         return existingData;
     }
 
-    private getFieldValue(data: ExistingData | undefined, field: string): number {
+    private getFieldValue(data: ExistingData | undefined, field: string): number | null {
         if (!this.selectedRecorder || !data) return 0;
 
         switch (field) {
@@ -1602,6 +1619,19 @@ export class WordflowWidgetView extends ItemView {
             case 'totalEditTime':
                 return data.totalEditTime;
             default:
+                // Handle property.xxx fields — prefer cached noteProperties, fallback to live frontmatter
+                if (field.startsWith('property.')) {
+                    const propKey = field.slice('property.'.length);
+                    if (data.noteProperties && propKey in data.noteProperties) {
+                        // null means the cell was empty in the record note — treat as "no property"
+                        return data.noteProperties[propKey]; // may be null or a number
+                    }
+                    // Fallback: read live from frontmatter (e.g. new data not yet written to record note)
+                    const raw = resolveNoteProperty(this.plugin, data.filePath, propKey);
+                    if (raw === '') return null; // property not present on this note
+                    const num = parseFloat(raw);
+                    return isNaN(num) ? null : num;
+                }
                 return 0;
         }
     }
@@ -1655,7 +1685,32 @@ export class WordflowWidgetView extends ItemView {
             'readEditTime',
         ];
 
-        return availableFields.filter(field => syntax.includes(`\${${field}}`))?? this.plugin.i18n.t('widget.prompts.noFieldinSyntax');
+        const standardFields = availableFields.filter(field => syntax.includes(`\${${field}}`));
+
+        // Detect ${property.xxx} tokens in the syntax — only include number-type properties
+        const propertyFieldRegex = /\$\{property\.([\w.]+)\}/g;
+        const propertyFields: string[] = [];
+        let match: RegExpExecArray | null;
+        while ((match = propertyFieldRegex.exec(syntax)) !== null) {
+            const propKey = match[1];
+            const token = `property.${propKey}`;
+            if (propertyFields.includes(token)) continue;
+
+            // Look up the property type from the vault-wide property registry.
+            // `metadataTypeManager.properties` is keyed by lowercase property name.
+            // The type is stored in the `widget` field (not `type`).
+            // @ts-expect-error — internal API
+            const allProps = this.plugin.app.metadataTypeManager?.properties;
+            const propInfo = allProps?.[propKey.toLowerCase()];
+            const propType: string | undefined = propInfo?.type ?? propInfo?.widget;
+            if (propType === 'number') {
+                propertyFields.push(token);
+            }
+        }
+
+        return [...standardFields, ...propertyFields].length > 0
+            ? [...standardFields, ...propertyFields]
+            : [this.plugin.i18n.t('widget.prompts.noFieldinSyntax')];
     }
 
     private getFieldDisplayName(fieldName: string): string {
@@ -1818,7 +1873,7 @@ export class WordflowWidgetView extends ItemView {
                             // Calculate total value for this date
                             let totalValue = 0;
                             dataMap.forEach(data => {
-                                totalValue += this.getFieldValue(data, field);
+                                totalValue += this.getFieldValue(data, field) ?? 0;
                             });
                             heatmapData.set(dateKey, totalValue);
                         }

@@ -30,7 +30,13 @@ export class RecorderManager {
     }
 
     public async record(tracker?: DocTracker): Promise<void> {
+        // Set isRecording synchronously before any await, so external events
+        // (e.g. metadataCache.changed) are blocked from the moment record() is called.
+        if (this.plugin.Widget) this.plugin.Widget.isRecording = true;
         await this.throttledRecord(tracker);
+        // If throttledRecord was a no-op (throttled away, execRecord didn't run),
+        // isRecording may still be true — clear it here as a safety net.
+        if (this.plugin.Widget) this.plugin.Widget.isRecording = false;
     }
 
     private async execRecord(tracker?: DocTracker): Promise<void> {
@@ -38,13 +44,21 @@ export class RecorderManager {
             // Record specific tracker
             if (!tracker.meetThreshold()) return;
 
-            for (const recorder of this.recorders) {
-                await recorder.record(tracker);
-            }
+            try {
+                for (const recorder of this.recorders) {
+                    await recorder.record(tracker);
+                }
 
-            // Ensure recording is over before resetting
-            await tracker.resetEdit();
-            new Notice(this.plugin.i18n.t('notices.editsRecorded', { filePath: tracker.filePath }), 1000);
+                // Ensure recording is over before resetting
+                await tracker.resetEdit();
+                new Notice(this.plugin.i18n.t('notices.editsRecorded', { filePath: tracker.filePath }), 1000);
+            } finally {
+                if (this.plugin.Widget) {
+                    this.plugin.Widget.isRecording = false;
+                    // Update Widget once: existing is final, current is 0
+                    await this.plugin.Widget.updateData();
+                }
+            }
         } else {
             // Record all eligible trackers
             const trackersToReset: DocTracker[] = [];
@@ -58,14 +72,22 @@ export class RecorderManager {
 
             if (trackersToReset.length === 0) return;
 
-            // Perform batch recording sequentially
-            for (const recorder of this.recorders) {
-                await recorder.record();
-            }
+            try {
+                // Perform batch recording sequentially
+                for (const recorder of this.recorders) {
+                    await recorder.record();
+                }
 
-            // Reset trackers
-            for (const t of trackersToReset) {
-                await t.resetEdit();
+                // Reset all trackers
+                for (const t of trackersToReset) {
+                    await t.resetEdit();
+                }
+            } finally {
+                if (this.plugin.Widget) {
+                    this.plugin.Widget.isRecording = false;
+                    // Update Widget once: existing is final, all currents are 0
+                    await this.plugin.Widget.updateData();
+                }
             }
         }
     }

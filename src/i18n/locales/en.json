@@ -500,7 +500,8 @@
       "noData": "No available data in this field",
       "noDataForField": "All data of selected field is zero",
       "noFieldinSyntax": "No available field in wordflow recording syntax to display.",
-      "unconfiguredTags": "Unconfigured Tags"
+      "unconfiguredTags": "Unconfigured Tags",
+      "noProperty": "no property"
     },
     "confirmations": {
       "focusModeNoReadTime": "**Caution:** There's no reading time property in recording syntax of the selected recorder.\n\nTo make use of this feature, it's recommended to click \"cancel\" button, and switch to a recorder that has the reading time property.\n\nIf you are not sure which recorder has, kindly add `${readTime}` or `${readEditTime}` in recording syntax of your table/bullet-list recorder.\n\nAre you sure to turn on focus mode? This will do no harm but the focused time will not be recorded."

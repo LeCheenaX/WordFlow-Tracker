@@ -3,6 +3,7 @@ import { formatTime, restoreTimeString } from "./Timer";
 import { moment, Plugin, TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
 import { resolveLinkToPath } from "./Utils/pathNormalizer";
+import { resolveNoteProperty } from "./Utils/notePropertyResolver";
 
 export class BulletListParser{
     //private recordType: string;
@@ -282,7 +283,12 @@ export class BulletListParser{
                 .replace(/\${comment}/g, data.comment)
                 .replace(/\${editTime}/g, formatTime(data.editTime))
                 .replace(/\${readTime}/g, formatTime(data.readTime))
-                .replace(/\${readEditTime}/g, formatTime(data.readEditTime));
+                .replace(/\${readEditTime}/g, formatTime(data.readEditTime))
+                // Handle ${property.xxx} — look up frontmatter of the tracked note
+                .replace(/\$\{property\.([\w.]+)\}/g, (_, propKey: string) => {
+                    const resolved = resolveNoteProperty(this.plugin, data.filePath, propKey);
+                    return resolved === '' ? '\u200B' : resolved;
+                });
             
             if (line.endsWith('\n\n')) {
                 output += line.trimEnd() + '\n';

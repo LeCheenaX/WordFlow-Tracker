@@ -17,6 +17,7 @@ export class DocTracker {
     public deletedWords: number = 0;
     public changedWords: number = 0;
     public isActive: boolean = false;
+    public isResetting: boolean = false; // Flag to indicate tracker is being reset (avoid double-counting in Widget)
     public trackerResetTime: number; // unix timestamp
     public lastModifiedTime: number; // unix timestamp
     public docLength: number = 0;
@@ -136,6 +137,7 @@ export class DocTracker {
 
     public async resetEdit() {
         //console.log('DocTracker.resetEdit: called')
+        this.isResetting = true; // Signal Widget to skip this tracker during the reset window
         await sleep(1000); // for multiple recorders to record before cleared.
         this.editedTimes = 0;
         this.editedWords = 0;
@@ -145,8 +147,8 @@ export class DocTracker {
         this.editTimer?.reset();
         this.readTimer?.reset();
         this.updateStatusBarTracker();
-        this.plugin.Widget?.updateCurrentData();
         this.trackerResetTime = Date.now();
+        this.isResetting = false; // Reset complete, Widget can now use the fresh tracker state
     }
 
     public destroyTimers() {
