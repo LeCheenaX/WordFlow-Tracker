@@ -1862,8 +1862,16 @@ export class WordflowWidgetView extends ItemView {
             const dateKey = currentDate.format('YYYY-MM-DD');
             const noteFileName = currentDate.format(this.selectedRecorder.periodicNoteFormat);
             
-            // Check if note exists for this date
-            if (this.availableNotes.has(noteFileName)) {
+            // For the currently selected note, reuse the already-updated dataMap to avoid
+            // reading a potentially stale file (e.g. right after record() writes new data).
+            if (noteFileName === this.selectedNoteName && this.dataMap) {
+                let totalValue = 0;
+                this.dataMap.forEach(data => {
+                    totalValue += this.getFieldValue(data, field) ?? 0;
+                });
+                heatmapData.set(dateKey, totalValue);
+            } else if (this.availableNotes.has(noteFileName)) {
+                // Check if note exists for this date
                 const noteMoment = this.availableNotes.get(noteFileName);
                 if (noteMoment) {
                     const recordNote = this.selectedRecorder.getRecordNote(noteMoment.valueOf());
