@@ -1,8 +1,21 @@
-export const currentPluginVersion = '2.0.1';
+export const currentPluginVersion = '2.1.0';
 
 export const changelog = {
 'en': 
 `
+### 2.1.0 updates
+✨ **New Features:**
+- Option to show and rank note properties. 
+   - To show note properties of each note recorded in daily note: use \`\${property.propertyName}\` in the table syntax. For example: \`\${property.tags}\` will list all tags for each note. 
+   - To rank note properties, the property type must be numbers. You can set alias for the note property in widget settings, and drop out the available properties in the widget. 
+
+🐛 **Bugs Fixed:**
+- Unability to count the edited words accurately in markdown table([issue #14](https://github.com/LeCheenaX/WordFlow-Tracker/issues/14)).
+- Data racing issue when current data is updated in widget.
+- Notes are not recorded when focused time is enough.
+- Heatmap view sometimes may not be updated.
+- Widget View frequently refreshing while editing the documents.
+
 ### 2.0.1 updates
 
 ✨ **New Features:**
@@ -74,22 +87,24 @@ export const changelog = {
 🎨 **UI Reworked:**
 - New style for dropdown component
 - Switching note support with navigation buttons
-
-### 1.7.5 updates
-✨ **New Features:**
-- Preview the result of recording syntax.
-- Prompt to adapt the existing record to recording syntax after changing.Previews are also supported.
-
-🐛 **Bug Fixed:**
-- Recorders not auto update to Widget after changes.
-
-⚡️ **Enhancements:**
-- Ensure the tracker is reset after recording completes.
-- Handle the cross-day editing correctly when multiple notes are edited simultaneously. 
 `,
 'zh-CN': 
 `
-### 2.0.1 更新内容
+### 2.1.0 更新说明
+
+✨ **新功能：**
+- 支持显示和统计笔记属性。
+   - 若要在日记记录中显示笔记属性，请在表格语法中使用 \`\${property.属性名称}\`。例如：使用 \`\${property.tags}\` 将列出每篇笔记的所有标签。
+   - 若要对笔记属性进行排序/排名，属性类型必须为数字。您可以在组件设置中为笔记属性设置别名，并在组件中选择要展示的属性。
+
+🐛 **问题修复：**
+- 修复了无法准确统计 Markdown 表格中已编辑字数的问题（[issue #14](https://github.com/LeCheenaX/WordFlow-Tracker/issues/14)）。
+- 修复了组件中更新当前数据时的竞态问题（Data racing）。
+- 修复了专注时间足够但笔记未被记录的问题。
+- 修复了热力图视图有时无法更新的问题。
+- 修复了编辑文档时组件视图频繁刷新的问题。
+
+### 2.0.1 更新说明
 
 ✨ **新功能：**
 - 忽略警告选项：您现在可以在设置中选择隐藏警告消息，获得更清爽的使用体验。
@@ -102,7 +117,7 @@ export const changelog = {
 - 解决了文档字数可能显示为负数的罕见情况([issue #14](https://github.com/LeCheenaX/WordFlow-Tracker/issues/14))。
 - 修复了首次启动时，当插件视图附加到工作区时，组件视图无法正确更新的问题。
 
-### 2.0.0 更新内容
+### 2.0.0 更新说明
 
 >[!caution]
 >每周笔记、每月笔记用户请注意：
@@ -160,17 +175,5 @@ export const changelog = {
 🎨 **界面重构：**
 - 下拉组件新样式。
 - 支持通过导航按钮切换笔记。
-
-### 1.7.5 更新
-✨ **新功能：**
-- 预览记录语法的结果。
-- 修改记录语法后，会提示适配现有记录，并提供预览。
-
-🐛 **错误修复：**
-- 记录器更改后不会自动更新到侧栏组件。
-
-⚡️ **性能增强：**
-- 确保记录完成后追踪器才被重置。
-- 正确处理多个笔记同时编辑时的跨日编辑情况。
 `
 };
