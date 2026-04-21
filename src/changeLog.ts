@@ -7,9 +7,10 @@ export const changelog = {
 ✨ **New Features:**
 - AI Diff Summary: Automatically generate a summary of note changes using LLM integration.
     - BYOK: Bring Your Own Key. You can use your own OpenAI API key to call LLM.
-![https://github.com/user-attachments/assets/fc2e58f8-0a91-4faa-8d62-ab2b23cb72e3]
 
->![Caution]
+![example](https://github.com/user-attachments/assets/fc2e58f8-0a91-4faa-8d62-ab2b23cb72e3)
+
+>[!Caution]
 > If enabled this feature, an temporary index file will be created in \`.obsidian/\` folder, which can be syncronized by Obsidian or third party services。
 
 ### 2.1.0 updates
@@ -103,9 +104,10 @@ export const changelog = {
 ✨ **新功能：**
 - AI 更改总结: 自动使用 LLM 总结周期笔记的修改。
     - BYOK: 使用自己的 API 密钥调用 LLM。
-![https://github.com/user-attachments/assets/fc2e58f8-0a91-4faa-8d62-ab2b23cb72e3]
 
->![Caution]
+![example](https://github.com/user-attachments/assets/fc2e58f8-0a91-4faa-8d62-ab2b23cb72e3)
+
+> [!Caution]
 > 开启此功能会在 \`.obsidian/\` 文件夹内创建一个临时索引，可以被同步。
 
 ### 2.1.0 更新说明
