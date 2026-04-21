@@ -1,8 +1,12 @@
-export const currentPluginVersion = '2.2.0';
+export const currentPluginVersion = '2.2.1';
 
 export const changelog = {
 'en': 
 `
+### 2.2.1 updates
+🐛 **Bug Fixed:**
+- Syntax change only updated today's note: now scans the entire folder for all periodic notes matching the format and containing data in the old syntax, and updates them all.
+
 ### 2.2.0 updates
 ✨ **New Features:**
 - AI Diff Summary: Automatically generate a summary of note changes using LLM integration.
@@ -100,6 +104,10 @@ export const changelog = {
 `,
 'zh-CN': 
 `
+### 2.2.1 更新说明
+🐛 **问题修复：**
+- 语法变更仅更新今天的笔记：现会扫描整个文件夹中所有符合格式且包含旧语法数据的周期笔记，并全部更新。
+
 ### 2.2.0 更新说明
 ✨ **新功能：**
 - AI 更改总结: 自动使用 LLM 总结周期笔记的修改。
