@@ -1237,6 +1237,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             statBar: '<span class="stat-bar-container" data-origin-words="1926" data-deleted-words="20" data-added-words="100"><span class="stat-bar origin" style="width: 60%"></span><span class="stat-bar deleted" style="width: 11%"></span><span class="stat-bar added" style="width: 49%"></span></span>',
 			lastModifiedTime: moment().format(settings.timeFormat),
 			comment: 'user comment that won\'t auto update',
+			diff: this.plugin.settings.enableAIDiff ? 'AI summary of changes' : 'AI not enabled',
 			totalEdits: '5',
 			totalWords: '150',
 			totalEditTime: '15 min',

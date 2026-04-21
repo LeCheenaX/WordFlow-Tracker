@@ -82,6 +82,48 @@ The plugin automatically detects your Obsidian language setting and displays the
 - **Adapt Existing Records**: When you change your recording syntax, the plugin can prompt you to adapt existing records in your periodic notes to match the new format. A preview is shown before applying changes, giving you full control over the migration.
 - **Auto-clear Records for Deleted Files**: When enabled, the plugin will automatically remove records for files that have been deleted from your vault, keeping your periodic notes clean and up-to-date.
 
+### AI Change Tracking
+
+WordFlow Tracker can use AI to automatically generate human-readable summaries of your note modifications. When enabled, the `${diff}` variable in your recording syntax will be filled with an AI-generated description of what changed in each note.
+
+#### How It Works
+
+1. When you edit a note and the data is recorded, the plugin computes a diff between the previous version and the current version.
+2. The diff is sent to the configured AI model along with a system prompt.
+3. The AI generates a concise summary of the changes, which is inserted into the `${diff}` field in your periodic note.
+4. While the AI is processing, a loading spinner is displayed in the `${diff}` position. If the AI call fails, the previous result is preserved with a ⚠️ icon.
+
+#### Configuration
+
+- **Enable AI Diff**: Toggle AI-powered change tracking on or off. When disabled, the `${diff}` variable will remain empty.
+- **AI Provider**: Select the AI service provider to use. Currently supports OpenAI-compatible APIs.
+- **API Key**: Enter your API key for the selected provider. This key is stored locally and never shared.
+- **API Base URL**: The base URL for the API endpoint. Change this if you are using a custom or self-hosted endpoint (e.g., `https://api.openai.com/v1`).
+- **Model**: The model identifier to use for generating diff summaries (e.g., `gpt-4o-mini`).
+- **System Prompt**: Customize the prompt sent to the AI model. The default prompt instructs the AI to summarize changes concisely. You can modify it to change the output style or language. The prompt will automatically include language-specific instructions based on your Obsidian locale.
+- **Max Length (KB)**: Maximum length of diff text to send to the AI model, in kilobytes (1k = 1024 characters). Larger values provide more context but cost more tokens. Default: 128k.
+
+#### Usage Example
+
+1. Enable AI Diff in the AI tab of plugin settings.
+2. Configure your API key and model.
+3. Add `${diff}` to your recording syntax, for example:
+
+   **Table format:**
+   ```
+   | Note | Words | Diff |
+   | [[${modifiedNote}\|${noteTitle}]] | ${editedWords} | ${diff} |
+   ```
+
+   **Bullet list format:**
+   ```
+   - [[${modifiedNote}|${noteTitle}]]
+     - Words: ${editedWords}
+     - Changes: ${diff}
+   ```
+
+4. When you edit a note, the AI will automatically summarize the changes and fill the `${diff}` field.
+
 #### Supported String Interpolations
 
 | String Interpolation | Description                                                                                                                                                                         | Compatible Record Types | Example                                                                                   | Note                                                                                                                                                                                                                                                                                                                                             |
@@ -101,6 +143,7 @@ The plugin automatically detects your Obsidian language setting and displays the
 | ${statBar}           | the portion of original words, deleted words and added words in html format. Very useful when you want to track if the edits are little changes or huge efforts                     | table                   | ![image](https://github.com/user-attachments/assets/c0d929a7-5ea8-4172-9d85-5de5f46e02bd) | the content will be styled to a svg bar, whose color can be customized in styles.css. Example uses the portion of 450:200:150                                                                                                                                                                                                                    |
 | ${lastModifiedTime}  | the last modified time of your note that is recorded to periodic note, you can specify the format of this item in plugin settings                                                   | table, bullet list      | 2025-03-23 16:00                                                                          |                                                                                                                                                                                                                                                                                                                                                  |
 | ${comment}           | any comment that can be added by the user for existing record in periodic note                                                                                                      | table, bullet list      | this note is completed!                                                                   | this plugin will not modify this value, it's all up to you to add anything.                                                                                                                                                                                                                                                                      |
+| ${diff}              | AI-generated summary of document changes. Requires AI Diff to be enabled in settings.                                                                                               | table, bullet list      | added greeting techniques, removed testing paragraph                                      | Shows a loading spinner while AI is processing. If AI fails, the previous result is preserved with a ⚠️ icon.                                                                                                                                                                                                                                    |
 | ${totalEdits}        | the total number of edits of all notes you edited in a period.                                                                                                                      | metadata                | 200                                                                                       | can be used for other plugins, such as generating a heatmap                                                                                                                                                                                                                                                                                      |
 | ${totalWords}        | the total number of edited words of all notes you edited in a period.                                                                                                               | metadata                | 2000                                                                                      | can be used for other plugins, such as generating a heatmap                                                                                                                                                                                                                                                                                      |
 | ${totalEditTime}     | the total editing time of all notes you edited in a period.                                                                                                                         | metadata                | 1 h 13 min                                                                                | can be used for other plugins, such as generating a heatmap                                                                                                                                                                                                                                                                                      |

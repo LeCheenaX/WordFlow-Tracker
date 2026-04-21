@@ -30,6 +30,7 @@ WordFlow Tracker is a lite plugin that tracks your focused time and edit statist
   
   ![image](https://github.com/user-attachments/assets/8422a96d-0ab5-417a-a474-7a838825de1e)
 - Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes.
+- **AI-Powered Change Tracking**: Automatically generates human-readable summaries of note modifications using LLM integration. Use the `${diff}` variable in your recording syntax to have AI summarize what changed — with configurable prompts, multi-language support.
 - Display the changes in the side pane widget. 
   
   ![Pasted image 20250706223743](https://github.com/user-attachments/assets/6edc1be0-f262-4054-8803-1b1b37caeec7)

@@ -29,6 +29,7 @@ WordFlow Tracker 是一个轻量级插件，可以跟踪每个笔记的专注时
   
   ![image](https://github.com/user-attachments/assets/8422a96d-0ab5-417a-a474-7a838825de1e)
 - 在笔记关闭时自动记录修改的数据。或者，使用命令或按钮记录所有笔记。
+- **AI 驱动的更改追踪**：通过 LLM 集成自动生成笔记修改的可读摘要。在记录语法中使用 `${diff}` 变量即可让 AI 总结你的更改——支持自定义提示词、多语言。
 - 在侧栏组件中展示更改。
   
   ![Pasted image 20250706223743](https://github.com/user-attachments/assets/6edc1be0-f262-4054-8803-1b1b37caeec7)
