@@ -506,6 +506,10 @@
     "syntaxSaved": "✅ Syntax saved successfully",
     "syntaxUpdatedToNote": "✅ Periodic note updated with new syntax",
     "syntaxUpdatedToNoteFailed": "❌ Failed to update periodic note with new syntax",
+    "syntaxUpdateFound": "🔍 Found {{count}} periodic note(s) with existing data to update",
+    "syntaxUpdateSuccess": "✅ Successfully updated {{total}} periodic notes",
+    "syntaxUpdatePartial": "⚠️ Partially updated periodic notes {{updated}}/{{total}}",
+    "syntaxUpdateFailedPath": "❌ Failed to update: {{path}}",
     "tableSyntaxWarning": "⚠️ The table syntax may lack \"\\\" in the alias.",
     "templateNotFound": "Error: Template file not found in wordflow recorders!"
   },

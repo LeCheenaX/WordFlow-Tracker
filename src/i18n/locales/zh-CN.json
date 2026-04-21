@@ -506,6 +506,10 @@
     "syntaxSaved": "✅ 语法保存成功",
     "syntaxUpdatedToNote": "✅ 周期笔记已使用新语法更新",
     "syntaxUpdatedToNoteFailed": "❌ 使用新语法更新周期笔记失败",
+    "syntaxUpdateFound": "🔍 找到 {{count}} 个包含现有数据的周期笔记需要更新",
+    "syntaxUpdateSuccess": "✅ 成功更新全部{{total}}个周期笔记/",
+    "syntaxUpdatePartial": "⚠️ 部分周期笔记更新成功 {{updated}}/{{total}}",
+    "syntaxUpdateFailedPath": "❌ 更新失败：{{path}}",
     "tableSyntaxWarning": "⚠️ 表格语法可能缺少别名中的 \"\\\"。",
     "templateNotFound": "错误：在 wordflow 记录器中未找到模板文件！"
   },

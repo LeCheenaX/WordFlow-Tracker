@@ -1,5 +1,5 @@
 import WordflowTrackerPlugin from './main';
-import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, MarkdownView, MarkdownRenderer, Component, setIcon, TFile, requestUrl } from 'obsidian';
+import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, MarkdownView, MarkdownRenderer, Component, setIcon, TFile, TFolder, requestUrl } from 'obsidian';
 import { DataRecorder, ExistingData, MergedData } from './DataRecorder';
 import { moment, normalizePath } from 'obsidian';
 import { SupportedLocale, I18nManager, getI18n } from './i18n';
@@ -2454,37 +2454,72 @@ class SyntaxChangeConfirmationModal extends Modal {
 			});
 	}
 
+	private async getAllRecordNotes(): Promise<TFile[]> {
+		const format = this.recorder.periodicNoteFormat;
+		const candidates: Array<{file: TFile, date: moment.Moment}> = [];
+
+		if (this.recorder.enableDynamicFolder) {
+			const folderPattern = this.recorder.periodicNoteFolder;
+			const allFolders = this.plugin.app.vault.getAllFolders();
+
+			for (const folder of allFolders) {
+				const parsedDate = moment(folder.name, folderPattern, true);
+				if (!parsedDate.isValid()) continue;
+
+				const files = folder.children.filter(f => f instanceof TFile && f.extension === 'md') as TFile[];
+				for (const file of files) {
+					const fileDate = moment(file.basename, format, true);
+					if (fileDate.isValid()) {
+						candidates.push({file, date: fileDate});
+					}
+				}
+			}
+		} else {
+			const folderPath = this.recorder.parseRecordNoteFolderPath();
+			const folder = folderPath === ''
+				? this.plugin.app.vault.getRoot()
+				: this.plugin.app.vault.getFolderByPath(folderPath);
+
+			if (folder) {
+				const files = folder.children.filter(f => f instanceof TFile && f.extension === 'md') as TFile[];
+				for (const file of files) {
+					const fileDate = moment(file.basename, format, true);
+					if (fileDate.isValid()) {
+						candidates.push({file, date: fileDate});
+					}
+				}
+			}
+		}
+
+		candidates.sort((a, b) => b.date.valueOf() - a.date.valueOf());
+
+		const notesWithData: TFile[] = [];
+		for (const {file} of candidates) {
+			try {
+				const existingDataMap = await this.recorder.getParser().extractData(file);
+				if (existingDataMap.size > 0) {
+					notesWithData.push(file);
+				}
+			} catch (error) {
+				console.error(`Failed to extract data from ${file.path}:`, error);
+			}
+		}
+
+		return notesWithData;
+	}
+
 	private async generatePreviews(): Promise<void> {
 		try {
-			// Get current periodic note
-			const recordNoteName = moment().format(this.recorder.periodicNoteFormat);
-			const recordNoteFolder = this.recorder.enableDynamicFolder 
-				? moment().format(this.recorder.periodicNoteFolder) 
-				: this.recorder.periodicNoteFolder;
-			const recordNotePath = recordNoteFolder 
-				? normalizePath(`${recordNoteFolder}/${recordNoteName}.md`)
-				: `${recordNoteName}.md`;
-			
-			const recordNote = this.app.vault.getFileByPath(recordNotePath);
-			if (!recordNote) {
-				this.hasExistingData = false;
-				return;
-			}
+			const notesWithData = await this.getAllRecordNotes();
 
-			// Extract existing data with OLD syntax
-			const existingContent = await this.recorder.getParser().getContent(recordNote);
-			if (!existingContent) {
-				this.hasExistingData = false;
-				return;
-			}
-
-			const existingDataMap = await this.recorder.getParser().extractData(recordNote);
-			if (existingDataMap.size === 0) {
+			if (notesWithData.length === 0) {
 				this.hasExistingData = false;
 				return;
 			}
 
 			this.hasExistingData = true;
+			const recordNote = notesWithData[0];
+			const existingDataMap = await this.recorder.getParser().extractData(recordNote);
 
 			// Generate old content (with old syntax)
 			const oldMergedData: MergedData[] = [];
@@ -2510,38 +2545,66 @@ class SyntaxChangeConfirmationModal extends Modal {
 	}
 
 	private async updatePeriodicNote(): Promise<void> {
-		try {
-			// Get current periodic note
-            
-            const recordNoteName = moment().format(this.recorder.periodicNoteFormat);
-            const recordNoteFolder = (this.recorder.enableDynamicFolder) ? moment().format(this.recorder.periodicNoteFolder) : this.recorder.periodicNoteFolder;
-            const isRootFolder: boolean = (recordNoteFolder.trim() == '') || (recordNoteFolder.trim() == '/');
-            let recordNotePath = (isRootFolder) ? '' : recordNoteFolder + '/';
-            recordNotePath += recordNoteName + '.md';
-            let recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
-			if (!recordNote) throw error;
+		const notesWithData = await this.getAllRecordNotes();
 
-			// Replace old content with new content
-			switch (this.recorder.insertPlace) {
-                case 'custom':
-                    await this.recorder.updateNoteToCustom(recordNote, this.newContent);
-                    break;
-                case 'yaml':
-                    // For YAML, use MetaDataParser to replace old properties with new ones
-                    const parser = this.recorder.getParser();
-                    if ('replaceYAMLProperties' in parser) {
-                        await parser.replaceYAMLProperties(recordNote, this.oldContent, this.newContent);
-                    }
-                    break
-                default: // default insert to bottom if not found
-                    await this.recorder.updateNoteToBottom(recordNote, this.newContent);
-                    break;
-            }
+		if (notesWithData.length === 0) return;
 
-			new Notice(getI18n().t('notices.syntaxUpdatedToNote'));
-		} catch (error) {
-			console.error('Failed to update periodic note:', error);
-			new Notice(getI18n().t('notices.syntaxUpdatedToNoteFailed'), 0);
+		const i18n = getI18n();
+		new Notice(i18n.t('notices.syntaxUpdateFound', { count: notesWithData.length }));
+
+		let updatedCount = 0;
+		const failedPaths: string[] = [];
+
+		for (const recordNote of notesWithData) {
+			try {
+				const existingDataMap = await this.recorder.getParser().extractData(recordNote);
+
+				const oldMergedData: MergedData[] = [];
+				existingDataMap.forEach((existingData) => {
+					oldMergedData.push(new MergedData(undefined, existingData));
+				});
+				const noteOldContent = this.recorder.getParser().generateContent(oldMergedData);
+
+				this.recorder.getParser().updateSyntax(this.newSyntax);
+				const newMergedData: MergedData[] = [];
+				existingDataMap.forEach((existingData) => {
+					newMergedData.push(new MergedData(undefined, existingData));
+				});
+				const noteNewContent = this.recorder.getParser().generateContent(newMergedData);
+
+				this.recorder.getParser().updateSyntax(this.oldSyntax);
+
+				switch (this.recorder.insertPlace) {
+					case 'custom':
+						await this.recorder.updateNoteToCustom(recordNote, noteNewContent);
+						break;
+					case 'yaml': {
+						const parser = this.recorder.getParser();
+						if ('replaceYAMLProperties' in parser) {
+							await parser.replaceYAMLProperties(recordNote, noteOldContent, noteNewContent);
+						}
+						break;
+					}
+					default:
+						await this.recorder.updateNoteToBottom(recordNote, noteNewContent);
+						break;
+				}
+
+				updatedCount++;
+			} catch (error) {
+				failedPaths.push(recordNote.path);
+				console.error(`Failed to update ${recordNote.path}:`, error);
+			}
+		}
+
+		if (failedPaths.length === 0) {
+			new Notice(i18n.t('notices.syntaxUpdateSuccess', { updated: updatedCount, total: notesWithData.length }));
+		} else {
+			new Notice(i18n.t('notices.syntaxUpdatePartial', { updated: updatedCount, total: notesWithData.length }), 0);
+			for (const path of failedPaths) {
+				console.error(`Failed to update: ${path}`);
+				new Notice(i18n.t('notices.syntaxUpdateFailedPath', { path }), 0);
+			}
 		}
 	}
 
