@@ -26,6 +26,7 @@ export class DocTracker {
     public fileName: string = 'unknown';
     public editTime: number = 0;
     public readTime: number = 0;
+    public snapshotUpdated: boolean = false; // Flag to indicate if snapshot has been updated for this day
 
     public editTimer: Timer | null = null;
     public readTimer: Timer | null = null;
@@ -145,6 +146,7 @@ export class DocTracker {
         this.addedWords = 0;
         this.deletedWords = 0;
         this.changedWords = 0;
+        this.snapshotUpdated = false; // Reset snapshot updated flag
         this.editTimer?.reset();
         this.readTimer?.reset();
         this.updateStatusBarTracker();
@@ -406,6 +408,69 @@ export class DocTracker {
             });
 
             this.editedTimes += undoneDiff; // multiple changes should be counted only one time.
+        }
+
+        // Capture snapshot when editedTimes > 0 and snapshot hasn't been updated yet
+        if (!this.snapshotUpdated && this.editedTimes > 0) {
+            // Try to get the content before any changes were made
+            // by reverting only the changes from the current session
+            const file = this.plugin.app.vault.getFileByPath(this.filePath);
+            if (file) {
+                // First, read the current content
+                this.plugin.app.vault.read(file).then(currentContent => {
+                    // If there are changes in the current session, try to revert them
+                    if ((doneDiff + historyCleared > 0) || (undoneDiff > 0)) {
+                        // Start with the current content
+                        let originalContent = currentContent;
+                        
+                        // Revert all done changes from the current session in reverse order
+                        if (doneDiff + historyCleared > 0) {
+                            for (let i = (doneDiff + historyCleared); i > 0; i--) {
+                                const doneChange = history.done[currentDone - i];
+                                // Create a temporary content to apply the reverse change
+                                let tempContent = originalContent;
+                                
+                                // Iterate through the changes and apply them in reverse
+                                doneChange.changes.iterChanges((fromA: number, toA: number, fromB: number, toB: number, inserted: string | Text) => {
+                                    // For a done change, inserted is the old content, and the other part is the new content
+                                    // To revert, we need to replace the new content with the old content
+                                    inserted = inserted.toString();
+                                    tempContent = tempContent.substring(0, fromA) + inserted + tempContent.substring(toA);
+                                });
+                                
+                                originalContent = tempContent;
+                            }
+                        }
+                        
+                        // Revert all undone changes from the current session in reverse order
+                        if ((doneDiff + historyCleared < 0) && ((undoneDiff + doneDiff + historyCleared) == 0)) {
+                            const undoneChange = history.undone[currentUndone - 1];
+                            // Create a temporary content to apply the reverse change
+                            let tempContent = originalContent;
+                            
+                            // Iterate through the changes and apply them in reverse
+                            undoneChange.changes.iterChanges((fromA: number, toA: number, fromB: number, toB: number, inserted: string | Text) => {
+                                // For an undone change, the other part is the old content, and inserted is the new content
+                                // To revert, we need to replace the new content with the old content
+                                // @ts-expect-error
+                                const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA, toA);
+                                tempContent = tempContent.substring(0, fromA) + theOther + tempContent.substring(toA);
+                            });
+                            
+                            originalContent = tempContent;
+                        }
+                        
+                        // Use the reconstructed original content as the snapshot
+                        this.plugin.recorderManager.captureSnapshotsForFile(this.filePath, originalContent);
+                    } else {
+                        // Failed to find changes in current session, use current content
+                        this.plugin.recorderManager.captureSnapshotsForFile(this.filePath, currentContent);
+                    }
+                }).catch(err => {
+                    console.error(`DocTracker: Failed to read file for snapshot:`, err);
+                });
+            }
+            this.snapshotUpdated = true;
         }
 
 

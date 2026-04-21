@@ -1309,6 +1309,25 @@
     }
 }
 
+/* =========================================== */
+/*  AI Tab Styles                             */
+/* =========================================== */
+
+.wordflow-eye-button {
+    margin-left: 8px;
+    padding: 0 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wordflow-eye-button:hover {
+    background: var(--background-modifier-hover);
+    border-color: var(--background-modifier-hover);
+}
+
 /* ======================== */
 /*  Reference Tab Styles    */
 /* ======================== */
@@ -1562,4 +1581,17 @@
 .stat-bar.added {
     background-color: #00CC66;
     border-radius: 0 6px 6px 0;
+}
+
+.wf-diff-loading {
+    display: inline-block;
+    animation: wf-spin 1s linear infinite;
+    width: 1em;
+    height: 1em;
+    vertical-align: middle;
+}
+
+@keyframes wf-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }

@@ -2,12 +2,14 @@ import { DocTracker } from './DocTracker';
 import { DataRecorder } from './DataRecorder';
 import { RecorderManager } from './RecorderManager';
 import { StatusBarManager, updateStatusBarStyle, removeStatusBarStyle } from './StatusBarManager';
-import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, WidgetTab, ReferenceTab } from './settings';
+import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, WidgetTab, ReferenceTab, AITab } from './settings';
 import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
 import { currentPluginVersion, changelog } from './changeLog';
 import { initI18n, SupportedLocale, I18nManager } from './i18n';
 import { executeOnceWithKey } from './Utils/executeOnce';
 import { throttleLeadingEdge } from './Utils/throttle';
+import { SnapshotManager } from './SnapshotManager';
+import { AIDiffManager } from './AIDiffManager';
 import { App, Component, getAllTags, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
 
 
@@ -22,12 +24,19 @@ export default class WordflowTrackerPlugin extends Plugin {
 	public recorderManager: RecorderManager;
 	public Widget: WordflowWidgetView | null = null;
 	public executeOnce = executeOnceWithKey();
+	public snapshotManager: SnapshotManager;
+	public aiDiffManager: AIDiffManager;
 
 	private isModeSwitch: boolean = false;
 	private lastActiveFile: { path: string; mode: 'source' | 'preview' } = { path: '', mode: 'preview' };
 
 	async onload() {
 		await this.loadSettings();
+
+		// Initialize AI Diff managers
+		this.snapshotManager = new SnapshotManager(this);
+		await this.snapshotManager.load();
+		this.aiDiffManager = new AIDiffManager(this);
 
 		if (this.settings.currentVersion !== currentPluginVersion) {
 			const currentLocale = this.settings.locale || 'en';
@@ -159,6 +168,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 					this.trackerMap.set(file.path, tracker);
 					this.trackerMap.delete(oldPath);
 				}
+				// Update snapshot key for AI Diff
+				this.snapshotManager.handleRename(oldPath, file.path);
 			}
 		}));
 
@@ -471,6 +482,10 @@ export default class WordflowTrackerPlugin extends Plugin {
 		// 首先清理 Widget view
 		this.app.workspace.detachLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET);
 
+		// Clean up AI Diff managers
+		this.aiDiffManager.destroy();
+		this.snapshotManager.save();
+
 		removeStatusBarStyle();
 		this.trackerMap.forEach((tracker, filePath) => {
 			this.recordTracker(tracker);
@@ -683,6 +698,7 @@ export class WordflowSettingTab extends PluginSettingTab {
 			[i18n.t('settings.tabs.timers')]: new TimersTab(this.app, this.plugin, this.contentContainer),
 			[i18n.t('settings.tabs.widget')]: new WidgetTab(this.app, this.plugin, this.contentContainer),
 			[i18n.t('settings.tabs.statusBar')]: new StatusBarTab(this.app, this.plugin, this.contentContainer),
+			[i18n.t('settings.tabs.ai')]: new AITab(this.app, this.plugin, this.contentContainer),
 			[i18n.t('settings.tabs.reference')]: new ReferenceTab(this.app, this.plugin, this.contentContainer)
 		};
 

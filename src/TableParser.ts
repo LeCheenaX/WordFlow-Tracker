@@ -208,6 +208,8 @@ export class TableParser{
                             return data.statBar.toNote();
                         case 'comment':
                             return data.comment??'\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost
+                        case 'diff':
+                            return data.diff??'\u200B';
                         case 'editTime':
                             return formatTime(data.editTime);
                         case 'readTime':
@@ -361,6 +363,9 @@ export class TableParser{
                     break;
                 case 'comment':
                     entry.comment = value??'\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost;
+                    break;
+                case 'diff':
+                    entry.diff = value??'\u200B';
                     break;
                 case 'editTime':
                     entry.editTime = restoreTimeString(value);

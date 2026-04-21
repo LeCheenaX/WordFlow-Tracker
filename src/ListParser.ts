@@ -166,7 +166,8 @@ export class BulletListParser{
                 if (groupData.editTime !== undefined) ListData.editTime = restoreTimeString(groupData.editTime);
                 if (groupData.readTime !== undefined) ListData.readTime = restoreTimeString(groupData.readTime);
                 if (groupData.readEditTime !== undefined) ListData.readEditTime = restoreTimeString(groupData.readEditTime);
-                
+                if (groupData.diff !== undefined) ListData.diff = groupData.diff ?? '\u200B';
+
                 existingDataMap.set(ListData.filePath, ListData);
  
                 // Skip to the end of this group to continue search
@@ -284,6 +285,7 @@ export class BulletListParser{
                 .replace(/\${editTime}/g, formatTime(data.editTime))
                 .replace(/\${readTime}/g, formatTime(data.readTime))
                 .replace(/\${readEditTime}/g, formatTime(data.readEditTime))
+                .replace(/\${diff}/g, data.diff ?? '\u200B')
                 // Handle ${property.xxx} — look up frontmatter of the tracked note
                 .replace(/\$\{property\.([\w.]+)\}/g, (_, propKey: string) => {
                     const resolved = resolveNoteProperty(this.plugin, data.filePath, propKey);

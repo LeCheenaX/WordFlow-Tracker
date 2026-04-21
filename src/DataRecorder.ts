@@ -4,6 +4,7 @@ import { DocTracker } from './DocTracker';
 import { TableParser } from './TableParser';
 import { BulletListParser } from './ListParser';
 import { MetaDataParser } from "./MetaDataParser";
+import { AIDiffManager } from "./AIDiffManager";
 import { moment, Notice, TFile, TFolder } from 'obsidian';
 import { stat } from "fs";
 
@@ -31,7 +32,7 @@ export class DataRecorder {
     constructor(
         private plugin: WordflowTrackerPlugin,
         private trackerMap: Map<string, DocTracker>,
-        private config?: RecorderConfig
+        public config?: RecorderConfig
         //private tracker?: DocTracker,
     ) {
         this.loadSettings();
@@ -75,6 +76,33 @@ export class DataRecorder {
 
     public getParser(): Readonly<TableParser | BulletListParser | MetaDataParser> {
         return this.Parser;
+    }
+
+    public hasDiffVariable(): boolean {
+        return this.listSyntax.includes('${diff}') || this.tableSyntax.includes('${diff}');
+    }
+
+    public isEligibleForAIDiff(): boolean {
+        return this.recordType !== 'metadata' && this.hasDiffVariable();
+    }
+
+    public getGroupKey(): string {
+        return `${this.periodicNoteType}|${this.periodicNoteFolder}|${this.periodicNoteFormat}`;
+    }
+
+    /**
+     * Map periodicNoteType to period format expected by SnapshotManager
+     */
+    private getPeriodFromType(periodicNoteType: string): string {
+        const typeMap: Record<string, string> = {
+            'daily note': 'daily',
+            'weekly note': 'weekly',
+            'monthly note': 'monthly',
+            'quarterly note': 'quarterly',
+            'semesterly note': 'semesterly',
+            'yearly note': 'yearly'
+        };
+        return typeMap[periodicNoteType] || 'daily';
     }
 
     private loadParsers() {
@@ -135,6 +163,31 @@ export class DataRecorder {
         } else {
             mergedData = this.mergeTotalData();
         }
+
+        // Queue AI diff requests if enabled and eligible
+        if (this.isEligibleForAIDiff() && this.plugin.settings.enableAIDiff) {
+            const groupKey = this.getGroupKey();
+            const period = this.getPeriodFromType(this.periodicNoteType);
+            const dateFormat = this.periodicNoteFormat;
+            
+            for (const data of mergedData) {
+                if (data.filePath === '|M|E|T|A|D|A|T|A|') continue;
+                if (!this.newDataMap.has(data.filePath)) continue;
+                const { html: diffHtml, id: diffId } = AIDiffManager.buildDiffLoading(data.filePath);
+                const oldDiff = data.diff && data.diff !== '\u200B' ? data.diff.replace(/<!--wf-diff:\w+-->|<!--\/wf-diff:\w+-->/g, '') : '';
+                const endMarker = `<!--/wf-diff:${diffId}-->`;
+                data.diff = diffHtml.replace(endMarker, oldDiff + endMarker);
+                this.plugin.aiDiffManager.queueDiffRequest({
+                    filePath: data.filePath,
+                    recordNotePath: recordNote.path,
+                    diffId,
+                    groupKey,
+                    period,
+                    dateFormat
+                });
+            }
+        }
+
         //console.log('mergedData:',mergedData)
         // Generate and update content
         const newContent = this.Parser.generateContent(mergedData);
@@ -496,6 +549,7 @@ export class ExistingData {
     totalEditTime: number;
     totalReadTime: number;
     totalTime: number;
+    diff: string;
     /** Stores numeric values of ${property.xxx} columns read back from the record note */
     noteProperties: Record<string, number | null>;
 
@@ -519,6 +573,7 @@ export class ExistingData {
         this.totalEditTime = 0;
         this.totalReadTime = 0;
         this.totalTime = 0;
+        this.diff = '\u200B';
         this.noteProperties = {};
     }
 }
@@ -585,6 +640,7 @@ export class MergedData {
     totalEditTime: number;
     totalReadTime: number;
     totalTime: number;
+    diff: string;
 
     constructor(newData?: NewData, existingData?: ExistingData) {
         if (newData) {
@@ -602,6 +658,7 @@ export class MergedData {
             this.editTime = newData.editTime;
             this.readTime = newData.readTime;
             this.readEditTime = newData.editTime + newData.readTime;
+            this.diff = '\u200B';
             this.isNew = true;
         } else if (existingData) {
             this.filePath = existingData.filePath;
@@ -616,6 +673,7 @@ export class MergedData {
             this.editedPercentage = existingData.editedPercentage;
             this.statBar = existingData.statBar;
             this.comment = existingData.comment ?? '\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost
+            this.diff = existingData.diff ?? '\u200B';
             this.editTime = existingData.editTime;
             this.readTime = existingData.readTime;
             this.readEditTime = existingData.readEditTime;
@@ -625,6 +683,7 @@ export class MergedData {
             this.totalEditTime = existingData.totalEditTime;
             this.totalReadTime = existingData.totalReadTime;
             this.totalTime = existingData.totalTime;
+            this.diff = existingData.diff ?? '\u200B';
             this.isNew = false;
         } else {
             this.filePath = '|M|E|T|A|D|A|T|A|';
@@ -657,6 +716,7 @@ export class MergedData {
         )
 
         this.comment = existingData.comment ?? '\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost
+        this.diff = existingData.diff ?? '\u200B';
 
         //console.log('newDocWords:', this.docWords)
         //console.log('newPercentage:',this.editedPercentage.percentage, '%')

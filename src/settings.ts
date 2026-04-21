@@ -1,5 +1,5 @@
 import WordflowTrackerPlugin from './main';
-import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, MarkdownView, MarkdownRenderer, Component, setIcon, TFile } from 'obsidian';
+import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, MarkdownView, MarkdownRenderer, Component, setIcon, TFile, requestUrl } from 'obsidian';
 import { DataRecorder, ExistingData, MergedData } from './DataRecorder';
 import { moment, normalizePath } from 'obsidian';
 import { SupportedLocale, I18nManager, getI18n } from './i18n';
@@ -71,6 +71,16 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
     enableMobileStatusBar: boolean;
     customStatusBarReadingMode: string;
     customStatusBarEditMode: string;
+
+    // AI Diff setting tab
+    enableAIDiff: boolean;
+    aiProvider: string;
+    aiBaseURL: string;
+    aiApiKey: string;
+    aiModel: string;
+    aiPrompt: string;
+    aiMaxDiffLength: string;
+    aiApiKeys: Record<string, string>; // Store API keys per provider
 }
 
 export interface RecorderConfig extends WordflowRecorderConfigs {
@@ -146,6 +156,16 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     enableMobileStatusBar: false,
     customStatusBarReadingMode: '📖 ${readTime}',
     customStatusBarEditMode: '⌨️ ${editTime} · ${editedTimes} edits · ${editedWords} words',
+
+    // AI Diff setting tab
+    enableAIDiff: false,
+    aiProvider: 'openai',
+    aiBaseURL: 'https://api.openai.com/v1',
+    aiApiKey: '',
+    aiModel: 'gpt-4o-mini',
+    aiPrompt: '',
+    aiMaxDiffLength: '128',
+    aiApiKeys: {}, // Store API keys per provider
 }
 
 
@@ -1981,6 +2001,212 @@ export class StatusBarTab extends WordflowSubSettingsTab {
                 }));
 
         makeMultilineTextSetting(editModeSetting);
+    }
+}
+
+// ========================================
+// AI Diff 设置标签页
+// ========================================
+export class AITab extends WordflowSubSettingsTab {
+    private aiSettingsContainer: HTMLElement | null = null;
+
+    display() {
+        this.container.empty();
+        const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
+
+        new Setting(tabContent)
+            .setName(this.i18n.t('settings.ai.enable.name'))
+            .setDesc(this.i18n.t('settings.ai.enable.desc'))
+            .addToggle(t => t
+                .setValue(this.plugin.settings.enableAIDiff)
+                .onChange(async (value) => {
+                    this.plugin.settings.enableAIDiff = value;
+                    await this.plugin.saveSettings();
+                    this.toggleAISettings(value);
+                }));
+
+        this.aiSettingsContainer = tabContent.createDiv();
+        this.aiSettingsContainer.id = 'wordflow-ai-settings';
+
+        new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.provider.name'))
+            .setDesc(this.i18n.t('settings.ai.provider.desc'))
+            .addDropdown(dropdown => {
+                dropdown
+                    .addOption('openai', 'OpenAI')
+                    .addOption('deepseek', 'DeepSeek')
+                    .addOption('openrouter', 'OpenRouter')
+                    .addOption('anthropic', 'Anthropic')
+                    .addOption('custom', 'Custom')
+                    .setValue(this.plugin.settings.aiProvider)
+                    .onChange(async (value) => {
+                        // Save current API key for the current provider
+                        if (this.plugin.settings.aiApiKey) {
+                            this.plugin.settings.aiApiKeys[this.plugin.settings.aiProvider] = this.plugin.settings.aiApiKey;
+                        }
+                        
+                        // Switch to new provider
+                        this.plugin.settings.aiProvider = value;
+                        
+                        // Auto-fill base URL based on provider
+                        switch (value) {
+                            case 'openai':
+                                this.plugin.settings.aiBaseURL = 'https://api.openai.com/v1';
+                                this.plugin.settings.aiModel = 'gpt-4o-mini';
+                                break;
+                            case 'deepseek':
+                                this.plugin.settings.aiBaseURL = 'https://api.deepseek.com/v1';
+                                this.plugin.settings.aiModel = 'deepseek-chat';
+                                break;
+                            case 'openrouter':
+                                this.plugin.settings.aiBaseURL = 'https://openrouter.ai/api/v1';
+                                this.plugin.settings.aiModel = 'gpt-4o-mini';
+                                break;
+                            case 'anthropic':
+                                this.plugin.settings.aiBaseURL = 'https://api.anthropic.com/v1';
+                                this.plugin.settings.aiModel = 'claude-3-5-sonnet-20240620';
+                                break;
+                            case 'custom':
+                                // Keep existing URL
+                                break;
+                        }
+                        
+                        // Load API key for the new provider if it exists
+                        this.plugin.settings.aiApiKey = this.plugin.settings.aiApiKeys[value] || '';
+                        
+                        await this.plugin.saveSettings();
+                        this.display(); // Refresh to update the UI
+                    });
+            });
+
+        new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.baseURL.name'))
+            .setDesc(this.i18n.t('settings.ai.baseURL.desc'))
+            .addText(text => text
+                .setPlaceholder('https://api.openai.com/v1')
+                .setValue(this.plugin.settings.aiBaseURL)
+                .onChange(async (value) => {
+                    this.plugin.settings.aiBaseURL = value.trim();
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.apiKey.name'))
+            .setDesc(this.i18n.t('settings.ai.apiKey.desc'))
+            .addText(text => {
+                const inputEl = text.inputEl;
+                inputEl.type = 'password';
+                text.setPlaceholder('sk-...')
+                    .setValue(this.plugin.settings.aiApiKey)
+                    .onChange(async (value) => {
+                        this.plugin.settings.aiApiKey = value.trim();
+                        await this.plugin.saveSettings();
+                    });
+                
+                // Create eye icon button
+                const button = inputEl.parentElement?.createEl('button', {
+                    cls: 'wordflow-eye-button',
+                    text: '👁︎',
+                    attr: {
+                        'aria-label': 'Toggle password visibility'
+                    }
+                });
+                
+                button?.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (inputEl.type === 'password') {
+                        inputEl.type = 'text';
+                        button.textContent = '👁️';
+                    } else {
+                        inputEl.type = 'password';
+                        button.textContent = '👁︎';
+                    }
+                });
+            });
+
+        new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.model.name'))
+            .setDesc(this.i18n.t('settings.ai.model.desc'))
+            .addText(text => text
+                .setPlaceholder('gpt-4o-mini')
+                .setValue(this.plugin.settings.aiModel)
+                .onChange(async (value) => {
+                    this.plugin.settings.aiModel = value.trim();
+                    await this.plugin.saveSettings();
+                }));
+
+        const promptSetting = new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.prompt.name'))
+            .setDesc(this.i18n.t('settings.ai.prompt.desc'))
+            .addTextArea(text => text
+                .setPlaceholder(this.i18n.t('settings.ai.prompt.defaultPrompt'))
+                .setValue(this.plugin.settings.aiPrompt)
+                .onChange(async (value) => {
+                    this.plugin.settings.aiPrompt = value;
+                    await this.plugin.saveSettings();
+                }));
+        makeMultilineTextSetting(promptSetting);
+
+        new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.maxDiffLength.name'))
+            .setDesc(this.i18n.t('settings.ai.maxDiffLength.desc'))
+            .addText(text => text
+                .setPlaceholder('128')
+                .setValue(this.plugin.settings.aiMaxDiffLength)
+                .onChange(async (value) => {
+                    const num = parseInt(value);
+                    if (!isNaN(num) && num > 0) {
+                        this.plugin.settings.aiMaxDiffLength = value;
+                        await this.plugin.saveSettings();
+                    }
+                }));
+
+        new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.testConnection'))
+            .addButton(button => button
+                .setButtonText(this.i18n.t('settings.ai.testConnection'))
+                .onClick(async () => {
+                    button.setDisabled(true);
+                    try {
+                        const { aiBaseURL, aiApiKey, aiModel, aiProvider } = this.plugin.settings;
+                        
+                        const response = await requestUrl({
+                            url: `${aiBaseURL.replace(/\/$/, '')}/chat/completions`,
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${aiApiKey}`
+                            },
+                            body: JSON.stringify({
+                                model: aiModel,
+                                messages: [{ role: 'user', content: 'Say "OK"' }],
+                                max_tokens: 5
+                            })
+                        });
+                        
+                        if (response.status === 200) {
+                            new Notice(this.i18n.t('settings.ai.testSuccess'), 3000);
+                        } else {
+                            const errorMessage = response.json?.error?.message || response.json?.message || 'Unknown error';
+                            new Notice(this.i18n.t('settings.ai.testFailed', { error: `HTTP ${response.status}: ${errorMessage}` }), 5000);
+                        }
+                    } catch (e: any) {
+                        const errorDetails = e.response?.json?.error?.message || e.response?.json?.message || e.message || 'Unknown error';
+                        new Notice(this.i18n.t('settings.ai.testFailed', { error: errorDetails }), 5000);
+                    } finally {
+                        button.setDisabled(false);
+                    }
+                }));
+
+        // Initially set visibility
+        this.toggleAISettings(this.plugin.settings.enableAIDiff);
+    }
+
+    private toggleAISettings(show: boolean) {
+        if (this.aiSettingsContainer) {
+            this.aiSettingsContainer.style.display = show ? '' : 'none';
+        }
     }
 }
 

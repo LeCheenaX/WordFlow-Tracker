@@ -39,6 +39,70 @@ export class RecorderManager {
         if (this.plugin.Widget) this.plugin.Widget.isRecording = false;
     }
 
+    /**
+     * Capture snapshots for a file across all eligible recorders.
+     * Only creates snapshots for recorders with AI Diff enabled and ${diff} variable.
+     */
+    public captureSnapshotsForFile(filePath: string, content: string): void {
+        if (!this.plugin.settings.enableAIDiff) return;
+
+        const recorderGroups = this.groupRecordersByNoteConfig();
+
+        for (const [groupKey, recorders] of Object.entries(recorderGroups)) {
+            const hasEligibleRecorder = recorders.some(recorder => recorder.isEligibleForAIDiff());
+
+            if (hasEligibleRecorder) {
+                const representativeRecorder = recorders[0];
+                const period = this.getPeriodFromType(representativeRecorder.periodicNoteType);
+                const dateFormat = representativeRecorder.periodicNoteFormat;
+
+                this.plugin.snapshotManager.captureIfNeeded(
+                    groupKey,
+                    filePath,
+                    content,
+                    period,
+                    dateFormat
+                );
+            }
+        }
+    }
+
+    /**
+     * Group recorders by their periodic note configuration (type, folder, format).
+     * Recorders with the same configuration are considered part of the same group.
+     */
+    private groupRecordersByNoteConfig(): Record<string, DataRecorder[]> {
+        const groups: Record<string, DataRecorder[]> = {};
+
+        for (const recorder of this.recorders) {
+            // Create a group key based on periodic note configuration
+            const groupKey = `${recorder.periodicNoteType}|${recorder.periodicNoteFolder}|${recorder.periodicNoteFormat}`;
+
+            if (!groups[groupKey]) {
+                groups[groupKey] = [];
+            }
+
+            groups[groupKey].push(recorder);
+        }
+
+        return groups;
+    }
+
+    /**
+     * Map periodicNoteType to period format expected by SnapshotManager
+     */
+    private getPeriodFromType(periodicNoteType: string): string {
+        const typeMap: Record<string, string> = {
+            'daily note': 'daily',
+            'weekly note': 'weekly',
+            'monthly note': 'monthly',
+            'quarterly note': 'quarterly',
+            'semesterly note': 'semesterly',
+            'yearly note': 'yearly'
+        };
+        return typeMap[periodicNoteType] || 'daily';
+    }
+
     private async execRecord(tracker?: DocTracker): Promise<void> {
         if (tracker) {
             // Record specific tracker
