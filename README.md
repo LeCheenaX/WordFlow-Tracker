@@ -13,34 +13,30 @@ WordFlow Tracker is a lite plugin that tracks your focused time and edit statist
 
 ### Core Features
 - Tracking the focused time, number of edits, edited words per note.
+- Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes.
 - Display the portions of statistics with multiple views:
     - file list view:
 
-      <img width="410" height="240" alt="image" src="https://github.com/user-attachments/assets/afd8a8c7-45bb-43ab-b84a-96f3de4d08e0" />
+      <img width="425" height="530" alt="wordflow-filelist" src="https://github.com/user-attachments/assets/fa29a689-865b-405e-87eb-1b7302590c18" />
     - tag list view: *with collapsible groups and dual-layer progress bars*
-
-      <img width="345" height="240" alt="image" src="https://github.com/user-attachments/assets/26644820-ee18-4938-9c68-47b54a01abb8" />
-
+      
+      <img width="425" height="574" alt="wordflow-taglist" src="https://github.com/user-attachments/assets/6ff3a5e7-75fb-494b-a405-1b644754f76f" />
     - heatmap view: *with custom color gradients and note navigation*
 
-	  <img width="349" height="319" alt="image" src="https://github.com/user-attachments/assets/90ed17df-e5c1-4578-b186-b46baaef1067" />
+	  <img width="425" height="518" alt="wordflow-heatmap" src="https://github.com/user-attachments/assets/35ebc80c-1145-485f-98e0-c64eb5c270e1" />
+- AI-Powered Change Tracking: Automatically generates human-readable summaries of note modifications using LLM integration. Use the `${diff}` variable in your recording syntax to have AI summarize what changed — with configurable prompts, multi-language support.
+- Display changes in a bar style to show the portion of original contents(yellow) v.s. modified contents(red: deleted words, green: added words).
+
+<img width="1108" height="544" alt="wordflow-table" src="https://github.com/user-attachments/assets/9efe00e4-77b5-4977-87c4-2809b3b245a5" />
+
+- Display the changes in the sidebar widget. 
+  
+  ![Pasted image 20250706223743](https://github.com/user-attachments/assets/6edc1be0-f262-4054-8803-1b1b37caeec7)
 - Customize status bar content with field aliases for personalized display.
   
   ![image](https://github.com/user-attachments/assets/51ce15a6-a935-46c2-9676-5525bd6b092f)
   
   ![image](https://github.com/user-attachments/assets/8422a96d-0ab5-417a-a474-7a838825de1e)
-- Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes.
-- AI-Powered Change Tracking: Automatically generates human-readable summaries of note modifications using LLM integration. Use the `${diff}` variable in your recording syntax to have AI summarize what changed — with configurable prompts, multi-language support.
-
-  <img width="940" height="666" alt="image" src="https://github.com/user-attachments/assets/fc2e58f8-0a91-4faa-8d62-ab2b23cb72e3" />
-
-- Display the changes in the side pane widget. 
-  
-  ![Pasted image 20250706223743](https://github.com/user-attachments/assets/6edc1be0-f262-4054-8803-1b1b37caeec7)
-- Display changes in a bar style to show the portion of original contents(yellow) v.s. modified contents(red: deleted words, green: added words).
-
-  ![image](https://github.com/user-attachments/assets/6c977b5f-0aba-4481-847b-f0fda6c5cd98)
-
 - Record edited statistics such as total words you edited today, to the YAML(Frontmatter) of daily note. Other plugins could use these metadata to generate analysis.
 - Customization of which data to be recorded with ${dataName}, see [Supported String Interpolations](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/docs/Settings%20Documentation.md#supported-string-interpolations). 
 - Customization of how the data to be recorded, like inserting a table or a list to the specified position of your note. Preview recording syntax before applying changes. 
@@ -69,6 +65,8 @@ Now the plugin will automatically track the edits you made and display them in t
 5. the automatic recording interval is timed out, which could be set in the setting of Wordflow Tracker plugin, to record all edited notes.
 
 Note: the tracker will be set to 0 once the note is recorded.
+
+<img width="471" height="416" alt="wordflow-switch" src="https://github.com/user-attachments/assets/cbb03688-f97c-49ad-9121-b9b638d3eb02" />
 
 ### Advanced guide for customization
 #### Apply templates to newly created notes before recording
