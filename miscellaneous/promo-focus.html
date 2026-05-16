@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wordflow Tracker – Focus Mode</title>
+<style>
+  /* ── Obsidian Default Theme tokens (light) ── */
+  :root {
+    --background-primary:         #ffffff;
+    --background-secondary:       #f2f3f5;
+    --background-modifier-border: #ddd;
+    --background-modifier-hover:  #e9e9e9;
+    --text-normal:                #2e3338;
+    --text-muted:                 #888888;
+    --text-faint:                 #b0b0b0;
+    --text-accent:                #7c6af7;
+    --text-on-accent:             #ffffff;
+    --interactive-accent:         #7c6af7;
+    --nav-item-color:             #444444;
+    --tab-text-color:             #888888;
+    --font-text: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #e8e8e8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: var(--font-text);
+    padding: 40px;
+  }
+
+  .ob-window {
+    width: 340px;
+    background: var(--background-primary);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.08);
+  }
+
+  .ob-titlebar {
+    background: #f0f0f0;
+    height: 36px;
+    display: flex; align-items: center;
+    padding: 0 14px; gap: 8px;
+    border-bottom: 1px solid var(--background-modifier-border);
+  }
+  .ob-titlebar-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .ob-titlebar-dot.red    { background: #ff5f57; }
+  .ob-titlebar-dot.yellow { background: #febc2e; }
+  .ob-titlebar-dot.green  { background: #28c840; }
+  .ob-titlebar-title {
+    flex: 1; text-align: center; font-size: 12px;
+    color: var(--text-muted); margin-right: 52px;
+  }
+
+  .ob-panel {
+    padding: 0 16px 20px;
+    color: var(--text-normal);
+    font-size: 14px;
+  }
+
+  /* ── Title row ── */
+  .wf-title-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 16px; margin-bottom: 16px;
+  }
+  .wf-title { font-size: 1.4em; font-weight: 700; color: var(--text-normal); }
+
+  /* View switcher with border */
+  .wf-view-switcher {
+    display: flex;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .wf-view-btn {
+    background: none; border: none;
+    border-right: 1px solid var(--background-modifier-border);
+    cursor: pointer; padding: 4px 8px; color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 0;
+  }
+  .wf-view-btn:last-child { border-right: none; }
+  .wf-view-btn.active { background: var(--interactive-accent); color: var(--text-on-accent); }
+  .wf-view-btn svg { width: 14px; height: 14px; }
+
+  /* ── Current note row ── */
+  .wf-current-note {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    font-size: 18px;
+  }
+  .wf-current-note-left {
+    display: flex; flex-direction: column;
+    flex: 1; min-width: 0; margin-right: 8px;
+  }
+  .wf-current-note-text { display: flex; align-items: baseline; gap: 12px; }
+  .wf-current-note-label {
+    font-weight: bold; color: var(--text-normal);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .wf-current-note-value {
+    font-weight: bold; color: var(--text-accent);
+    white-space: nowrap; flex-shrink: 0;
+    /* Slightly smaller to fit the longer time string */
+    font-size: 0.88em;
+  }
+  .wf-bar-container {
+    display: flex; height: 8px; border-radius: 4px; overflow: hidden;
+    background: var(--background-modifier-hover); margin-top: 5px; width: 72%;
+  }
+  .wf-bar-existing { height: 100%; background: var(--tab-text-color); width: 62%; }
+  .wf-bar-current  { height: 100%; background: var(--text-accent); width: 38%; }
+
+  .wf-current-note-buttons { display: flex; gap: 8px; flex-shrink: 0; }
+  .wf-btn-circle {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+  }
+  .wf-btn-circle svg { width: 16px; height: 16px; }
+
+  /* ── Controls row ── */
+  .wf-controls {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .wf-period-name { font-size: 20px; font-weight: bold; color: var(--text-accent); padding: 0 4px; }
+  .wf-field-total {
+    font-size: 20px; font-weight: 350; color: var(--text-normal);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .wf-field-name { color: var(--text-muted); }
+
+  /* ── Dual-layer progress bar ── */
+  .wf-dual-layer {
+    border-radius: 5px; overflow: hidden;
+    background: var(--background-modifier-hover);
+    margin-bottom: 8px;
+  }
+  .wf-tag-layer  { height: 16px; display: flex; width: 100%; background: var(--background-modifier-hover); }
+  .wf-file-layer { height: 4px;  display: flex; width: 100%; background: var(--background-modifier-hover); }
+  .wf-seg { height: 100%; }
+
+  /* ── Tag group list ── */
+  .wf-tag-list { margin-top: 8px; }
+
+  .wf-tag-group-row {
+    display: flex; align-items: center;
+    margin: 0 0 8px; cursor: pointer; border-radius: 4px;
+  }
+  .wf-tag-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    margin-right: 12px; flex-shrink: 0;
+  }
+  .wf-tag-name {
+    flex-grow: 1; color: var(--nav-item-color);
+    font-weight: bold; font-size: 15px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .wf-tag-value {
+    font-size: 14px; font-weight: 400; flex-shrink: 0; margin-left: 8px;
+  }
+  .wf-tag-arrow {
+    flex-shrink: 0; color: var(--text-muted);
+    font-size: 11px; margin-left: 6px; user-select: none;
+  }
+  .wf-tag-group-row.unconfigured .wf-tag-name { color: var(--text-muted); }
+
+  /* Collapsible file list */
+  .wf-tag-files {
+    position: relative;
+    margin-left: 5.5px; padding-left: 20px; margin-bottom: 8px;
+  }
+  .wf-tag-files::before {
+    content: '';
+    position: absolute;
+    left: 0; top: -4px; bottom: -4px;
+    width: 1px;
+    background: var(--background-modifier-border);
+  }
+  .wf-tag-file-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  }
+  .wf-tag-file-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .wf-tag-filename {
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    color: var(--nav-item-color); cursor: pointer; font-size: 13px;
+  }
+  .wf-tags-container {
+    display: flex; gap: 4px; flex-shrink: 1; min-width: 0; overflow: hidden;
+  }
+  .wf-tag-pill {
+    display: inline-block; padding: 1px 6px; border-radius: 10px;
+    font-size: 11px; line-height: 1.4;
+    background: var(--background-modifier-border);
+    color: var(--text-muted);
+    border: 1px solid var(--background-modifier-border);
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .wf-tag-file-value { font-size: 13px; font-weight: 400; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="ob-window">
+  <div class="ob-titlebar">
+    <div class="ob-titlebar-dot red"></div>
+    <div class="ob-titlebar-dot yellow"></div>
+    <div class="ob-titlebar-dot green"></div>
+    <span class="ob-titlebar-title">Wordflow Tracker</span>
+  </div>
+
+  <div class="ob-panel">
+
+    <!-- Title + view switcher (tag-list active) -->
+    <div class="wf-title-row">
+      <span class="wf-title">Daily Notes</span>
+      <div class="wf-view-switcher">
+        <button class="wf-view-btn" title="File List">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </button>
+        <button class="wf-view-btn active" title="Tag List">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+        </button>
+        <button class="wf-view-btn" title="Heatmap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Current note row – focus mode, time with seconds -->
+    <div class="wf-current-note">
+      <div class="wf-current-note-left">
+        <div class="wf-current-note-text">
+          <span class="wf-current-note-label">Chapter 3 – Revision</span>
+          <!-- formatTime with useSecond=true: "X min Y s" -->
+          <span class="wf-current-note-value" id="live-time">47 min 23 s</span>
+        </div>
+        <div class="wf-bar-container">
+          <span class="wf-bar-existing"></span>
+          <span class="wf-bar-current"></span>
+        </div>
+      </div>
+      <div class="wf-current-note-buttons">
+        <!-- record button: square (quit focusing and record) -->
+        <div class="wf-btn-circle" title="quit focusing and record">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          </svg>
+        </div>
+        <!-- focus button: pause (pause focusing) -->
+        <div class="wf-btn-circle" title="pause focusing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/>
+            <rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls row – field is Focused (readEditTime) -->
+    <div class="wf-controls">
+      <span class="wf-period-name">Today</span>
+      <div class="wf-field-total">
+        <span class="wf-field-name">Focused</span>:
+        <span id="live-total">2 h 14 min</span>
+      </div>
+    </div>
+
+    <!-- Tag list content -->
+    <div id="tag-list-content"></div>
+
+  </div>
+</div>
+
+<script>
+// ── Canonical data (Focused / readEditTime, same files as other promos) ───────
+// Values are focus-time in minutes for each file today.
+// Displayed as "X min" or "X h Y min" (no-second for list rows).
+
+function fmtMin(totalMin) {
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return h > 0 ? `${h} h ${m} min` : `${m} min`;
+}
+
+const tagGroups = [
+  {
+    name: 'Writing',
+    color: '#e05c5c',
+    minutes: 74,
+    files: [
+      { name: 'Chapter 3 – Revision', color: 'hsl(0,52%,60%)',   minutes: 47, tags: ['#writing'] },
+      { name: 'Chapter 4 – Draft',    color: 'hsl(0,69%,60%)',   minutes: 27, tags: ['#writing'] },
+    ]
+  },
+  {
+    name: 'Research',
+    color: '#3a8fd4',
+    minutes: 52,
+    files: [
+      { name: 'Research Notes',        color: 'hsl(210,69%,60%)', minutes: 31, tags: ['#research'] },
+      { name: 'Reading Notes – Vol.2', color: 'hsl(210,52%,60%)', minutes: 21, tags: ['#research'] },
+    ]
+  },
+  {
+    name: 'Work',
+    color: '#3aaa6e',
+    minutes: 22,
+    files: [
+      { name: 'Project Outline',  color: 'hsl(145,69%,60%)', minutes: 14, tags: ['#work'] },
+      { name: 'Meeting Summary',  color: 'hsl(145,52%,60%)', minutes:  8, tags: ['#work'] },
+    ]
+  },
+];
+
+const unconfigured = {
+  color: '#999999',
+  minutes: 6,
+  files: [
+    { name: 'Inbox', color: '#999999', minutes: 6, tags: [] },
+  ]
+};
+
+const totalMin = tagGroups.reduce((s, g) => s + g.minutes, 0) + unconfigured.minutes; // 154 min = 2h34min
+
+// All files flat, sorted desc (for file layer)
+const allFiles = [
+  { color: 'hsl(0,52%,60%)',   minutes: 47 },
+  { color: 'hsl(0,69%,60%)',   minutes: 27 },
+  { color: 'hsl(210,69%,60%)', minutes: 31 },
+  { color: 'hsl(210,52%,60%)', minutes: 21 },
+  { color: 'hsl(145,69%,60%)', minutes: 14 },
+  { color: 'hsl(145,52%,60%)', minutes:  8 },
+  { color: '#999999',           minutes:  6 },
+].sort((a, b) => b.minutes - a.minutes);
+
+// Update total display
+document.getElementById('live-total').textContent = fmtMin(totalMin);
+
+const container = document.getElementById('tag-list-content');
+
+// ── Dual-layer progress bar ───────────────────────────────────────────────────
+const dual = document.createElement('div');
+dual.className = 'wf-dual-layer';
+
+const tagLayer = document.createElement('div');
+tagLayer.className = 'wf-tag-layer';
+[...tagGroups, { color: unconfigured.color, minutes: unconfigured.minutes }].forEach(g => {
+  const seg = document.createElement('div');
+  seg.className = 'wf-seg';
+  seg.style.width = `${(g.minutes / totalMin * 100).toFixed(2)}%`;
+  seg.style.backgroundColor = g.color;
+  tagLayer.appendChild(seg);
+});
+dual.appendChild(tagLayer);
+
+const fileLayer = document.createElement('div');
+fileLayer.className = 'wf-file-layer';
+allFiles.forEach(f => {
+  const seg = document.createElement('div');
+  seg.className = 'wf-seg';
+  seg.style.width = `${(f.minutes / totalMin * 100).toFixed(2)}%`;
+  seg.style.backgroundColor = f.color;
+  fileLayer.appendChild(seg);
+});
+dual.appendChild(fileLayer);
+container.appendChild(dual);
+
+// ── Tag group list ────────────────────────────────────────────────────────────
+const listDiv = document.createElement('div');
+listDiv.className = 'wf-tag-list';
+
+function makeTagGroup(group, isUnconfigured = false) {
+  const row = document.createElement('div');
+  row.className = 'wf-tag-group-row' + (isUnconfigured ? ' unconfigured' : '');
+
+  const dot = document.createElement('span');
+  dot.className = 'wf-tag-dot';
+  dot.style.backgroundColor = group.color;
+
+  const name = document.createElement('span');
+  name.className = 'wf-tag-name';
+  name.textContent = isUnconfigured ? 'Others' : group.name;
+
+  const val = document.createElement('span');
+  val.className = 'wf-tag-value';
+  val.style.color = group.color;
+  val.textContent = fmtMin(group.minutes);
+
+  const arrow = document.createElement('span');
+  arrow.className = 'wf-tag-arrow';
+  arrow.textContent = '▼';
+
+  row.appendChild(dot);
+  row.appendChild(name);
+  row.appendChild(val);
+  row.appendChild(arrow);
+
+  const filesDiv = document.createElement('div');
+  filesDiv.className = 'wf-tag-files';
+  filesDiv.style.display = 'none';
+
+  group.files.forEach(f => {
+    const fileRow = document.createElement('div');
+    fileRow.className = 'wf-tag-file-row';
+
+    const fdot = document.createElement('span');
+    fdot.className = 'wf-tag-file-dot';
+    fdot.style.backgroundColor = f.color;
+
+    const fname = document.createElement('span');
+    fname.className = 'wf-tag-filename';
+    fname.textContent = f.name;
+
+    const tagsWrap = document.createElement('span');
+    tagsWrap.className = 'wf-tags-container';
+    f.tags.forEach(t => {
+      const pill = document.createElement('span');
+      pill.className = 'wf-tag-pill';
+      pill.textContent = t;
+      tagsWrap.appendChild(pill);
+    });
+
+    const fval = document.createElement('span');
+    fval.className = 'wf-tag-file-value';
+    fval.style.color = f.color;
+    fval.textContent = fmtMin(f.minutes);
+
+    fileRow.appendChild(fdot);
+    fileRow.appendChild(fname);
+    fileRow.appendChild(tagsWrap);
+    fileRow.appendChild(fval);
+    filesDiv.appendChild(fileRow);
+  });
+
+  let collapsed = true;
+  row.addEventListener('click', () => {
+    collapsed = !collapsed;
+    filesDiv.style.display = collapsed ? 'none' : 'block';
+    arrow.textContent = collapsed ? '▼' : '▲';
+  });
+
+  listDiv.appendChild(row);
+  listDiv.appendChild(filesDiv);
+}
+
+// Expand Writing group by default
+tagGroups.forEach((g, i) => {
+  makeTagGroup(g);
+  if (i === 0) {
+    const filesDiv = listDiv.lastElementChild;
+    const row      = filesDiv.previousElementSibling;
+    filesDiv.style.display = 'block';
+    row.querySelector('.wf-tag-arrow').textContent = '▲';
+  }
+});
+makeTagGroup(unconfigured, true);
+container.appendChild(listDiv);
+
+// ── Live clock: tick the current-note time every second ──────────────────────
+// Starts at 47 min 23 s and counts up, purely for visual effect.
+let totalSeconds = 47 * 60 + 23;
+const liveEl = document.getElementById('live-time');
+
+setInterval(() => {
+  totalSeconds++;
+  const h   = Math.floor(totalSeconds / 3600);
+  const min = Math.floor((totalSeconds % 3600) / 60);
+  const sec = totalSeconds % 60;
+  liveEl.textContent = h > 0
+    ? `${h} h ${min} min ${sec} s`
+    : `${min} min ${sec} s`;
+}, 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wordflow Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  width:1200px;height:800px;overflow:hidden;
+  background:linear-gradient(135deg,#ede9fe 0%,#ddd6fe 30%,#c7d2fe 70%,#e0e7ff 100%);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  display:flex;align-items:stretch;
+}
+
+/* ── LEFT PANEL ── */
+.left{
+  width:360px;flex-shrink:0;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:56px 44px 56px 52px;
+  gap:0;
+}
+.logo-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.logo-box{
+  width:44px;height:44px;border-radius:12px;
+  background:linear-gradient(135deg,#7c6af7,#6366f1);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(124,106,247,0.4);
+}
+.logo-box svg{width:24px;height:24px;color:#fff;}
+.plugin-name{font-size:22px;font-weight:800;color:#1e1b4b;letter-spacing:-0.02em;}
+.tagline{
+  font-size:15px;font-weight:400;color:#4c1d95;
+  line-height:1.5;margin-bottom:36px;
+  opacity:0.8;
+}
+.features{display:flex;flex-direction:column;gap:14px;}
+.feat{display:flex;align-items:flex-start;gap:12px;}
+.feat-icon{
+  width:30px;height:30px;border-radius:8px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(124,106,247,0.12);
+  margin-top:1px;
+}
+.feat-icon svg{width:15px;height:15px;color:#7c6af7;}
+.feat-text{}
+.feat-title{font-size:13px;font-weight:700;color:#1e1b4b;margin-bottom:2px;}
+.feat-desc{font-size:11.5px;color:#6d28d9;opacity:0.75;line-height:1.4;}
+
+/* ── RIGHT PANEL ── */
+.right{
+  flex:1;
+  display:flex;align-items:center;justify-content:center;
+  padding:32px 36px 32px 0;
+  position:relative;
+}
+
+/* Obsidian window shell */
+.ob-shell{
+  width:680px;height:680px;
+  background:#ffffff;
+  border-radius:14px;
+  box-shadow:0 32px 80px rgba(99,102,241,0.22),0 0 0 1px rgba(99,102,241,0.12);
+  overflow:hidden;
+  position:relative;
+}
+.ob-titlebar{
+  height:34px;background:#f5f5f7;
+  display:flex;align-items:center;padding:0 14px;gap:7px;
+  border-bottom:1px solid #e5e5e5;flex-shrink:0;
+}
+.dot{width:11px;height:11px;border-radius:50%;}
+.dot.r{background:#ff5f57;}.dot.y{background:#febc2e;}.dot.g{background:#28c840;}
+.ob-body{
+  height:calc(100% - 34px);
+  display:flex;
+  position:relative;overflow:hidden;
+}
+
+/* ── LAYER 3 (back): table rows, blurred + faded ── */
+.layer-table{
+  position:absolute;inset:0;
+  padding:28px 32px;
+  opacity:0.22;
+  filter:blur(1.5px);
+  pointer-events:none;
+}
+.tbl{width:100%;border-collapse:collapse;font-size:12px;color:#2e3338;}
+.tbl th{
+  padding:6px 10px;border-bottom:1px solid #ddd;
+  color:#888;font-weight:600;font-size:10.5px;text-transform:uppercase;
+  letter-spacing:0.04em;text-align:left;
+}
+.tbl td{padding:7px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle;}
+.note-link{color:#5c7cfa;font-weight:500;}
+.stat-bar-container{display:inline-flex;width:90px;height:10px;border-radius:5px;overflow:hidden;vertical-align:middle;}
+.stat-bar{height:100%;}
+.stat-bar.o{background:#FFD700;border-radius:5px 0 0 5px;}
+.stat-bar.d{background:#FF4D4D;}
+.stat-bar.a{background:#00CC66;border-radius:0 5px 5px 0;}
+.diff-t{font-size:11px;color:#888;max-width:160px;}
+.mono{font-family:monospace;font-size:11.5px;color:#666;}
+
+/* ── LAYER 2 (mid): heatmap grid only ── */
+.layer-heatmap{
+  position:absolute;
+  bottom:28px;right:28px;
+  opacity:0.55;
+  pointer-events:none;
+}
+.hm-grid{
+  display:grid;
+  grid-template-columns:repeat(16,1fr);
+  grid-template-rows:repeat(7,1fr);
+  gap:3px;
+  width:280px;
+  aspect-ratio:16/7;
+}
+.hm-cell{
+  border-radius:3px;
+  border:1px solid rgba(0,0,0,0.08);
+  aspect-ratio:1/1;
+}
+.hm-legend{
+  display:flex;align-items:center;justify-content:flex-end;
+  gap:3px;margin-top:6px;
+}
+.hm-legend-cell{width:12px;aspect-ratio:1/1;border-radius:2px;border:1px solid rgba(0,0,0,0.08);}
+.hm-legend-lbl{font-size:9px;color:#aaa;}
+
+/* ── LAYER 1 (front): widget card ── */
+.layer-widget{
+  position:absolute;
+  top:24px;left:24px;
+  width:272px;
+  background:#fff;
+  border-radius:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.14),0 0 0 1px rgba(0,0,0,0.07);
+  padding:14px 14px 16px;
+  font-size:13px;color:#2e3338;
+}
+
+/* widget internals */
+.w-title-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.w-title{font-size:16px;font-weight:700;color:#2e3338;}
+.w-switcher{
+  display:flex;border:1px solid #ddd;border-radius:7px;overflow:hidden;
+}
+.w-btn{
+  width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+  border:none;border-right:1px solid #ddd;background:none;color:#888;
+}
+.w-btn:last-child{border-right:none;}
+.w-btn.active{background:#7c6af7;color:#fff;}
+.w-btn svg{width:12px;height:12px;}
+
+.w-cur{
+  display:flex;justify-content:space-between;align-items:center;
+  padding-bottom:8px;margin-bottom:8px;
+  border-bottom:1px solid #eee;font-size:15px;
+}
+.w-cur-left{display:flex;flex-direction:column;flex:1;min-width:0;margin-right:6px;}
+.w-cur-text{display:flex;align-items:baseline;gap:8px;}
+.w-cur-label{font-weight:700;color:#2e3338;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.w-cur-val{font-weight:700;color:#7c6af7;font-size:14px;white-space:nowrap;}
+.w-bar-wrap{display:flex;height:6px;border-radius:3px;overflow:hidden;background:#eee;margin-top:4px;width:70%;}
+.w-bar-e{height:100%;background:#aaa;width:57%;}
+.w-bar-c{height:100%;background:#7c6af7;width:43%;}
+.w-btns{display:flex;gap:6px;flex-shrink:0;}
+.w-circle{
+  width:30px;height:30px;border-radius:50%;
+  border:1px solid #ddd;background:#f5f5f5;
+  display:flex;align-items:center;justify-content:center;color:#888;
+}
+.w-circle svg{width:13px;height:13px;}
+
+.w-ctrl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+.w-period{font-size:16px;font-weight:700;color:#7c6af7;}
+.w-total{font-size:16px;color:#2e3338;display:flex;gap:3px;align-items:center;}
+.w-field{color:#888;}
+
+/* dual-layer bar */
+.w-dual{border-radius:4px;overflow:hidden;background:#eee;margin-bottom:8px;}
+.w-tag-layer{height:13px;display:flex;}
+.w-file-layer{height:3px;display:flex;}
+.w-seg{height:100%;}
+
+/* tag list */
+.w-tag-list{display:flex;flex-direction:column;gap:6px;}
+.w-tag-row{display:flex;align-items:center;gap:8px;}
+.w-tag-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.w-tag-name{flex:1;font-weight:700;font-size:13px;color:#444;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.w-tag-val{font-size:12px;flex-shrink:0;}
+.w-tag-arrow{font-size:10px;color:#aaa;margin-left:2px;}
+
+/* expanded files */
+.w-files{
+  position:relative;margin-left:5px;padding-left:16px;
+  display:flex;flex-direction:column;gap:5px;
+}
+.w-files::before{
+  content:'';position:absolute;left:0;top:-3px;bottom:-3px;
+  width:1px;background:#ddd;
+}
+.w-file-row{display:flex;align-items:center;gap:6px;}
+.w-file-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.w-file-name{flex:1;font-size:11.5px;color:#444;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.w-tag-pill{
+  font-size:10px;padding:1px 5px;border-radius:8px;
+  background:#eee;color:#888;border:1px solid #ddd;white-space:nowrap;
+}
+.w-file-val{font-size:11.5px;flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<!-- LEFT -->
+<div class="left">
+  <div class="logo-row">
+    <div class="logo-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/>
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6"  y1="20" x2="6"  y2="14"/>
+      </svg>
+    </div>
+    <span class="plugin-name">Wordflow Tracker</span>
+  </div>
+
+  <div class="tagline">Track your writing,<br>your way.</div>
+
+  <div class="features">
+    <div class="feat">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      </div>
+      <div class="feat-text">
+        <div class="feat-title">Tag-based grouping</div>
+        <div class="feat-desc">Visualize word counts by project or topic</div>
+      </div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+      </div>
+      <div class="feat-text">
+        <div class="feat-title">Activity heatmap</div>
+        <div class="feat-desc">GitHub-style calendar of your writing habit</div>
+      </div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="feat-text">
+        <div class="feat-title">Focus mode</div>
+        <div class="feat-desc">Track deep-work sessions with live timer</div>
+      </div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <div class="feat-text">
+        <div class="feat-title">Auto-recorded table</div>
+        <div class="feat-desc">Stat bar, AI diff &amp; timestamps in your notes</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT -->
+<div class="right">
+  <div class="ob-shell">
+    <div class="ob-titlebar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    </div>
+    <div class="ob-body">
+
+      <!-- LAYER 3: table (back, blurred) -->
+      <div class="layer-table">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Note</th><th>Stat</th><th>Diff</th><th>Focused</th><th>Modified</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-body"></tbody>
+        </table>
+      </div>
+
+      <!-- LAYER 2: heatmap grid (mid) -->
+      <div class="layer-heatmap">
+        <div class="hm-grid" id="hm-grid"></div>
+        <div class="hm-legend">
+          <span class="hm-legend-lbl">Less</span>
+          <div class="hm-legend-cell"></div>
+          <div class="hm-legend-cell" style="background:hsl(137,70%,80%)"></div>
+          <div class="hm-legend-cell" style="background:hsl(137,76%,66%)"></div>
+          <div class="hm-legend-cell" style="background:hsl(137,83%,52%)"></div>
+          <div class="hm-legend-cell" style="background:hsl(137,95%,25%)"></div>
+          <span class="hm-legend-lbl">More</span>
+        </div>
+      </div>
+
+      <!-- LAYER 1: widget (front) -->
+      <div class="layer-widget">
+
+        <!-- title row -->
+        <div class="w-title-row">
+          <span class="w-title">Daily Notes</span>
+          <div class="w-switcher">
+            <button class="w-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg></button>
+            <button class="w-btn active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></button>
+            <button class="w-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></button>
+          </div>
+        </div>
+
+        <!-- current note -->
+        <div class="w-cur">
+          <div class="w-cur-left">
+            <div class="w-cur-text">
+              <span class="w-cur-label">Meeting Summary</span>
+              <span class="w-cur-val">900</span>
+            </div>
+            <div class="w-bar-wrap"><span class="w-bar-e"></span><span class="w-bar-c"></span></div>
+          </div>
+          <div class="w-btns">
+            <div class="w-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="12" cy="15" r="3"/><line x1="12" y1="12" x2="12" y2="15"/></svg></div>
+            <div class="w-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg></div>
+          </div>
+        </div>
+
+        <!-- controls -->
+        <div class="w-ctrl">
+          <span class="w-period">Today</span>
+          <div class="w-total"><span class="w-field">Words</span>: <span>8,472</span></div>
+        </div>
+
+        <!-- dual-layer bar -->
+        <div class="w-dual">
+          <div class="w-tag-layer">
+            <div class="w-seg" style="width:49.7%;background:#e05c5c;"></div>
+            <div class="w-seg" style="width:29.3%;background:#3a8fd4;"></div>
+            <div class="w-seg" style="width:16.3%;background:#3aaa6e;"></div>
+            <div class="w-seg" style="width:4.5%; background:#999;"></div>
+          </div>
+          <div class="w-file-layer">
+            <div class="w-seg" style="width:27.6%;background:hsl(0,52%,60%);"></div>
+            <div class="w-seg" style="width:22.1%;background:hsl(0,69%,60%);"></div>
+            <div class="w-seg" style="width:17.5%;background:hsl(210,69%,60%);"></div>
+            <div class="w-seg" style="width:11.8%;background:hsl(210,52%,60%);"></div>
+            <div class="w-seg" style="width:10.3%;background:hsl(145,69%,60%);"></div>
+            <div class="w-seg" style="width:6.0%; background:hsl(145,52%,60%);"></div>
+            <div class="w-seg" style="width:4.5%; background:#999;"></div>
+          </div>
+        </div>
+
+        <!-- tag list -->
+        <div class="w-tag-list">
+          <!-- Writing expanded -->
+          <div class="w-tag-row">
+            <div class="w-tag-dot" style="background:#e05c5c;"></div>
+            <span class="w-tag-name">Writing</span>
+            <span class="w-tag-val" style="color:#e05c5c;">4,217</span>
+            <span class="w-tag-arrow">▲</span>
+          </div>
+          <div class="w-files">
+            <div class="w-file-row">
+              <div class="w-file-dot" style="background:hsl(0,52%,60%);"></div>
+              <span class="w-file-name">Chapter 3 – Revision</span>
+              <span class="w-tag-pill">#writing</span>
+              <span class="w-file-val" style="color:hsl(0,52%,60%);">2,341</span>
+            </div>
+            <div class="w-file-row">
+              <div class="w-file-dot" style="background:hsl(0,69%,60%);"></div>
+              <span class="w-file-name">Chapter 4 – Draft</span>
+              <span class="w-tag-pill">#writing</span>
+              <span class="w-file-val" style="color:hsl(0,69%,60%);">1,876</span>
+            </div>
+          </div>
+          <!-- Research collapsed -->
+          <div class="w-tag-row">
+            <div class="w-tag-dot" style="background:#3a8fd4;"></div>
+            <span class="w-tag-name">Research</span>
+            <span class="w-tag-val" style="color:#3a8fd4;">2,486</span>
+            <span class="w-tag-arrow">▼</span>
+          </div>
+          <!-- Work collapsed -->
+          <div class="w-tag-row">
+            <div class="w-tag-dot" style="background:#3aaa6e;"></div>
+            <span class="w-tag-name">Work</span>
+            <span class="w-tag-val" style="color:#3aaa6e;">1,386</span>
+            <span class="w-tag-arrow">▼</span>
+          </div>
+          <!-- Others -->
+          <div class="w-tag-row">
+            <div class="w-tag-dot" style="background:#999;"></div>
+            <span class="w-tag-name" style="color:#888;">Others</span>
+            <span class="w-tag-val" style="color:#999;">383</span>
+            <span class="w-tag-arrow">▼</span>
+          </div>
+        </div>
+
+      </div><!-- /layer-widget -->
+
+    </div><!-- /ob-body -->
+  </div><!-- /ob-shell -->
+</div><!-- /right -->
+
+<script>
+// ── Heatmap ──────────────────────────────────────────────────────────────────
+function makePRNG(s){let st=s>>>0;return()=>{st=(Math.imul(1664525,st)+1013904223)>>>0;return st/0x100000000;};}
+const rng=makePRNG(0xCAFEBABE);
+const COLS=16,ROWS=7;
+const vals=[];
+for(let i=0;i<COLS*ROWS;i++) vals.push(rng()<0.15?0:Math.round(200+rng()*1400));
+// spikes
+[10,27,45,62,80,97].forEach(i=>{if(i<vals.length)vals[i]=Math.round(1600+rng()*400);});
+const nonzero=vals.filter(v=>v>0).sort((a,b)=>a-b);
+const minV=nonzero[3]??nonzero[0]??1;
+const maxV=nonzero[nonzero.length-4]??nonzero[nonzero.length-1]??1;
+function getColor(v){
+  if(!v)return null;
+  const n=Math.max(0,Math.min(1,(v-minV)/(maxV-minV)));
+  const idx=Math.min(3,Math.floor(n*4));
+  const l=80-(80-25)*idx/3;
+  const s=70+(95-70)*idx/3;
+  return `hsl(137,${s.toFixed(0)}%,${l.toFixed(0)}%)`;
+}
+const grid=document.getElementById('hm-grid');
+vals.forEach((v,i)=>{
+  const c=document.createElement('div');
+  c.className='hm-cell';
+  if(v>0) c.style.backgroundColor=getColor(v);
+  grid.appendChild(c);
+});
+
+// ── Table rows ───────────────────────────────────────────────────────────────
+const rows=[
+  {name:'Chapter 3 – Revision',op:58,dp:8,ap:34,diff:'Restructured opening argument; tightened prose.',focused:'47 min',mt:'21:34'},
+  {name:'Chapter 4 – Draft',op:72,dp:5,ap:23,diff:'Added new scene outline; minor wording fixes.',focused:'27 min',mt:'19:08'},
+  {name:'Research Notes',op:65,dp:12,ap:23,diff:'Inserted three new citations.',focused:'31 min',mt:'16:52'},
+  {name:'Reading Notes – Vol.2',op:80,dp:4,ap:16,diff:'Annotated chapter 7 highlights.',focused:'21 min',mt:'14:20'},
+  {name:'Project Outline',op:55,dp:15,ap:30,diff:'Revised milestone dates.',focused:'14 min',mt:'11:45'},
+  {name:'Meeting Summary',op:70,dp:6,ap:24,diff:'Transcribed action items.',focused:'8 min',mt:'09:17'},
+  {name:'Inbox',op:90,dp:2,ap:8,diff:'Quick capture: three fleeting notes.',focused:'6 min',mt:'08:03'},
+];
+const tbody=document.getElementById('tbl-body');
+rows.forEach(r=>{
+  tbody.innerHTML+=`<tr>
+    <td><span class="note-link">${r.name}</span></td>
+    <td><span class="stat-bar-container"><span class="stat-bar o" style="width:${r.op}%"></span><span class="stat-bar d" style="width:${r.dp}%"></span><span class="stat-bar a" style="width:${r.ap}%"></span></span></td>
+    <td><span class="diff-t">${r.diff}</span></td>
+    <td class="mono">${r.focused}</td>
+    <td class="mono">${r.mt}</td>
+  </tr>`;
+});
+</script>
+</body>
+</html>

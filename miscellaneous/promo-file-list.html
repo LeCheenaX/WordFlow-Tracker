@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wordflow Tracker – File List View</title>
+<style>
+  /* ── Obsidian Default Theme tokens (light) ── */
+  :root {
+    --background-primary:         #ffffff;
+    --background-secondary:       #f2f3f5;
+    --background-modifier-border: #ddd;
+    --background-modifier-hover:  #e9e9e9;
+    --text-normal:                #2e3338;
+    --text-muted:                 #888888;
+    --text-faint:                 #b0b0b0;
+    --text-accent:                #7c6af7;
+    --text-on-accent:             #ffffff;
+    --interactive-accent:         #7c6af7;
+    --nav-item-color:             #444444;
+    --tab-text-color:             #888888;
+    --font-text: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #e8e8e8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: var(--font-text);
+    padding: 40px;
+  }
+
+  .ob-window {
+    width: 340px;
+    background: var(--background-primary);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.08);
+  }
+
+  .ob-titlebar {
+    background: #f0f0f0;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 8px;
+    border-bottom: 1px solid var(--background-modifier-border);
+  }
+  .ob-titlebar-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .ob-titlebar-dot.red    { background: #ff5f57; }
+  .ob-titlebar-dot.yellow { background: #febc2e; }
+  .ob-titlebar-dot.green  { background: #28c840; }
+  .ob-titlebar-title {
+    flex: 1; text-align: center; font-size: 12px;
+    color: var(--text-muted); margin-right: 52px;
+  }
+
+  .ob-panel {
+    padding: 0 16px 20px;
+    color: var(--text-normal);
+    font-size: 14px;
+  }
+
+  /* Title row */
+  .wf-title-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 16px; margin-bottom: 16px;
+  }
+  .wf-title { font-size: 1.4em; font-weight: 700; color: var(--text-normal); }
+  .wf-view-switcher {
+    display: flex;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .wf-view-btn {
+    background: none;
+    border: none;
+    border-right: 1px solid var(--background-modifier-border);
+    cursor: pointer;
+    padding: 4px 8px; color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 0;
+  }
+  .wf-view-btn:last-child { border-right: none; }
+  .wf-view-btn.active { background: var(--interactive-accent); color: var(--text-on-accent); }
+  .wf-view-btn svg { width: 14px; height: 14px; }
+
+  /* Current note row */
+  .wf-current-note {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    font-size: 18px;
+  }
+  .wf-current-note-left { display: flex; flex-direction: column; flex: 1; min-width: 0; margin-right: 8px; }
+  .wf-current-note-text { display: flex; align-items: baseline; gap: 12px; }
+  .wf-current-note-label { font-weight: bold; color: var(--text-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wf-current-note-value { font-weight: bold; color: var(--text-accent); white-space: nowrap; flex-shrink: 0; }
+  .wf-bar-container {
+    display: flex; height: 8px; border-radius: 4px; overflow: hidden;
+    background: var(--background-modifier-hover); margin-top: 5px; width: 72%;
+  }
+  .wf-bar-existing { height: 100%; background: var(--tab-text-color); width: 55%; }
+  .wf-bar-current  { height: 100%; background: var(--text-accent); width: 45%; }
+  .wf-current-note-buttons { display: flex; gap: 8px; flex-shrink: 0; }
+  .wf-btn-circle {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+  }
+  .wf-btn-circle svg { width: 16px; height: 16px; }
+
+  /* Controls row */
+  .wf-controls {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .wf-period-name { font-size: 20px; font-weight: bold; color: var(--text-accent); padding: 0 4px; }
+  .wf-field-total { font-size: 20px; font-weight: 350; color: var(--text-normal); display: flex; align-items: center; gap: 4px; }
+  .wf-field-name { color: var(--text-muted); }
+
+  /* ── Total progress bar ── */
+  .wf-total-bar {
+    height: 20px;
+    background: var(--background-modifier-hover);
+    border-radius: 5px;
+    overflow: hidden;
+    display: flex;
+    margin-bottom: 8px;
+  }
+  .wf-bar-seg {
+    height: 100%;
+  }
+
+  /* ── File data rows ── */
+  .wf-data-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .wf-circle {
+    width: 0.8em; height: 0.8em;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  .wf-filename {
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    flex-grow: 1; min-width: 0;
+    color: var(--nav-item-color);
+    cursor: pointer;
+  }
+  .wf-value {
+    margin-left: 8px; font-weight: 400; flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="ob-window">
+  <div class="ob-titlebar">
+    <div class="ob-titlebar-dot red"></div>
+    <div class="ob-titlebar-dot yellow"></div>
+    <div class="ob-titlebar-dot green"></div>
+    <span class="ob-titlebar-title">Wordflow Tracker</span>
+  </div>
+
+  <div class="ob-panel">
+
+    <!-- Title + view switcher -->
+    <div class="wf-title-row">
+      <span class="wf-title">Daily Notes</span>
+      <div class="wf-view-switcher">
+        <!-- file-list active -->
+        <button class="wf-view-btn active" title="File List">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </button>
+        <button class="wf-view-btn" title="Tag List">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+        </button>
+        <button class="wf-view-btn" title="Heatmap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Current note row -->
+    <div class="wf-current-note">
+      <div class="wf-current-note-left">
+        <div class="wf-current-note-text">
+          <span class="wf-current-note-label">Meeting Summary</span>
+          <span class="wf-current-note-value">900</span>
+        </div>
+        <div class="wf-bar-container">
+          <span class="wf-bar-existing" style="width:57%"></span>
+          <span class="wf-bar-current" style="width:43%"></span>
+        </div>
+      </div>
+      <div class="wf-current-note-buttons">
+        <!-- record button: file-clock icon (record wordflows to periodic notes) -->
+        <div class="wf-btn-circle" title="record wordflows to periodic notes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <circle cx="12" cy="15" r="3"/>
+            <line x1="12" y1="12" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <!-- focus button: play icon -->
+        <div class="wf-btn-circle" title="start focusing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls row -->
+    <div class="wf-controls">
+      <span class="wf-period-name">Today</span>
+      <div class="wf-field-total">
+        <span class="wf-field-name">Words</span>:
+        <span>8,472</span>
+      </div>
+    </div>
+
+    <!-- Total progress bar + file rows (rendered by JS) -->
+    <div id="file-list-content"></div>
+
+  </div>
+</div>
+
+<script>
+// ── Color logic mirrors TagColorManager exactly ───────────────────────────────
+// Tag color: user-configured hex (fixed H/S/L)
+// File color: same H as tag, L=60 fixed, S varies by file position (sorted alpha)
+//   2 files → S: 52, 69
+//   3 files → S: 35, 60, 85  (minSat=50 but for 3: step=(86-50)/2=18 → 50,68,86... 
+//             actually minSaturation=50, maxSaturation=86, step=(86-50)/(n-1))
+//
+// Tag hues (extracted from hex):
+//   Writing  #e05c5c → H≈0
+//   Research #3a8fd4 → H≈210
+//   Work     #3aaa6e → H≈145
+//
+// 2 files per group, sorted alphabetically:
+//   Writing:  "Chapter 3 – Revision" < "Chapter 4 – Draft"  → S=52, S=69
+//   Research: "Reading Notes – Vol.2" < "Research Notes"     → S=52, S=69
+//   Work:     "Meeting Summary" < "Project Outline"          → S=52, S=69
+
+const TAG_COLORS = {
+  Writing:  { h: 0,   hex: '#e05c5c' },
+  Research: { h: 210, hex: '#3a8fd4' },
+  Work:     { h: 145, hex: '#3aaa6e' },
+};
+
+// hsl(H, S%, 60%) for each file
+// Writing (H=0):   Chapter 3 (alpha-first) S=52, Chapter 4 S=69
+// Research (H=210): Reading Notes (alpha-first) S=52, Research Notes S=69
+// Work (H=145):    Meeting Summary (alpha-first) S=52, Project Outline S=69
+
+const files = [
+  // Writing – sorted alpha: "Chapter 3" < "Chapter 4"
+  { name: 'Chapter 3 – Revision', value: 2341, color: 'hsl(0,52%,60%)',   group: 'Writing' },
+  { name: 'Chapter 4 – Draft',    value: 1876, color: 'hsl(0,69%,60%)',   group: 'Writing' },
+  // Research – sorted alpha: "Reading Notes" < "Research Notes"
+  { name: 'Research Notes',        value: 1486, color: 'hsl(210,69%,60%)', group: 'Research' },
+  { name: 'Reading Notes – Vol.2', value: 1000, color: 'hsl(210,52%,60%)', group: 'Research' },
+  // Work – sorted alpha: "Meeting Summary" < "Project Outline"
+  { name: 'Project Outline',       value:  874, color: 'hsl(145,69%,60%)', group: 'Work' },
+  { name: 'Meeting Summary',       value:  512, color: 'hsl(145,52%,60%)', group: 'Work' },
+  // Others (grey, UniqueColorGenerator)
+  { name: 'Inbox',                 value:  383, color: '#999999',           group: 'Others' },
+];
+
+const total = files.reduce((s, f) => s + f.value, 0);
+const container = document.getElementById('file-list-content');
+
+// Total progress bar
+const bar = document.createElement('div');
+bar.className = 'wf-total-bar';
+files.forEach(f => {
+  const seg = document.createElement('div');
+  seg.className = 'wf-bar-seg';
+  seg.style.width = `${(f.value / total * 100).toFixed(2)}%`;
+  seg.style.backgroundColor = f.color;
+  bar.appendChild(seg);
+});
+container.appendChild(bar);
+
+// File rows
+files.forEach(f => {
+  const row = document.createElement('div');
+  row.className = 'wf-data-row';
+
+  const dot = document.createElement('span');
+  dot.className = 'wf-circle';
+  dot.style.backgroundColor = f.color;
+
+  const name = document.createElement('span');
+  name.className = 'wf-filename';
+  name.textContent = f.name;
+
+  const val = document.createElement('span');
+  val.className = 'wf-value';
+  val.style.color = f.color;
+  val.textContent = f.value.toLocaleString();
+
+  row.appendChild(dot);
+  row.appendChild(name);
+  row.appendChild(val);
+  container.appendChild(row);
+});
+</script>
+</body>
+</html>

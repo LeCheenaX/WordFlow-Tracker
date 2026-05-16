@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wordflow Tracker – Interactions</title>
+<style>
+  :root {
+    --bg:      #ffffff;
+    --bg2:     #f2f3f5;
+    --border:  #ddd;
+    --hover:   #e9e9e9;
+    --normal:  #2e3338;
+    --muted:   #888888;
+    --faint:   #b0b0b0;
+    --accent:  #7c6af7;
+    --on-acc:  #ffffff;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #e8e8e8;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; font-family: var(--font); padding: 32px 20px;
+  }
+
+  .card {
+    background: var(--bg);
+    border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06);
+    padding: 20px 20px 22px;
+    width: fit-content;
+    display: inline-flex; flex-direction: column; gap: 16px;
+  }
+
+  /* section label */
+  .slabel {
+    font-size: 9.5px; font-weight: 600; color: var(--faint);
+    letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 8px;
+  }
+
+  .divider { height: 1px; background: var(--border); width: 100%; }
+
+  /* ── ROW 1: two dropdowns ── */
+  .row1 {
+    display: flex;
+    align-items: start;
+    gap: 0;
+  }
+  .vline { background: var(--border); align-self: stretch; width: 1px; margin: 0 16px; flex-shrink: 0; }
+
+  .dcol { display: flex; flex-direction: column; gap: 6px; }
+
+  .trigger {
+    display: inline-flex; align-items: center; gap: 4px;
+    cursor: pointer; padding-bottom: 2px;
+    border-bottom: 2px solid var(--accent);
+    width: fit-content;
+  }
+  .trigger.rec  { font-size: 17px; font-weight: 700; color: var(--normal); }
+  .trigger.fld  { font-size: 13px; font-weight: 400; color: var(--muted); }
+  .trigger svg  { width: 11px; height: 11px; color: var(--muted); flex-shrink: 0; }
+
+  .dmenu {
+    border: 1px solid var(--border); border-radius: 7px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.09);
+    overflow: hidden; width: fit-content; min-width: 140px;
+  }
+  .ditem {
+    padding: 5px 11px; font-size: 12px; color: var(--normal);
+    display: flex; align-items: center; gap: 7px;
+    border-bottom: 1px solid var(--border); cursor: pointer;
+  }
+  .ditem:last-child { border-bottom: none; }
+  .ditem.active { background: var(--accent); color: var(--on-acc); }
+  .ditem svg { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.6; }
+  .ditem.active svg { opacity: 1; }
+
+  /* ── ROW 2: timeline ── */
+  .row2 { display: flex; flex-direction: column; gap: 8px; }
+
+  .timeline {
+    display: flex; align-items: center; gap: 0; width: fit-content;
+  }
+  .tl-line {
+    width: 20px; height: 1px; background: var(--border); flex-shrink: 0;
+  }
+  .tl-entry {
+    display: flex; align-items: center; gap: 1px;
+    padding: 3px 5px; border-radius: 6px; white-space: nowrap;
+  }
+  .tl-entry.cur {
+    background: rgba(124,106,247,0.09);
+    outline: 1.5px solid rgba(124,106,247,0.32);
+  }
+  .tl-nav {
+    font-size: 13px; color: var(--muted);
+    padding: 0 3px; border-radius: 3px; cursor: pointer; line-height: 1;
+  }
+  .tl-nav.clicked { color: var(--accent); font-weight: 700; }
+  .tl-name {
+    font-size: 13px; font-weight: 700; color: var(--accent); padding: 0 4px;
+  }
+  .tl-reset { font-size: 12px; color: var(--muted); padding: 0 2px; opacity: 0.7; }
+
+  .tl-cap {
+    font-size: 10.5px; color: var(--faint); line-height: 1.5; padding: 0 2px;
+  }
+  .tl-cap .a  { color: var(--accent); font-weight: 600; }
+  .tl-cap .hl {
+    background: rgba(124,106,247,0.09); outline: 1px solid rgba(124,106,247,0.28);
+    border-radius: 3px; padding: 0 3px; color: var(--accent); font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- ROW 1 -->
+  <div>
+    <div class="slabel">Switch recorder &amp; field</div>
+    <div class="row1">
+
+      <!-- Recorder -->
+      <div class="dcol">
+        <div class="trigger rec">
+          Daily Notes
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="dmenu">
+          <div class="ditem active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Daily Notes
+          </div>
+          <div class="ditem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Weekly Notes
+          </div>
+          <div class="ditem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Monthly Notes
+          </div>
+        </div>
+      </div>
+
+      <div class="vline"></div>
+
+      <!-- Field -->
+      <div class="dcol">
+        <div class="trigger fld">
+          Focused
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="dmenu">
+          <div class="ditem active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Focused
+          </div>
+          <div class="ditem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+            Words
+          </div>
+          <div class="ditem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edits
+          </div>
+          <div class="ditem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Added
+          </div>
+          <div class="ditem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Deleted
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ROW 2 -->
+  <div class="row2">
+    <div class="slabel">Navigate periods</div>
+    <div class="timeline">
+
+      <div class="tl-entry cur">
+        <span class="tl-nav clicked">&lt;</span>
+        <span class="tl-name">2026-05-14</span>
+        <span class="tl-reset">↺</span>
+      </div>
+
+      <div class="tl-line"></div>
+
+      <div class="tl-entry">
+        <span class="tl-nav">&lt;</span>
+        <span class="tl-name">Yesterday</span>
+        <span class="tl-nav">&gt;</span>
+      </div>
+
+      <div class="tl-line"></div>
+
+      <div class="tl-entry">
+        <span class="tl-nav">&lt;</span>
+        <span class="tl-name">Today</span>
+      </div>
+
+    </div>
+    <div class="tl-cap">
+      <span class="a">&lt;</span> on <span class="hl">Yesterday</span> → viewing 2026-05-14 &nbsp;·&nbsp; <span class="a">↺</span> back to Today
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
