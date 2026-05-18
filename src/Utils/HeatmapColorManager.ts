@@ -24,42 +24,56 @@ export class HeatmapColorManager {
 
     /**
      * Generate color scale based on base hue and gradient levels
-     * Uses center-point approach: 80 and 25 are center points of the range
-     * When gradientLevels < max, the range shrinks but middle color stays at L=55
+     * Fixed total range: first color center=80, last color center=25 (when gradientLevels=maxLevels)
+     * Each color takes the center point of its segment
+     * Middle colors stay relatively stable when gradientLevels changes
      */
     private generateColorScale(): void {
         this.colorScale = [];
-        
-        const maxLevels = 10;
-        const maxLightnessStart = 80;
-        const maxLightnessEnd = 25;
-        const maxSaturationStart = 90;
-        const maxSaturationEnd = 30;
-        const middleLightness = (maxLightnessStart + maxLightnessEnd) / 2;
-        const middleSaturation = (maxSaturationStart + maxSaturationEnd) / 2;
-        
-        const ratio = this.gradientLevels / (maxLevels - 1);
-        
-        const lightnessRange = (maxLightnessStart - maxLightnessEnd) * ratio;
-        const saturationRange = (maxSaturationStart - maxSaturationEnd) * ratio;
-        
-        const lightnessStart = middleLightness + lightnessRange / 2;
-        const lightnessEnd = middleLightness - lightnessRange / 2;
-        const saturationStart = middleSaturation + saturationRange / 2;
-        const saturationEnd = middleSaturation - saturationRange / 2;
-        
-        for (let i = 0; i < this.gradientLevels; i++) {
-            const t = this.gradientLevels > 1 ? i / (this.gradientLevels - 1) : 0;
-            
-            const lightness = lightnessStart - lightnessRange * t;
-            const saturation = saturationStart - saturationRange * t;
-            
+
+        // 配置：最大等级数以及在该等级下首尾中点的目标值
+        const maxLevels = 9;                 // 最大等级数（可修改）
+        const targetFirstLight = 80;         // 第1个颜色（最小值）的亮度目标
+        const targetLastLight  = 25;         // 第maxLevels个颜色（最大值）的亮度目标
+        const targetFirstSat   = 90;         // 第1个颜色的饱和度目标
+        const targetLastSat    = 30;         // 第maxLevels个颜色的饱和度目标
+
+        // ---------- 根据最大等级和端点目标值，反推出固定的总范围 ----------
+        // 亮度：已知当 n = maxLevels 时，第一个中点 = targetFirstLight，最后一个中点 = targetLastLight
+        // 设总范围为 [L_low, L_high] (L_low < L_high)，区间长度 dL = (L_high - L_low) / maxLevels
+        // 第一个中点 = L_high - dL/2 = targetFirstLight   (因为浅色靠近高亮端)
+        // 最后一个中点 = L_low + dL/2  = targetLastLight   (因为深色靠近低亮端)
+        // 解得：
+        // dL = (targetFirstLight - targetLastLight) / (maxLevels - 1)
+        // L_high = targetFirstLight + dL/2
+        // L_low  = targetLastLight  - dL/2
+        const dL = (targetFirstLight - targetLastLight) / (maxLevels - 1);
+        const L_high = targetFirstLight + dL / 2;
+        const L_low  = targetLastLight  - dL / 2;
+        // 同理，饱和度（从鲜艳到灰暗）
+        const dS = (targetFirstSat - targetLastSat) / (maxLevels - 1);
+        const S_high = targetFirstSat + dS / 2;
+        const S_low  = targetLastSat  - dS / 2;
+
+        // 当前实际等级数
+        const n = this.gradientLevels;
+        if (n === 0) return;
+
+        // 使用固定的总范围 [L_low, L_high] 和 [S_low, S_high] 计算当前 n 个中点
+        const segmentLengthL = (L_high - L_low) / n;   // 每个区间的长度（亮度）
+        const segmentLengthS = (S_high - S_low) / n;   // 每个区间的长度（饱和度）
+
+        for (let i = 0; i < n; i++) {
+            // 第 i 个区间的中点 (i 从 0 开始，0 对应最小值颜色，n-1 对应最大值颜色)
+            // 注意：因为浅色在高亮端，所以中点从 L_high - d/2 开始递减
+            const lightness = L_high - (i + 0.5) * segmentLengthL;
+            const saturation = S_high - (i + 0.5) * segmentLengthS;
+
             const hsl: HSL = {
                 h: Math.max(0, Math.min(360, this.baseHue)),
                 s: Math.max(0, Math.min(100, saturation)),
                 l: Math.max(0, Math.min(100, lightness))
             };
-            
             this.colorScale.push(this.hslToHex(hsl));
         }
     }
