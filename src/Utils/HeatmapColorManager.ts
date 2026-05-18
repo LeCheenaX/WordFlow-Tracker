@@ -24,19 +24,35 @@ export class HeatmapColorManager {
 
     /**
      * Generate color scale based on base hue and gradient levels
-     * Classic heatmap style: fixed H, varying L with minor S compensation
+     * Uses center-point approach: 80 and 25 are center points of the range
+     * When gradientLevels < max, the range shrinks but middle color stays at L=55
      */
     private generateColorScale(): void {
         this.colorScale = [];
         
+        const maxLevels = 10;
+        const maxLightnessStart = 80;
+        const maxLightnessEnd = 25;
+        const maxSaturationStart = 90;
+        const maxSaturationEnd = 30;
+        const middleLightness = (maxLightnessStart + maxLightnessEnd) / 2;
+        const middleSaturation = (maxSaturationStart + maxSaturationEnd) / 2;
+        
+        const ratio = this.gradientLevels / (maxLevels - 1);
+        
+        const lightnessRange = (maxLightnessStart - maxLightnessEnd) * ratio;
+        const saturationRange = (maxSaturationStart - maxSaturationEnd) * ratio;
+        
+        const lightnessStart = middleLightness + lightnessRange / 2;
+        const lightnessEnd = middleLightness - lightnessRange / 2;
+        const saturationStart = middleSaturation + saturationRange / 2;
+        const saturationEnd = middleSaturation - saturationRange / 2;
+        
         for (let i = 0; i < this.gradientLevels; i++) {
-            // Main variation: Lightness from high to low (80% to 25%)
-            // Large range for clear contrast: light colors for low values, dark for high values
-            const lightness = 80 - (80 - 25) * (i / (this.gradientLevels - 1));
+            const t = this.gradientLevels > 1 ? i / (this.gradientLevels - 1) : 0;
             
-            // High saturation throughout (70% to 95%)
-            // Maintains vibrant, non-grayish colors across all levels
-            const saturation = 70 + (95 - 70) * (i / (this.gradientLevels - 1));
+            const lightness = lightnessStart - lightnessRange * t;
+            const saturation = saturationStart - saturationRange * t;
             
             const hsl: HSL = {
                 h: Math.max(0, Math.min(360, this.baseHue)),
