@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,455 +6,454 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{
-  width:1200px;height:800px;overflow:hidden;
-  background:linear-gradient(135deg,#ede9fe 0%,#ddd6fe 30%,#c7d2fe 70%,#e0e7ff 100%);
+  width:1200px;height:900px;overflow:hidden;
+  background:linear-gradient(135deg,#0f0c29 0%,#1a1040 45%,#1e1b4b 100%);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  display:flex;align-items:stretch;
+  position:relative;
 }
+.gb{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;}
+.gb1{width:560px;height:560px;background:rgba(124,106,247,0.18);top:-180px;left:-120px;}
+.gb2{width:400px;height:400px;background:rgba(99,102,241,0.13);bottom:-60px;right:100px;}
+.gb3{width:260px;height:260px;background:rgba(51,193,94,0.08);top:320px;right:40px;}
 
-/* ── LEFT PANEL ── */
-.left{
-  width:360px;flex-shrink:0;
-  display:flex;flex-direction:column;justify-content:center;
-  padding:56px 44px 56px 52px;
-  gap:0;
+/* HEADER */
+.hdr{
+  position:absolute;top:0;left:0;right:0;height:100px;
+  display:flex;align-items:center;padding:0 30px;gap:20px;
+  border-bottom:1px solid rgba(255,255,255,0.07);z-index:20;
 }
-.logo-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
 .logo-box{
-  width:44px;height:44px;border-radius:12px;
+  width:40px;height:40px;border-radius:11px;flex-shrink:0;
   background:linear-gradient(135deg,#7c6af7,#6366f1);
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 16px rgba(124,106,247,0.4);
+  box-shadow:0 4px 18px rgba(124,106,247,0.5);margin-right:12px;
 }
-.logo-box svg{width:24px;height:24px;color:#fff;}
-.plugin-name{font-size:22px;font-weight:800;color:#1e1b4b;letter-spacing:-0.02em;}
-.tagline{
-  font-size:15px;font-weight:400;color:#4c1d95;
-  line-height:1.5;margin-bottom:36px;
-  opacity:0.8;
-}
-.features{display:flex;flex-direction:column;gap:14px;}
-.feat{display:flex;align-items:flex-start;gap:12px;}
-.feat-icon{
-  width:30px;height:30px;border-radius:8px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  background:rgba(124,106,247,0.12);
-  margin-top:1px;
-}
-.feat-icon svg{width:15px;height:15px;color:#7c6af7;}
-.feat-text{}
-.feat-title{font-size:13px;font-weight:700;color:#1e1b4b;margin-bottom:2px;}
-.feat-desc{font-size:11.5px;color:#6d28d9;opacity:0.75;line-height:1.4;}
+.logo-box svg{width:22px;height:22px;color:#fff;}
+.hdr-name{font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.01em;margin-right:18px;}
+.hdr-tag{font-size:13px;color:rgba(255,255,255,0.42);}
 
-/* ── RIGHT PANEL ── */
-.right{
+/* MAIN */
+.main{
+  position:absolute;top:100px;left:0;right:0;bottom:0;
+  display:flex;flex-direction:column;
+  padding:16px 30px 20px 30px;
+  gap:12px;
+}
+
+/* TOP ROW: 3 widget cards */
+.row-top{
+  display:flex;gap:12px;
+  flex:0 0 auto;
+}
+
+/* MIDDLE ROW: table */
+.row-mid{
+  flex:0 0 auto;
+}
+
+/* BOTTOM ROW */
+.row-bot{
   flex:1;
-  display:flex;align-items:center;justify-content:center;
-  padding:32px 36px 32px 0;
-  position:relative;
+  display:flex;align-items:center;
+  min-height:0;
+}
+/* left: hero text */
+.bot-left{
+  flex:0 0 400px;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:0 8px;
+}
+.hero-title{
+  font-size:30px;font-weight:900;line-height:1.15;letter-spacing:-0.03em;
+  color:#fff;margin-bottom:8px;
+}
+.hero-title em{
+  font-style:normal;
+  background:linear-gradient(90deg,#a78bfa,#818cf8,#6ee7b7);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero-sub{
+  font-size:12.5px;color:rgba(255,255,255,0.45);line-height:1.6;margin-bottom:18px;
+}
+.stats-row{display:flex;gap:24px;}
+.stat-item{display:flex;flex-direction:column;gap:2px;}
+.stat-num{font-size:20px;font-weight:800;color:#a78bfa;letter-spacing:-0.02em;line-height:1;}
+.stat-desc{font-size:9.5px;color:rgba(255,255,255,0.35);letter-spacing:0.04em;text-transform:uppercase;}
+/* right: controls */
+.bot-right{
+  flex:1;
+  display:flex;align-items:center;
 }
 
-/* Obsidian window shell */
-.ob-shell{
-  width:680px;height:680px;
-  background:#ffffff;
-  border-radius:14px;
-  box-shadow:0 32px 80px rgba(99,102,241,0.22),0 0 0 1px rgba(99,102,241,0.12);
-  overflow:hidden;
-  position:relative;
-}
-.ob-titlebar{
-  height:34px;background:#f5f5f7;
-  display:flex;align-items:center;padding:0 14px;gap:7px;
-  border-bottom:1px solid #e5e5e5;flex-shrink:0;
-}
-.dot{width:11px;height:11px;border-radius:50%;}
-.dot.r{background:#ff5f57;}.dot.y{background:#febc2e;}.dot.g{background:#28c840;}
-.ob-body{
-  height:calc(100% - 34px);
-  display:flex;
-  position:relative;overflow:hidden;
-}
-
-/* ── LAYER 3 (back): table rows, blurred + faded ── */
-.layer-table{
-  position:absolute;inset:0;
-  padding:28px 32px;
-  opacity:0.22;
-  filter:blur(1.5px);
-  pointer-events:none;
-}
-.tbl{width:100%;border-collapse:collapse;font-size:12px;color:#2e3338;}
-.tbl th{
-  padding:6px 10px;border-bottom:1px solid #ddd;
-  color:#888;font-weight:600;font-size:10.5px;text-transform:uppercase;
-  letter-spacing:0.04em;text-align:left;
-}
-.tbl td{padding:7px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle;}
-.note-link{color:#5c7cfa;font-weight:500;}
-.stat-bar-container{display:inline-flex;width:90px;height:10px;border-radius:5px;overflow:hidden;vertical-align:middle;}
-.stat-bar{height:100%;}
-.stat-bar.o{background:#FFD700;border-radius:5px 0 0 5px;}
-.stat-bar.d{background:#FF4D4D;}
-.stat-bar.a{background:#00CC66;border-radius:0 5px 5px 0;}
-.diff-t{font-size:11px;color:#888;max-width:160px;}
-.mono{font-family:monospace;font-size:11.5px;color:#666;}
-
-/* ── LAYER 2 (mid): heatmap grid only ── */
-.layer-heatmap{
-  position:absolute;
-  bottom:28px;right:28px;
-  opacity:0.55;
-  pointer-events:none;
-}
-.hm-grid{
-  display:grid;
-  grid-template-columns:repeat(16,1fr);
-  grid-template-rows:repeat(7,1fr);
-  gap:3px;
-  width:280px;
-  aspect-ratio:16/7;
-}
-.hm-cell{
-  border-radius:3px;
-  border:1px solid rgba(0,0,0,0.08);
-  aspect-ratio:1/1;
-}
-.hm-legend{
-  display:flex;align-items:center;justify-content:flex-end;
-  gap:3px;margin-top:6px;
-}
-.hm-legend-cell{width:12px;aspect-ratio:1/1;border-radius:2px;border:1px solid rgba(0,0,0,0.08);}
-.hm-legend-lbl{font-size:9px;color:#aaa;}
-
-/* ── LAYER 1 (front): widget card ── */
-.layer-widget{
-  position:absolute;
-  top:24px;left:24px;
-  width:272px;
-  background:#fff;
+/* card shell */
+.card{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.11);
   border-radius:12px;
-  box-shadow:0 8px 32px rgba(0,0,0,0.14),0 0 0 1px rgba(0,0,0,0.07);
-  padding:14px 14px 16px;
-  font-size:13px;color:#2e3338;
+  overflow:hidden;
+  box-shadow:0 6px 28px rgba(0,0,0,0.4);
 }
 
-/* widget internals */
-.w-title-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.w-title{font-size:16px;font-weight:700;color:#2e3338;}
-.w-switcher{
-  display:flex;border:1px solid #ddd;border-radius:7px;overflow:hidden;
+/* scale wrapper */
+.sw{overflow:hidden;position:relative;background:#fff;}
+.si{transform-origin:top left;position:absolute;top:0;left:0;}
+/* fade out bottom of widget cards */
+.sw::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:32px;
+  background:linear-gradient(to bottom,transparent,#fff);
+  pointer-events:none;
 }
-.w-btn{
-  width:24px;height:24px;display:flex;align-items:center;justify-content:center;
-  border:none;border-right:1px solid #ddd;background:none;color:#888;
-}
-.w-btn:last-child{border-right:none;}
-.w-btn.active{background:#7c6af7;color:#fff;}
-.w-btn svg{width:12px;height:12px;}
 
-.w-cur{
-  display:flex;justify-content:space-between;align-items:center;
-  padding-bottom:8px;margin-bottom:8px;
-  border-bottom:1px solid #eee;font-size:15px;
+/* BOTTOM INFO BAR */
+.infobar{
+  display:flex;align-items:stretch;gap:0;width:100%;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.09);
+  border-radius:14px;
+  padding:18px 24px;
 }
-.w-cur-left{display:flex;flex-direction:column;flex:1;min-width:0;margin-right:6px;}
-.w-cur-text{display:flex;align-items:baseline;gap:8px;}
-.w-cur-label{font-weight:700;color:#2e3338;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.w-cur-val{font-weight:700;color:#7c6af7;font-size:14px;white-space:nowrap;}
-.w-bar-wrap{display:flex;height:6px;border-radius:3px;overflow:hidden;background:#eee;margin-top:4px;width:70%;}
-.w-bar-e{height:100%;background:#aaa;width:57%;}
-.w-bar-c{height:100%;background:#7c6af7;width:43%;}
-.w-btns{display:flex;gap:6px;flex-shrink:0;}
-.w-circle{
-  width:30px;height:30px;border-radius:50%;
-  border:1px solid #ddd;background:#f5f5f5;
-  display:flex;align-items:center;justify-content:center;color:#888;
+.ib-section{display:flex;flex-direction:column;gap:9px;padding:0 22px;}
+.ib-section:first-child{padding-left:0;}
+.ib-section:last-child{padding-right:0;}
+.ib-label{
+  font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;
+  color:rgba(255,255,255,0.28);
 }
-.w-circle svg{width:13px;height:13px;}
+.pills{display:flex;flex-wrap:wrap;gap:5px;}
+.pill{
+  font-size:11px;font-weight:600;padding:4px 11px;border-radius:16px;
+  border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.5);
+  background:rgba(255,255,255,0.05);
+}
+.pill.on{
+  background:rgba(124,106,247,0.25);border-color:rgba(124,106,247,0.55);color:#c4b5fd;
+}
+.ib-div{width:1px;align-self:stretch;background:rgba(255,255,255,0.08);flex-shrink:0;}
+.views{display:flex;flex-wrap:wrap;gap:5px;}
+.vrow{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);}
+.vicon{width:14px;height:14px;color:#a78bfa;flex-shrink:0;}
+.vname{font-size:11px;font-weight:600;color:#e2e8f0;white-space:nowrap;}
 
-.w-ctrl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
-.w-period{font-size:16px;font-weight:700;color:#7c6af7;}
-.w-total{font-size:16px;color:#2e3338;display:flex;gap:3px;align-items:center;}
-.w-field{color:#888;}
-
-/* dual-layer bar */
-.w-dual{border-radius:4px;overflow:hidden;background:#eee;margin-bottom:8px;}
-.w-tag-layer{height:13px;display:flex;}
-.w-file-layer{height:3px;display:flex;}
-.w-seg{height:100%;}
-
-/* tag list */
-.w-tag-list{display:flex;flex-direction:column;gap:6px;}
-.w-tag-row{display:flex;align-items:center;gap:8px;}
-.w-tag-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-.w-tag-name{flex:1;font-weight:700;font-size:13px;color:#444;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.w-tag-val{font-size:12px;flex-shrink:0;}
-.w-tag-arrow{font-size:10px;color:#aaa;margin-left:2px;}
-
-/* expanded files */
-.w-files{
-  position:relative;margin-left:5px;padding-left:16px;
-  display:flex;flex-direction:column;gap:5px;
-}
-.w-files::before{
-  content:'';position:absolute;left:0;top:-3px;bottom:-3px;
-  width:1px;background:#ddd;
-}
-.w-file-row{display:flex;align-items:center;gap:6px;}
-.w-file-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-.w-file-name{flex:1;font-size:11.5px;color:#444;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.w-tag-pill{
-  font-size:10px;padding:1px 5px;border-radius:8px;
-  background:#eee;color:#888;border:1px solid #ddd;white-space:nowrap;
-}
-.w-file-val{font-size:11.5px;flex-shrink:0;}
+/* WIDGET INTERNALS */
+.w{background:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+.w-ctrl{display:flex;justify-content:space-between;align-items:baseline;padding:10px 16px 8px;}
+.w-period{font-size:18px;font-weight:700;color:#7c6af7;}
+.w-tot{font-size:16px;color:#2e3338;display:flex;gap:3px;align-items:center;}
+.w-muted{color:#888;}
+.w-divline{height:1px;background:#ddd;margin:0 16px;}
+.w-body{padding:10px 16px 14px;}
+/* file list */
+.w-pbar{height:14px;background:#e9e9e9;border-radius:4px;overflow:hidden;display:flex;margin-bottom:8px;}
+.w-pseg{height:100%;}
+.w-frow{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.w-fdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.w-fname{flex:1;font-size:12px;color:#444;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.w-fval{font-size:12px;flex-shrink:0;}
+/* dual bar */
+.w-dual{border-radius:4px;overflow:hidden;background:#e9e9e9;margin-bottom:8px;}
+.w-tlayer{height:14px;display:flex;}
+.w-flayer{height:4px;display:flex;}
+.w-dseg{height:100%;}
+/* tag rows */
+.w-trow{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.w-tdot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.w-tname{flex:1;font-weight:700;font-size:13px;color:#444;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.w-tval{font-size:12px;flex-shrink:0;}
+.w-tarr{font-size:10px;color:#aaa;}
+.w-tfiles{position:relative;margin-left:5px;padding-left:14px;margin-bottom:5px;}
+.w-tfiles::before{content:'';position:absolute;left:0;top:-2px;bottom:-2px;width:1px;background:#ddd;}
+.w-tfrow{display:flex;align-items:center;gap:5px;margin-bottom:4px;}
+.w-tfdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.w-tfname{flex:1;font-size:10.5px;color:#444;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.w-tpill{font-size:9px;padding:1px 4px;border-radius:6px;background:#eee;color:#888;border:1px solid #ddd;white-space:nowrap;}
+.w-tfval{font-size:10.5px;flex-shrink:0;}
+/* heatmap */
+.w-hm{display:grid;gap:2.5px;}
+.w-hc{border-radius:2px;border:1px solid rgba(0,0,0,0.07);aspect-ratio:1/1;}
+.w-hleg{display:flex;align-items:center;gap:3px;margin-top:5px;justify-content:flex-end;}
+.w-hlc{width:10px;aspect-ratio:1/1;border-radius:2px;border:1px solid rgba(0,0,0,0.07);}
+.w-hll{font-size:9px;color:#aaa;}
+/* table */
+.w-tbl{width:100%;border-collapse:collapse;font-size:12px;color:#2e3338;}
+.w-tbl th{background:#f2f3f5;color:#888;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.04em;padding:6px 10px;border:1px solid #ddd;text-align:left;white-space:nowrap;}
+.w-tbl td{padding:6px 10px;border:1px solid #eee;vertical-align:middle;}
+.w-tbl tr:nth-child(even) td{background:rgba(0,0,0,0.018);}
+.w-nl{color:#5c7cfa;font-weight:500;white-space:nowrap;}
+.w-sbc{display:inline-flex;width:100px;height:10px;border-radius:5px;overflow:hidden;vertical-align:middle;}
+.w-sb{height:100%;}
+.w-sb.o{background:#FFD700;border-radius:5px 0 0 5px;}
+.w-sb.d{background:#FF4D4D;}
+.w-sb.a{background:#00CC66;border-radius:0 5px 5px 0;}
+.w-dt{font-size:10.5px;color:#888;max-width:220px;line-height:1.35;}
+.w-mn{font-family:monospace;font-size:11px;color:#666;white-space:nowrap;}
+.w-ai{display:inline-flex;align-items:center;font-size:9px;font-weight:700;background:linear-gradient(90deg,#7c6af7,#6366f1);color:#fff;padding:1px 6px;border-radius:7px;margin-left:6px;vertical-align:middle;letter-spacing:0.04em;line-height:1;position:relative;top:-1px;}
 </style>
 </head>
 <body>
+<div class="gb gb1"></div>
+<div class="gb gb2"></div>
+<div class="gb gb3"></div>
 
-<!-- LEFT -->
-<div class="left">
-  <div class="logo-row">
-    <div class="logo-box">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10"/>
-        <line x1="12" y1="20" x2="12" y2="4"/>
-        <line x1="6"  y1="20" x2="6"  y2="14"/>
-      </svg>
+<!-- HEADER: hero title + stats (left) | infobar (right) -->
+<div class="hdr">
+  <!-- left: title + stats -->
+  <div style="display:flex;flex-direction:column;justify-content:center;gap:6px;flex-shrink:0;">
+    <div class="hero-title" style="margin-bottom:0;font-size:22px;">Know your <em>writing flow.</em></div>
+    <div class="stats-row">
+      <div class="stat-item">
+        <span class="stat-num">8,472</span>
+        <span class="stat-desc">Words today</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">154 min</span>
+        <span class="stat-desc">Focused today</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">5</span>
+        <span class="stat-desc">Notes edited</span>
+      </div>
     </div>
-    <span class="plugin-name">Wordflow Tracker</span>
   </div>
 
-  <div class="tagline">Track your writing,<br>your way.</div>
+  <div style="flex:1;min-width:20px;"></div>
 
-  <div class="features">
-    <div class="feat">
-      <div class="feat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-      </div>
-      <div class="feat-text">
-        <div class="feat-title">Tag-based grouping</div>
-        <div class="feat-desc">Visualize word counts by project or topic</div>
-      </div>
-    </div>
-    <div class="feat">
-      <div class="feat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-      </div>
-      <div class="feat-text">
-        <div class="feat-title">Activity heatmap</div>
-        <div class="feat-desc">GitHub-style calendar of your writing habit</div>
+  <!-- right: infobar -->
+  <div class="infobar" style="border-radius:10px;padding:10px 18px;">
+
+    <div class="ib-section" style="gap:6px;">
+      <div class="ib-label">Note Type</div>
+      <div class="pills">
+        <span class="pill on">Daily</span>
+        <span class="pill">Weekly</span>
+        <span class="pill">Monthly</span>
       </div>
     </div>
-    <div class="feat">
-      <div class="feat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      </div>
-      <div class="feat-text">
-        <div class="feat-title">Focus mode</div>
-        <div class="feat-desc">Track deep-work sessions with live timer</div>
-      </div>
-    </div>
-    <div class="feat">
-      <div class="feat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      </div>
-      <div class="feat-text">
-        <div class="feat-title">Auto-recorded table</div>
-        <div class="feat-desc">Stat bar, AI diff &amp; timestamps in your notes</div>
+
+    <div class="ib-div"></div>
+
+    <div class="ib-section" style="gap:6px;">
+      <div class="ib-label">Metric</div>
+      <div class="pills">
+        <span class="pill on">Words</span>
+        <span class="pill">Edits</span>
+        <span class="pill">Focused</span>
+        <span class="pill">Added</span>
+        <span class="pill">Deleted</span>
       </div>
     </div>
+
+    <div class="ib-div"></div>
+
+    <div class="ib-section" style="gap:6px;">
+      <div class="ib-label">Views</div>
+      <div class="views">
+        <div class="vrow">
+          <svg class="vicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span class="vname">File List</span>
+        </div>
+        <div class="vrow">
+          <svg class="vicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <span class="vname">Tag List</span>
+        </div>
+        <div class="vrow">
+          <svg class="vicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+          <span class="vname">Heatmap</span>
+        </div>
+        <div class="vrow">
+          <svg class="vicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+          <span class="vname">Table</span>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<!-- RIGHT -->
-<div class="right">
-  <div class="ob-shell">
-    <div class="ob-titlebar">
-      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOP ROW: 3 widget cards -->
+  <div class="row-top">
+    <div class="card" id="card-fl" style="flex:1;">
+      <div class="sw" id="sw-fl"><div class="si" id="si-fl"><div id="fl"></div></div></div>
     </div>
-    <div class="ob-body">
+    <div class="card" id="card-tl" style="flex:1;">
+      <div class="sw" id="sw-tl"><div class="si" id="si-tl"><div id="tl"></div></div></div>
+    </div>
+    <div class="card" id="card-hm" style="flex:1;">
+      <div class="sw" id="sw-hm"><div class="si" id="si-hm"><div id="hm"></div></div></div>
+    </div>
+  </div>
 
-      <!-- LAYER 3: table (back, blurred) -->
-      <div class="layer-table">
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th>Note</th><th>Stat</th><th>Diff</th><th>Focused</th><th>Modified</th>
-            </tr>
-          </thead>
-          <tbody id="tbl-body"></tbody>
-        </table>
+  <!-- MIDDLE ROW: table -->
+  <div class="row-mid">
+    <div class="card" id="card-tb">
+      <div class="sw" id="sw-tb"><div class="si" id="si-tb"><div id="tb"></div></div></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW: logo + tagline only -->
+  <div class="row-bot">
+    <div class="bot-left" style="flex:0 0 auto;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <div class="logo-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6"  y1="20" x2="6"  y2="14"/>
+          </svg>
+        </div>
+        <span class="hdr-name">Wordflow Tracker</span>
       </div>
+      <div class="hero-sub" style="margin-bottom:0;">Track focused time &amp; edits &mdash; auto-record to your notes. Zero performance cost.</div>
+    </div>
+  </div>
 
-      <!-- LAYER 2: heatmap grid (mid) -->
-      <div class="layer-heatmap">
-        <div class="hm-grid" id="hm-grid"></div>
-        <div class="hm-legend">
-          <span class="hm-legend-lbl">Less</span>
-          <div class="hm-legend-cell"></div>
-          <div class="hm-legend-cell" style="background:hsl(137,70%,80%)"></div>
-          <div class="hm-legend-cell" style="background:hsl(137,76%,66%)"></div>
-          <div class="hm-legend-cell" style="background:hsl(137,83%,52%)"></div>
-          <div class="hm-legend-cell" style="background:hsl(137,95%,25%)"></div>
-          <span class="hm-legend-lbl">More</span>
-        </div>
-      </div>
-
-      <!-- LAYER 1: widget (front) -->
-      <div class="layer-widget">
-
-        <!-- title row -->
-        <div class="w-title-row">
-          <span class="w-title">Daily Notes</span>
-          <div class="w-switcher">
-            <button class="w-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg></button>
-            <button class="w-btn active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></button>
-            <button class="w-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></button>
-          </div>
-        </div>
-
-        <!-- current note -->
-        <div class="w-cur">
-          <div class="w-cur-left">
-            <div class="w-cur-text">
-              <span class="w-cur-label">Meeting Summary</span>
-              <span class="w-cur-val">900</span>
-            </div>
-            <div class="w-bar-wrap"><span class="w-bar-e"></span><span class="w-bar-c"></span></div>
-          </div>
-          <div class="w-btns">
-            <div class="w-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="12" cy="15" r="3"/><line x1="12" y1="12" x2="12" y2="15"/></svg></div>
-            <div class="w-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg></div>
-          </div>
-        </div>
-
-        <!-- controls -->
-        <div class="w-ctrl">
-          <span class="w-period">Today</span>
-          <div class="w-total"><span class="w-field">Words</span>: <span>8,472</span></div>
-        </div>
-
-        <!-- dual-layer bar -->
-        <div class="w-dual">
-          <div class="w-tag-layer">
-            <div class="w-seg" style="width:49.7%;background:#e05c5c;"></div>
-            <div class="w-seg" style="width:29.3%;background:#3a8fd4;"></div>
-            <div class="w-seg" style="width:16.3%;background:#3aaa6e;"></div>
-            <div class="w-seg" style="width:4.5%; background:#999;"></div>
-          </div>
-          <div class="w-file-layer">
-            <div class="w-seg" style="width:27.6%;background:hsl(0,52%,60%);"></div>
-            <div class="w-seg" style="width:22.1%;background:hsl(0,69%,60%);"></div>
-            <div class="w-seg" style="width:17.5%;background:hsl(210,69%,60%);"></div>
-            <div class="w-seg" style="width:11.8%;background:hsl(210,52%,60%);"></div>
-            <div class="w-seg" style="width:10.3%;background:hsl(145,69%,60%);"></div>
-            <div class="w-seg" style="width:6.0%; background:hsl(145,52%,60%);"></div>
-            <div class="w-seg" style="width:4.5%; background:#999;"></div>
-          </div>
-        </div>
-
-        <!-- tag list -->
-        <div class="w-tag-list">
-          <!-- Writing expanded -->
-          <div class="w-tag-row">
-            <div class="w-tag-dot" style="background:#e05c5c;"></div>
-            <span class="w-tag-name">Writing</span>
-            <span class="w-tag-val" style="color:#e05c5c;">4,217</span>
-            <span class="w-tag-arrow">▲</span>
-          </div>
-          <div class="w-files">
-            <div class="w-file-row">
-              <div class="w-file-dot" style="background:hsl(0,52%,60%);"></div>
-              <span class="w-file-name">Chapter 3 – Revision</span>
-              <span class="w-tag-pill">#writing</span>
-              <span class="w-file-val" style="color:hsl(0,52%,60%);">2,341</span>
-            </div>
-            <div class="w-file-row">
-              <div class="w-file-dot" style="background:hsl(0,69%,60%);"></div>
-              <span class="w-file-name">Chapter 4 – Draft</span>
-              <span class="w-tag-pill">#writing</span>
-              <span class="w-file-val" style="color:hsl(0,69%,60%);">1,876</span>
-            </div>
-          </div>
-          <!-- Research collapsed -->
-          <div class="w-tag-row">
-            <div class="w-tag-dot" style="background:#3a8fd4;"></div>
-            <span class="w-tag-name">Research</span>
-            <span class="w-tag-val" style="color:#3a8fd4;">2,486</span>
-            <span class="w-tag-arrow">▼</span>
-          </div>
-          <!-- Work collapsed -->
-          <div class="w-tag-row">
-            <div class="w-tag-dot" style="background:#3aaa6e;"></div>
-            <span class="w-tag-name">Work</span>
-            <span class="w-tag-val" style="color:#3aaa6e;">1,386</span>
-            <span class="w-tag-arrow">▼</span>
-          </div>
-          <!-- Others -->
-          <div class="w-tag-row">
-            <div class="w-tag-dot" style="background:#999;"></div>
-            <span class="w-tag-name" style="color:#888;">Others</span>
-            <span class="w-tag-val" style="color:#999;">383</span>
-            <span class="w-tag-arrow">▼</span>
-          </div>
-        </div>
-
-      </div><!-- /layer-widget -->
-
-    </div><!-- /ob-body -->
-  </div><!-- /ob-shell -->
-</div><!-- /right -->
+</div><!-- /main -->
 
 <script>
-// ── Heatmap ──────────────────────────────────────────────────────────────────
-function makePRNG(s){let st=s>>>0;return()=>{st=(Math.imul(1664525,st)+1013904223)>>>0;return st/0x100000000;};}
-const rng=makePRNG(0xCAFEBABE);
-const COLS=16,ROWS=7;
-const vals=[];
-for(let i=0;i<COLS*ROWS;i++) vals.push(rng()<0.15?0:Math.round(200+rng()*1400));
-// spikes
-[10,27,45,62,80,97].forEach(i=>{if(i<vals.length)vals[i]=Math.round(1600+rng()*400);});
-const nonzero=vals.filter(v=>v>0).sort((a,b)=>a-b);
-const minV=nonzero[3]??nonzero[0]??1;
-const maxV=nonzero[nonzero.length-4]??nonzero[nonzero.length-1]??1;
-function getColor(v){
-  if(!v)return null;
-  const n=Math.max(0,Math.min(1,(v-minV)/(maxV-minV)));
-  const idx=Math.min(3,Math.floor(n*4));
-  const l=80-(80-25)*idx/3;
-  const s=70+(95-70)*idx/3;
-  return `hsl(137,${s.toFixed(0)}%,${l.toFixed(0)}%)`;
-}
-const grid=document.getElementById('hm-grid');
-vals.forEach((v,i)=>{
-  const c=document.createElement('div');
-  c.className='hm-cell';
-  if(v>0) c.style.backgroundColor=getColor(v);
-  grid.appendChild(c);
-});
-
-// ── Table rows ───────────────────────────────────────────────────────────────
-const rows=[
-  {name:'Chapter 3 – Revision',op:58,dp:8,ap:34,diff:'Restructured opening argument; tightened prose.',focused:'47 min',mt:'21:34'},
-  {name:'Chapter 4 – Draft',op:72,dp:5,ap:23,diff:'Added new scene outline; minor wording fixes.',focused:'27 min',mt:'19:08'},
-  {name:'Research Notes',op:65,dp:12,ap:23,diff:'Inserted three new citations.',focused:'31 min',mt:'16:52'},
-  {name:'Reading Notes – Vol.2',op:80,dp:4,ap:16,diff:'Annotated chapter 7 highlights.',focused:'21 min',mt:'14:20'},
-  {name:'Project Outline',op:55,dp:15,ap:30,diff:'Revised milestone dates.',focused:'14 min',mt:'11:45'},
-  {name:'Meeting Summary',op:70,dp:6,ap:24,diff:'Transcribed action items.',focused:'8 min',mt:'09:17'},
-  {name:'Inbox',op:90,dp:2,ap:8,diff:'Quick capture: three fleeting notes.',focused:'6 min',mt:'08:03'},
+/* ── shared data ── */
+const FILES=[
+  {name:'Chapter 3 - Revision',value:2341,color:'hsl(0,52%,60%)'},
+  {name:'Chapter 4 - Draft',   value:1876,color:'hsl(0,69%,60%)'},
+  {name:'Research Notes',      value:1486,color:'hsl(210,69%,60%)'},
+  {name:'Reading Notes Vol.2', value:1000,color:'hsl(210,52%,60%)'},
+  {name:'Project Outline',     value:874, color:'hsl(145,69%,60%)'},
+  {name:'Meeting Summary',     value:512, color:'hsl(145,52%,60%)'},
+  {name:'Inbox',               value:383, color:'#999'},
 ];
-const tbody=document.getElementById('tbl-body');
-rows.forEach(r=>{
-  tbody.innerHTML+=`<tr>
-    <td><span class="note-link">${r.name}</span></td>
-    <td><span class="stat-bar-container"><span class="stat-bar o" style="width:${r.op}%"></span><span class="stat-bar d" style="width:${r.dp}%"></span><span class="stat-bar a" style="width:${r.ap}%"></span></span></td>
-    <td><span class="diff-t">${r.diff}</span></td>
-    <td class="mono">${r.focused}</td>
-    <td class="mono">${r.mt}</td>
-  </tr>`;
-});
+const TOTAL=FILES.reduce((s,f)=>s+f.value,0);
+const TAGS=[
+  {name:'Writing', color:'#e05c5c',value:4217,
+   files:[{name:'Chapter 3 - Revision',color:'hsl(0,52%,60%)',value:2341,tag:'#writing'},
+          {name:'Chapter 4 - Draft',   color:'hsl(0,69%,60%)',value:1876,tag:'#writing'}]},
+  {name:'Research',color:'#3a8fd4',value:2486,
+   files:[{name:'Research Notes',      color:'hsl(210,69%,60%)',value:1486,tag:'#research'},
+          {name:'Reading Notes Vol.2', color:'hsl(210,52%,60%)',value:1000,tag:'#research'}]},
+  {name:'Work',    color:'#3aaa6e',value:1386,
+   files:[{name:'Project Outline', color:'hsl(145,69%,60%)',value:874,tag:'#work'},
+          {name:'Meeting Summary', color:'hsl(145,52%,60%)',value:512,tag:'#work'}]},
+  {name:'Others',  color:'#999',   value:383,
+   files:[{name:'Inbox',color:'#999',value:383,tag:''}]},
+];
+const TROWS=[
+  {name:'Chapter 3 - Revision',op:58,dp:8, ap:34,diff:'Restructured opening argument; tightened prose.',focused:'47 min',mt:'21:34'},
+  {name:'Chapter 4 - Draft',   op:72,dp:5, ap:23,diff:'Added new scene outline; minor wording fixes.',  focused:'27 min',mt:'19:08'},
+  {name:'Research Notes',      op:65,dp:12,ap:23,diff:'Inserted three new citations; removed outdated refs.',focused:'31 min',mt:'16:52'},
+  {name:'Reading Notes Vol.2', op:80,dp:4, ap:16,diff:'Annotated chapter 7 highlights.',                focused:'21 min',mt:'14:20'},
+  {name:'Project Outline',     op:55,dp:15,ap:30,diff:'Revised milestone dates; expanded deliverables.',focused:'14 min',mt:'11:45'},
+];
+
+/* ── controls header (Today line) ── */
+function ctrlHdr(){
+  return `<div class="w-ctrl"><span class="w-period">Today</span><div class="w-tot"><span class="w-muted">Words</span>&nbsp;8,472</div></div><div class="w-divline"></div>`;
+}
+
+/* ── FILE LIST ── */
+(function(){
+  let h=`<div class="w" style="width:308px;">${ctrlHdr()}<div class="w-body" style="padding-bottom:22px;"><div class="w-pbar">`;
+  FILES.forEach(f=>{h+=`<div class="w-pseg" style="width:${(f.value/TOTAL*100).toFixed(1)}%;background:${f.color}"></div>`;});
+  h+=`</div>`;
+  FILES.forEach(f=>{h+=`<div class="w-frow"><div class="w-fdot" style="background:${f.color}"></div><span class="w-fname">${f.name}</span><span class="w-fval" style="color:${f.color}">${f.value.toLocaleString()}</span></div>`;});
+  h+=`</div></div>`;
+  document.getElementById('fl').innerHTML=h;
+})();
+
+/* ── TAG LIST ── */
+(function(){
+  let h=`<div class="w" style="width:308px;">${ctrlHdr()}<div class="w-body">`;
+  h+=`<div class="w-dual"><div class="w-tlayer">`;
+  TAGS.forEach(g=>{h+=`<div class="w-dseg" style="width:${(g.value/TOTAL*100).toFixed(1)}%;background:${g.color}"></div>`;});
+  h+=`</div><div class="w-flayer">`;
+  FILES.forEach(f=>{h+=`<div class="w-dseg" style="width:${(f.value/TOTAL*100).toFixed(1)}%;background:${f.color}"></div>`;});
+  h+=`</div></div>`;
+  TAGS.forEach((g,gi)=>{
+    // expand Writing (gi=0) and Others (gi=3)
+    const expanded = gi===0 || gi===3;
+    h+=`<div class="w-trow"><div class="w-tdot" style="background:${g.color}"></div><span class="w-tname">${g.name}</span><span class="w-tval" style="color:${g.color}">${g.value.toLocaleString()}</span><span class="w-tarr">${expanded?'&#9650;':'&#9660;'}</span></div>`;
+    if(expanded){
+      h+=`<div class="w-tfiles">`;
+      g.files.forEach(f=>{h+=`<div class="w-tfrow"><div class="w-tfdot" style="background:${f.color}"></div><span class="w-tfname">${f.name}</span>${f.tag?`<span class="w-tpill">${f.tag}</span>`:''}<span class="w-tfval" style="color:${f.color}">${f.value.toLocaleString()}</span></div>`;});
+      h+=`</div>`;
+    }
+  });
+  h+=`</div></div>`;
+  document.getElementById('tl').innerHTML=h;
+})();
+
+/* ── HEATMAP ── */
+(function(){
+  function prng(s){let st=s>>>0;return()=>{st=(Math.imul(1664525,st)+1013904223)>>>0;return st/0x100000000;};}
+  const rng=prng(0xDEADBEEF);
+  const COLS=12,ROWS=7;
+  const vals=[];
+  for(let i=0;i<COLS*ROWS;i++) vals.push(rng()<0.14?0:Math.round(200+rng()*1400));
+  [8,22,38,55,70,82].forEach(i=>{if(i<vals.length)vals[i]=Math.round(1600+rng()*400);});
+  const nz=vals.filter(v=>v>0).sort((a,b)=>a-b);
+  const minV=nz[2]??1,maxV=nz[nz.length-3]??1;
+  function col(v){if(!v)return'';const n=Math.max(0,Math.min(1,(v-minV)/(maxV-minV)));const idx=Math.min(3,Math.floor(n*4));const l=80-(80-25)*idx/3,s=70+(95-70)*idx/3;return`hsl(137,${s.toFixed(0)}%,${l.toFixed(0)}%)`;}
+  let h=`<div class="w" style="width:308px;">${ctrlHdr()}<div class="w-body" style="padding-bottom:4px;">`;
+  h+=`<div class="w-hm" style="grid-template-columns:repeat(${COLS},1fr);grid-template-rows:repeat(${ROWS},1fr);gap:2.5px;">`;
+  vals.forEach(v=>{const c=col(v);h+=`<div class="w-hc"${c?` style="background:${c}"`:''}></div>`;});
+  h+=`</div><div class="w-hleg"><span class="w-hll">Less</span>`;
+  ['','hsl(137,70%,80%)','hsl(137,76%,66%)','hsl(137,83%,52%)','hsl(137,95%,25%)'].forEach(bg=>{h+=`<div class="w-hlc"${bg?` style="background:${bg}"`:''}></div>`;});
+  h+=`<span class="w-hll">More</span></div></div></div>`;
+  document.getElementById('hm').innerHTML=h;
+})();
+
+/* ── TABLE (table element only) ── */
+(function(){
+  let h=`<div class="w" style="width:700px;padding:0;">`;
+  h+=`<table class="w-tbl"><thead><tr><th>Note</th><th>Stat</th><th>AI Diff <span class="w-ai">AI</span></th><th>Focused</th><th>Modified</th></tr></thead><tbody>`;
+  TROWS.forEach(r=>{
+    h+=`<tr><td><span class="w-nl">${r.name}</span></td>`;
+    h+=`<td><span class="w-sbc"><span class="w-sb o" style="width:${r.op}%"></span><span class="w-sb d" style="width:${r.dp}%"></span><span class="w-sb a" style="width:${r.ap}%"></span></span></td>`;
+    h+=`<td><span class="w-dt">${r.diff}</span></td>`;
+    h+=`<td class="w-mn">${r.focused}</td><td class="w-mn">${r.mt}</td></tr>`;
+  });
+  h+=`</tbody></table></div>`;
+  document.getElementById('tb').innerHTML=h;
+})();
+
+/* ── SCALE TO FIT ── */
+requestAnimationFrame(()=>requestAnimationFrame(()=>{
+
+  /* widget cards: scale by width, then unify height to tallest */
+  const scaledHeights = [];
+  ['fl','tl','hm'].forEach(id=>{
+    const sw=document.getElementById('sw-'+id);
+    const si=document.getElementById('si-'+id);
+    if(!sw||!si) return;
+    const ww=sw.parentElement.clientWidth;
+    const iw=si.scrollWidth||308;
+    const s=ww/iw;
+    si.style.transform=`scale(${s})`;
+    si.style.width=iw+'px';
+    const ih=si.scrollHeight;
+    scaledHeights.push({sw, scaledH: ih*s});
+  });
+  // unify to max height
+  const maxH = Math.max(...scaledHeights.map(x=>x.scaledH));
+  scaledHeights.forEach(({sw})=>{
+    sw.style.height=maxH+'px';
+    sw.style.width='100%';
+  });
+
+  /* table card: scale by width */
+  const sw=document.getElementById('sw-tb');
+  const si=document.getElementById('si-tb');
+  if(sw&&si){
+    const ww=sw.parentElement.clientWidth;
+    const iw=si.scrollWidth||700;
+    const s=ww/iw;
+    si.style.transform=`scale(${s})`;
+    si.style.width=iw+'px';
+    const ih=si.scrollHeight;
+    sw.style.height=(ih*s)+'px';
+    sw.style.width='100%';
+  }
+
+}));
 </script>
 </body>
 </html>
