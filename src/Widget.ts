@@ -299,7 +299,6 @@ export class WordflowWidgetView extends ItemView {
             this.heatmapResizeObserver.disconnect();
             this.heatmapResizeObserver = null;
         }
-        this.plugin.Widget = null;
     }
 
     public async updateData() {

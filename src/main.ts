@@ -22,7 +22,13 @@ export default class WordflowTrackerPlugin extends Plugin {
 	public trackerMap: Map<string, DocTracker> = new Map<string, DocTracker>(); // give up nested map
 	public statusBarManager: StatusBarManager;
 	public recorderManager: RecorderManager;
-	public Widget: WordflowWidgetView | null = null;
+	public get Widget(): WordflowWidgetView | null {
+		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET);
+		if (leaves.length > 0) {
+			return leaves[0].view as WordflowWidgetView;
+		}
+		return null;
+	}
 	public executeOnce = executeOnceWithKey();
 	public snapshotManager: SnapshotManager;
 	public aiDiffManager: AIDiffManager;
