@@ -1,8 +1,12 @@
-export const currentPluginVersion = '2.2.3';
+export const currentPluginVersion = '2.2.4';
 
 export const changelog = {
 'en': 
 `
+### 2.2.4 updates
+🎨 **UI Optimization:**
+- CSS standardization according to Obsidian specifications.
+
 ### 2.2.3 updates
 ✨ **New Features:**
 - AI Diff Summary could now using line-breaks by default. 
@@ -51,6 +55,10 @@ export const changelog = {
 `,
 'zh-CN': 
 `
+### 2.2.4 updates
+🎨 **UI Optimization:**
+- 根据 Obsidian 要求，标准化了 css 的使用。
+
 ### 2.2.3 更新说明
 ✨ **新功能：**
 - AI 差异总结现在默认支持换行。
