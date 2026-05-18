@@ -129,7 +129,7 @@ WordFlow Tracker 是一个轻量级插件，可以跟踪每个笔记的专注时
 
 想了解这个项目是如何构建的？或者想在这个插件上合作？详见 https://deepwiki.com/LeCheenaX/WordFlow-Tracker
 
-![下载量趋势](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/miscellaneous/cumulative_downloads_trend.png)
+![下载量趋势](https://raw.githubusercontent.com/LeCheenaX/WordFlow-Tracker/main/miscellaneous/cumulative_downloads_trend.png)
 
 ## 安装
 ### 在 Obsidian 中安装

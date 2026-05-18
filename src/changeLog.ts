@@ -1,8 +1,17 @@
-export const currentPluginVersion = '2.2.1';
+export const currentPluginVersion = '2.2.2';
 
 export const changelog = {
 'en': 
 `
+### 2.2.2 updates
+🎨 **UI Optimization:**
+- Improved Heatmap color gradient generation logic.
+
+⚡ **Enhancements:**
+- Refactored core code structure for better maintainability and performance.
+- Optimized Widget property retrieval logic.
+- Enhanced i18n content processing.
+
 ### 2.2.1 updates
 🐛 **Bug Fixed:**
 - Syntax change only updated today's note: now scans the entire folder for all periodic notes matching the format and containing data in the old syntax, and updates them all.
@@ -104,6 +113,15 @@ export const changelog = {
 `,
 'zh-CN': 
 `
+### 2.2.2 更新说明
+🎨 **界面优化：**
+- 改进热力图颜色渐变生成逻辑。
+
+⚡ **功能强化：**
+- 重构核心代码结构，提升可维护性和性能。
+- 优化组件属性获取逻辑。
+- 增强国际化内容处理。
+
 ### 2.2.1 更新说明
 🐛 **问题修复：**
 - 语法变更仅更新今天的笔记：现会扫描整个文件夹中所有符合格式且包含旧语法数据的周期笔记，并全部更新。

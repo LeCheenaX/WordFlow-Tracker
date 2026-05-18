@@ -127,7 +127,7 @@ See [Development Roadmap](https://github.com/LeCheenaX/WordFlow-Tracker/wiki/Dev
 
 Want to know how this project is built? Or wanna collaborate on this plugin? See details at https://deepwiki.com/LeCheenaX/WordFlow-Tracker
 
-![Downloads trend](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/miscellaneous/cumulative_downloads_trend.png)
+![Cumulative Downloads Trend](https://raw.githubusercontent.com/LeCheenaX/WordFlow-Tracker/main/miscellaneous/cumulative_downloads_trend.png)
 
 ## Installation
 ### Install in Obsidian
