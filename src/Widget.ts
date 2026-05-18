@@ -9,7 +9,7 @@ import { TagColorManager } from "./Utils/TagColorManager";
 import { HeatmapColorManager } from "./Utils/HeatmapColorManager";
 import { DynamicDropdown } from "./Utils/DynamicDropdown";
 import { resolveNoteProperty } from "./Utils/notePropertyResolver";
-import { DropdownComponent, IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon, setTooltip, TFile, TFolder } from "obsidian";
+import { IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon, setTooltip, TFile, TFolder } from "obsidian";
 
 export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
 
@@ -50,8 +50,8 @@ export class WordflowWidgetView extends ItemView {
     plugin: WordflowTrackerPlugin;
     public colorGenerator: UniqueColorGenerator;
     public tagColorManager: TagColorManager;
-    public onFocusMode: boolean = false;
-    public focusPaused: boolean = true;
+    public onFocusMode = false;
+    public focusPaused = true;
     private recorderDropdown: DynamicDropdown;
     private fieldDropdown: DynamicDropdown;
     private totalDataContainer: HTMLSpanElement;
@@ -67,14 +67,14 @@ export class WordflowWidgetView extends ItemView {
     private selectedRecorder: DataRecorder | null = null;
     private selectedField: string;
     private dataMap: Map<string, ExistingData> | null = null;
-    private totalFieldValue: number = 0;
+    private totalFieldValue = 0;
     private colorMap: Map<string, string>; // <filePath, color>
     private selectedNoteName: string; // Track the current view filename (avoids moment format issues)
     private availableNotes: Map<string, moment.Moment>; // Map of filename -> moment object for sorting
     private viewSwitcher: HTMLDivElement;
     private currentView: string;
     private heatmapResizeObserver: ResizeObserver | null = null; // Observer for heatmap cell size changes
-    public isRecording: boolean = false; // Guard: block external updateData calls during record+reset cycle
+    public isRecording = false; // Guard: block external updateData calls during record+reset cycle
 
     constructor(leaf: WorkspaceLeaf, plugin: WordflowTrackerPlugin) {
         super(leaf);
@@ -111,7 +111,7 @@ export class WordflowWidgetView extends ItemView {
         
         // Recorder dropdown as title
         const titleContainer = titleRow.createDiv({cls: "wordflow-widget-title-container"});
-        const recorderDropdownContainer = titleContainer.createEl("span", {cls: "recorder-dropdown-container"});
+        const recorderDropdownContainer = titleContainer.createSpan({cls: "recorder-dropdown-container"});
         this.recorderDropdown = new DynamicDropdown(recorderDropdownContainer);
         setTooltip(recorderDropdownContainer, 'Switch the recorder', {
             placement: 'top',
@@ -135,7 +135,8 @@ export class WordflowWidgetView extends ItemView {
         setTooltip(heatmapViewBtn, this.plugin.i18n.t('widget.viewSwitcher.heatmapView'), {placement: 'top', delay: 300});
 
         // Add click handlers for view switching
-        this.viewSwitcher.addEventListener('click', async (evt: MouseEvent) => {
+        this.viewSwitcher.addEventListener('click', (evt: MouseEvent) => {
+            void (async () => {
             const target = evt.target as HTMLElement;
             const btn = target.closest('.view-switch-btn') as HTMLElement;
             if (btn) {
@@ -149,6 +150,7 @@ export class WordflowWidgetView extends ItemView {
                     await this.renderData(this.selectedField);
                 }
             }
+            })();
         });
 
         this.currentNoteDataContainer = container.createDiv({cls: "wordflow-widget-current-note-data"});
@@ -165,13 +167,14 @@ export class WordflowWidgetView extends ItemView {
             delay: 300
         });
         this.prevNoteButton.addEventListener('click', () => {
-            this.navigateToPrevious();
+            void this.navigateToPrevious();
         });
 
-        this.periodicNoteNameContainer = leftGroup.createEl("span", {cls: "periodic-note-name-container"});
+        this.periodicNoteNameContainer = leftGroup.createSpan({cls: "periodic-note-name-container"});
         
         // Add click handler for periodic note name (similar to fileEntry)
-        this.periodicNoteNameContainer.addEventListener('click', async (evt: MouseEvent) => {
+        this.periodicNoteNameContainer.addEventListener('click', (evt: MouseEvent) => {
+            void (async () => {
             const noteExists = this.periodicNoteNameContainer.dataset.noteExists === 'true';
             
             if (noteExists) {
@@ -208,6 +211,7 @@ export class WordflowWidgetView extends ItemView {
                 );
                 confirmModal.open();
             }
+            })();
         });
         
         this.nextNoteButton = leftGroup.createEl("button", {cls: "wordflow-widget-nav-button", text: ">"});
@@ -216,7 +220,7 @@ export class WordflowWidgetView extends ItemView {
             delay: 300
         });
         this.nextNoteButton.addEventListener('click', () => {
-            this.navigateToNext();
+            void this.navigateToNext();
         });
 
         this.presentButton = leftGroup.createEl("button", {cls: "wordflow-widget-nav-button", text: "↺"});
@@ -225,11 +229,11 @@ export class WordflowWidgetView extends ItemView {
             delay: 300
         });
         this.presentButton.addEventListener('click', () => {
-            this.navigateToToday();
+            void this.navigateToToday();
         });
         
         const rightGroup = controls.createDiv({cls: "wordflow-widget-control-rightgroup-container"});
-        const fieldDropdownContainer = rightGroup.createEl("span", {cls: "field-dropdown-container"});
+        const fieldDropdownContainer = rightGroup.createSpan({cls: "field-dropdown-container"});
         this.fieldDropdown = new DynamicDropdown(fieldDropdownContainer, 'right');
         fieldDropdownContainer.insertAdjacentText("afterend", ':');
         setTooltip(fieldDropdownContainer, 'switch data to display from recording syntax', {
@@ -237,7 +241,7 @@ export class WordflowWidgetView extends ItemView {
             delay: 300
         });
 
-        this.totalDataContainer = rightGroup.createEl("span", {cls: "totalDataContainer"});
+        this.totalDataContainer = rightGroup.createSpan({cls: "totalDataContainer"});
 
         this.dataContainer = container.createDiv();
 
@@ -258,13 +262,15 @@ export class WordflowWidgetView extends ItemView {
         
         this.updateButtons_Quit(); // Initial icon setup
 
-        this.recordButton.addEventListener('click', async () => {
+        this.recordButton.addEventListener('click', () => {
+            void (async () => {
             if (this.onFocusMode || (!this.onFocusMode && this.focusPaused)) {
                 this.onFocusMode = false;
                 this.updateButtons_Quit();
             }
             await this.plugin.recorderManager.record();
             new Notice(this.plugin.i18n.t('notices.recordSuccess'), 3000);
+            })();
         });
 
         this.focusButton.addEventListener('click', () => {           
@@ -276,10 +282,10 @@ export class WordflowWidgetView extends ItemView {
                         this.app, 
                         this.plugin.i18n.t('widget.confirmations.focusModeNoReadTime'), 
                         async ()=>{
-                            this.startFocus();
+                            void this.startFocus();
                     });
                     tempMessage.open();
-                } else this.startFocus();
+                } else void this.startFocus();
             } else {
                 this.onFocusMode = false;
                 this.updateButtons_Pause();
@@ -331,8 +337,8 @@ export class WordflowWidgetView extends ItemView {
                 }
                 textContainer.empty();
 
-                textContainer.createEl('span', { text: `${activeFile.basename}`, cls: 'wordflow-widget-current-note-label' });
-                const noteValueStyle = textContainer.createEl('span', { text: currentValueString, cls: 'wordflow-widget-current-note-value' });
+                textContainer.createSpan({ text: `${activeFile.basename}`, cls: 'wordflow-widget-current-note-label' });
+                const noteValueStyle = textContainer.createSpan({ text: currentValueString, cls: 'wordflow-widget-current-note-value' });
                 
                 // Get color for current file using appendToColorMap
                 if (!this.colorMap.has(activeTracker.filePath)) {
@@ -348,8 +354,8 @@ export class WordflowWidgetView extends ItemView {
                     let currentBar: HTMLSpanElement | null | undefined = barContainer?.querySelector('.wordflow-widget-current-note-bar-current');
                     if (!barContainer || !existingBar || !currentBar) {
                         barContainer = leftContentWrapper.createDiv({ cls: 'wordflow-widget-current-note-bar-container' });
-                        existingBar = barContainer.createEl('span', { cls: 'wordflow-widget-current-note-bar-existing' });
-                        currentBar = barContainer.createEl('span', { cls: 'wordflow-widget-current-note-bar-current' });
+                        existingBar = barContainer.createSpan({ cls: 'wordflow-widget-current-note-bar-existing' });
+                        currentBar = barContainer.createSpan({ cls: 'wordflow-widget-current-note-bar-current' });
                         barContainer.style.width = '0';
                         existingBar.style.width = '0';
                         currentBar.style.width = '0';
@@ -373,11 +379,11 @@ export class WordflowWidgetView extends ItemView {
                 }
             } else {
                 this.currentNoteRow.empty();
-                this.currentNoteRow.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noFile'), cls: 'wordflow-widget-current-note-faint-label' });
+                this.currentNoteRow.createSpan({ text: this.plugin.i18n.t('widget.prompts.noFile'), cls: 'wordflow-widget-current-note-faint-label' });
             }
         } else {
             this.currentNoteRow.empty();
-            this.currentNoteRow.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noOpenedFile'), cls: 'wordflow-widget-current-note-faint-label' });
+            this.currentNoteRow.createSpan({ text: this.plugin.i18n.t('widget.prompts.noOpenedFile'), cls: 'wordflow-widget-current-note-faint-label' });
         }
     }
 
@@ -722,7 +728,7 @@ export class WordflowWidgetView extends ItemView {
         const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
         const allFilesWithTags = this.tagColorManager.buildFilesWithTagsMap(this.plugin.app, this.dataMap);
         
-        this.dataMap.forEach((data, filePath) => {
+        this.dataMap.forEach((_data, filePath) => {
             const file = this.plugin.app.vault.getFileByPath(filePath);
             if (!file) {
                 this.plugin.executeOnce(`fileNotFound:${filePath}`, ()=>{
@@ -753,7 +759,7 @@ export class WordflowWidgetView extends ItemView {
         
         const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
         
-        this.dataMap.forEach((data, filePath) => {
+        this.dataMap.forEach((_data, filePath) => {
             const file = this.plugin.app.vault.getFileByPath(filePath);
             if (!file) {
                 this.plugin.executeOnce(`fileNotFound:${filePath}`, ()=>{
@@ -825,7 +831,7 @@ export class WordflowWidgetView extends ItemView {
         this.tagColorManager.updateTagColors(this.plugin.settings.tagColors);
         await this.updateDataMap();
         await this.updateTaggedColorMap(); // must update color first
-        this.updateData();
+        await this.updateData();
     }
 
     private initRecorderDropdown() {
@@ -859,11 +865,13 @@ export class WordflowWidgetView extends ItemView {
             this.recorderDropdown.setValue(defaultIndex.toString());
         }
 
-        this.recorderDropdown.onChange(async (value) => {
+        this.recorderDropdown.onChange((value) => {
+            void (async () => {
             this.selectedRecorder = recorders[parseInt(value)];
             this.selectedNoteName = moment().format(this.selectedRecorder.periodicNoteFormat);
             await this.updateAll(); // Redraw the entire widget when recorder changes
             this.recorderDropdown.setValue(value); // put after draw to render correct selection
+            })();
         });
     }
 
@@ -890,10 +898,12 @@ export class WordflowWidgetView extends ItemView {
         this.fieldDropdown.setValue(this.selectedField)
         await this.updateData();
 
-        this.fieldDropdown.onChange(async (value) => {
+        this.fieldDropdown.onChange((value) => {
+            void (async () => {
             this.selectedField = value;
             await this.renderData(value);
             this.updateCurrentData();
+            })();
         });
     }
 
@@ -906,7 +916,7 @@ export class WordflowWidgetView extends ItemView {
         if (!this.dataMap || !field) {
             // Only show no data message for non-heatmap views
             if (this.currentView !== 'heatmap') {
-                this.dataContainer.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noData'), cls: 'wordflow-widget-no-data-message'});
+                this.dataContainer.createSpan({ text: this.plugin.i18n.t('widget.prompts.noData'), cls: 'wordflow-widget-no-data-message'});
             }
             this.totalDataContainer.textContent = (field === 'editTime' || field === 'readTime' || field === 'readEditTime')
                 ? formatTime(0)
@@ -922,7 +932,7 @@ export class WordflowWidgetView extends ItemView {
         if (this.dataMap.size === 0) {
             // Only show no data message for non-heatmap views
             if (this.currentView !== 'heatmap') {
-                this.dataContainer.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noData'), cls: 'wordflow-widget-no-data-message'});
+                this.dataContainer.createSpan({ text: this.plugin.i18n.t('widget.prompts.noData'), cls: 'wordflow-widget-no-data-message'});
             }
             this.totalDataContainer.textContent = (field === 'editTime' || field === 'readTime' || field === 'readEditTime')
                 ? formatTime(0)
@@ -947,7 +957,7 @@ export class WordflowWidgetView extends ItemView {
         if (this.totalFieldValue === 0) {
             // Only show no data message for non-heatmap views
             if (this.currentView !== 'heatmap') {
-                this.dataContainer.createEl('span', { text: this.plugin.i18n.t('widget.prompts.noDataForField'), cls: 'wordflow-widget-no-data-message'});
+                this.dataContainer.createSpan({ text: this.plugin.i18n.t('widget.prompts.noDataForField'), cls: 'wordflow-widget-no-data-message'});
             }
             this.totalDataContainer.textContent = (field === 'editTime' || field === 'readTime' || field === 'readEditTime')
                 ? formatTime(0)
@@ -1042,7 +1052,7 @@ export class WordflowWidgetView extends ItemView {
         });
     }
 
-    private renderTagSegments(container: HTMLElement, tagGroups: TagGroupData[], unconfiguredTagsFiles: { totalWeight: number }, field: string) {
+    private renderTagSegments(container: HTMLElement, tagGroups: TagGroupData[], unconfiguredTagsFiles: { totalWeight: number }, _field: string) {
         // Render configured tag groups
         tagGroups.forEach((tagGroup, index) => {
             const percentage = this.totalFieldValue > 0 ? (tagGroup.totalWeight / this.totalFieldValue) * 100 : 0;
@@ -1128,10 +1138,10 @@ export class WordflowWidgetView extends ItemView {
 
             const dataRow = this.dataContainer.createDiv({ cls: 'wordflow-widget-data-row' });
 
-            const circleSpan = dataRow.createEl('span', { cls: 'wordflow-widget-data-row-circle' });
+            const circleSpan = dataRow.createSpan({ cls: 'wordflow-widget-data-row-circle' });
             circleSpan.style.backgroundColor = barColor;
 
-            const filePathSpan = dataRow.createEl('span', { cls: 'wordflow-widget-data-row-file-path' });
+            const filePathSpan = dataRow.createSpan({ cls: 'wordflow-widget-data-row-file-path' });
             filePathSpan.dataset.filePath = rowData.filePath;
             filePathSpan.dataset.fileName = 
                 (rowData.fileName !== 'unknown')
@@ -1145,7 +1155,7 @@ export class WordflowWidgetView extends ItemView {
                 delay: 500
             });
 
-            const rowText = dataRow.createEl('span', { text: valueString, cls: `wordflow-widget-data-row-value`});
+            const rowText = dataRow.createSpan({ text: valueString, cls: `wordflow-widget-data-row-value`});
             rowText.style.color = barColor;
         });
     }
@@ -1168,10 +1178,10 @@ export class WordflowWidgetView extends ItemView {
             // Create data row with tag group specific styling
             const dataRow = container.createDiv({ cls: 'wordflow-widget-data-row wordflow-widget-tag-group-file-row' });
 
-            const circleSpan = dataRow.createEl('span', { cls: 'wordflow-widget-data-row-circle' });
+            const circleSpan = dataRow.createSpan({ cls: 'wordflow-widget-data-row-circle' });
             circleSpan.style.backgroundColor = barColor;
 
-            const filePathSpan = dataRow.createEl('span', { cls: 'wordflow-widget-data-row-file-path' });
+            const filePathSpan = dataRow.createSpan({ cls: 'wordflow-widget-data-row-file-path' });
             filePathSpan.dataset.filePath = rowData.filePath;
             filePathSpan.dataset.fileName = 
                 (rowData.fileName !== 'unknown')
@@ -1186,7 +1196,7 @@ export class WordflowWidgetView extends ItemView {
             });
 
             // Create middle container for tags (positioned between filename and value)
-            const middleContainer = dataRow.createEl('span', { cls: 'wordflow-widget-middle-container' });
+            const middleContainer = dataRow.createSpan({ cls: 'wordflow-widget-middle-container' });
 
             // Add source tags for tagged files (in middle container)
             const file = this.plugin.app.vault.getFileByPath(rowData.filePath);
@@ -1201,9 +1211,9 @@ export class WordflowWidgetView extends ItemView {
                 });
 
                 if (relevantTags.length > 0) {
-                    const sourceTagsContainer = middleContainer.createEl('span', { cls: 'wordflow-widget-source-tags-container' });
+                    const sourceTagsContainer = middleContainer.createSpan({ cls: 'wordflow-widget-source-tags-container' });
                     relevantTags.forEach(tag => {
-                        const tagPill = sourceTagsContainer.createEl('span', { 
+                        sourceTagsContainer.createSpan({ 
                             cls: 'wordflow-widget-source-tag-pill',
                             text: tag.startsWith('#') ? tag : `#${tag}`
                         });
@@ -1212,7 +1222,7 @@ export class WordflowWidgetView extends ItemView {
             }
 
             // Value always on the right
-            const rowText = dataRow.createEl('span', { text: valueString, cls: `wordflow-widget-data-row-value`});
+            const rowText = dataRow.createSpan({ text: valueString, cls: `wordflow-widget-data-row-value`});
             rowText.style.color = barColor;
         });
     }
@@ -1224,7 +1234,7 @@ export class WordflowWidgetView extends ItemView {
         const listContainer = this.dataContainer.createDiv({ cls: 'wordflow-widget-tag-list-container' });
 
         // Render configured tag groups
-        tagGroups.forEach((tagGroup, index) => {
+        tagGroups.forEach((tagGroup, _index) => {
             this.renderTagGroupRow(listContainer, tagGroup, sortedData, field);
         });
 
@@ -1244,7 +1254,7 @@ export class WordflowWidgetView extends ItemView {
     /**
      * Render a single tag group row (works for both configured and unconfigured groups)
      */
-    private renderTagGroupRow(container: HTMLElement, tagGroup: TagGroupData, sortedData: ExistingData[], field: string, isUnconfiguredGroup: boolean = false) {
+    private renderTagGroupRow(container: HTMLElement, tagGroup: TagGroupData, sortedData: ExistingData[], field: string, isUnconfiguredGroup = false) {
         // Create tag group row
         const tagRow = container.createDiv({ 
             cls: isUnconfiguredGroup ? 'wordflow-widget-tag-group-row wordflow-widget-unconfigured-group' : 'wordflow-widget-tag-group-row'
@@ -1252,16 +1262,16 @@ export class WordflowWidgetView extends ItemView {
         tagRow.dataset.collapsed = 'true'; // Default collapsed
 
         // Left: HSL color dot
-        const colorDot = tagRow.createEl('span', { cls: 'wordflow-widget-tag-group-color-dot' });
+        const colorDot = tagRow.createSpan({ cls: 'wordflow-widget-tag-group-color-dot' });
         colorDot.style.backgroundColor = tagGroup.color;
 
         // Middle: Tag name (plain text)
-        const tagName = tagRow.createEl('span', { cls: 'wordflow-widget-tag-group-name' });
+        const tagName = tagRow.createSpan({ cls: 'wordflow-widget-tag-group-name' });
         tagName.textContent = tagGroup.tagName;
 
         // Right: Expand/collapse arrow indicator
-        const arrowIndicator = tagRow.createEl('span', { cls: 'wordflow-widget-tag-group-arrow' });
-        arrowIndicator.innerHTML = '▼'; // Down arrow for collapsed state
+        const arrowIndicator = tagRow.createSpan({ cls: 'wordflow-widget-tag-group-arrow' });
+        arrowIndicator.textContent = '▼'; // Down arrow for collapsed state
 
         // Create collapsible file list container with vertical line
         const fileListContainer = container.createDiv({ 
@@ -1303,7 +1313,7 @@ export class WordflowWidgetView extends ItemView {
             fileListContainer.style.display = isCollapsed ? 'block' : 'none';
             
             // Update arrow direction
-            arrowIndicator.innerHTML = isCollapsed ? '▲' : '▼';
+            arrowIndicator.textContent = isCollapsed ? '▲' : '▼';
         });
     }
 
@@ -1438,14 +1448,14 @@ export class WordflowWidgetView extends ItemView {
                 if (isCurrentlyCollapsed) {
                     tagRow.dataset.collapsed = 'false';
                     fileListContainer.style.display = 'block';
-                    arrowElement.innerHTML = '▲';
+                    arrowElement.textContent = '▲';
                 }
                 // If already expanded, keep it expanded (no change)
             } else {
                 // For all other tags: collapse them
                 tagRow.dataset.collapsed = 'true';
                 fileListContainer.style.display = 'none';
-                arrowElement.innerHTML = '▼';
+                arrowElement.textContent = '▼';
             }
         });
     }
@@ -1918,7 +1928,7 @@ export class WordflowWidgetView extends ItemView {
 
             // Display month label if this week contains the 1st and we haven't shown this month yet
             if (weekContainsFirstDay && !monthsShown.has(monthKey)) {
-                const monthLabel = container.createEl('span', {
+                const monthLabel = container.createSpan({
                     cls: 'wordflow-heatmap-month-label',
                     text: monthKey
                 });
@@ -1933,7 +1943,7 @@ export class WordflowWidgetView extends ItemView {
     /**
      * Render weekday labels on the left side
      */
-    private renderWeekdayLabels(container: HTMLElement, startOfWeek: number = 0) {
+    private renderWeekdayLabels(container: HTMLElement, startOfWeek = 0) {
         let weekdays: string[];
         let weekdayIndices: number[];
         
@@ -1948,7 +1958,7 @@ export class WordflowWidgetView extends ItemView {
         }
 
         weekdayIndices.forEach((dayIndex, index) => {
-            const label = container.createEl('span', {
+            const label = container.createSpan({
                 cls: 'wordflow-heatmap-weekday-label',
                 text: weekdays[index]
             });
@@ -2025,7 +2035,8 @@ export class WordflowWidgetView extends ItemView {
                     // Add click handler to open or create note (only for non-future dates)
                     if (!isFuture) {
                         const cellDate = moment(currentDate); // Capture current date in closure
-                        cell.addEventListener('click', async (evt: MouseEvent) => {
+                        cell.addEventListener('click', (evt: MouseEvent) => {
+                            void (async () => {
                             if (!this.selectedRecorder) return;
 
                             const targetDate = cellDate.valueOf();
@@ -2073,6 +2084,7 @@ export class WordflowWidgetView extends ItemView {
                                 );
                                 confirmModal.open();
                             }
+                            })();
                         });
 
                         // Add hover handler for Ctrl+hover preview (only for existing notes)
@@ -2107,7 +2119,7 @@ export class WordflowWidgetView extends ItemView {
      * Render heatmap legend
      */
     private renderHeatmapLegend(container: HTMLElement, data: Map<string, number>, field: string) {
-            const legendLabel = container.createEl('span', {
+            container.createSpan({
                 cls: 'wordflow-heatmap-legend-label',
                 text: 'Less'
             });
@@ -2199,7 +2211,7 @@ export class WordflowWidgetView extends ItemView {
                 }
             }
 
-            const legendLabelMore = container.createEl('span', {
+            container.createSpan({
                 cls: 'wordflow-heatmap-legend-label',
                 text: 'More'
             });

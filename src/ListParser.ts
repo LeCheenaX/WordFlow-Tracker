@@ -1,6 +1,6 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
 import { formatTime, restoreTimeString } from "./Timer";
-import { moment, Plugin, TFile } from 'obsidian';
+import { moment, TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
 import { resolveLinkToPath } from "./Utils/pathNormalizer";
 import { resolveNoteProperty } from "./Utils/notePropertyResolver";
@@ -145,7 +145,7 @@ export class BulletListParser{
                 if (groupData.lastModifiedTime !== undefined) {
                     try {
                         ListData.lastModifiedTime = moment(groupData.lastModifiedTime, this.timeFormat).valueOf();
-                    } catch (e) {
+                    } catch (_e) {
                         ListData.lastModifiedTime = null;
                     }
                 } else {
@@ -272,7 +272,7 @@ export class BulletListParser{
                 .replace(/\${noteTitle}/g, data.fileName)
                 .replace(/\${lastModifiedTime}/g, typeof data.lastModifiedTime === 'number' 
                     ? moment(data.lastModifiedTime).format(this.timeFormat) 
-                    : data.lastModifiedTime as string)
+                    : data.lastModifiedTime)
                 .replace(/\${editedWords}/g, data.editedWords.toString())
                 .replace(/\${editedTimes}/g, data.editedTimes.toString())
                 .replace(/\${addedWords}/g, data.addedWords.toString())
@@ -382,7 +382,7 @@ export class BulletListParser{
             });
         }
     }
-};
+}
 
 // used for list data that belong to a single list group, not multiple list groups
 /*

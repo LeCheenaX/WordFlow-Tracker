@@ -2,7 +2,7 @@ import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
 import { formatTime, restoreTimeString } from "./Timer";
 import { moment, Notice, TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
-import { normalizeFilePath, normalizeObsidianLinkPath, resolveLinkToPath } from "./Utils/pathNormalizer";
+import { normalizeObsidianLinkPath, resolveLinkToPath } from "./Utils/pathNormalizer";
 import { resolveNoteProperty } from "./Utils/notePropertyResolver";
 
 export class TableParser{
@@ -176,7 +176,7 @@ export class TableParser{
                             return resolved === '' ? '\u200B' : resolved;
                         }
                         switch (varName) {
-                            case 'modifiedNote':
+                            case 'modifiedNote': {
                                 // Use Obsidian's fileToLinktext for shortest link text
                                 const file = this.plugin.app.vault.getFileByPath(data.filePath);
                                 if (!file) {
@@ -184,12 +184,13 @@ export class TableParser{
                                     return data.filePath;
                                 }
                                 return this.plugin.app.metadataCache.fileToLinktext(file, ''); // only for passing the validation
+                            }
                         case 'noteTitle':
                             return data.fileName;
                         case 'lastModifiedTime':
                             return typeof data.lastModifiedTime === 'number'
                                 ? moment(data.lastModifiedTime).format(this.timeFormat)
-                                : data.lastModifiedTime as string;
+                                : data.lastModifiedTime;
                         case 'editedWords':
                             return data.editedWords.toString();
                         case 'editedTimes':
@@ -257,7 +258,7 @@ export class TableParser{
             if (rowColumns.length > 1 && rowColumns[0].includes('[[') && !rowColumns[0].includes(']]')) {
                 // combine 2 columns with alias [[filePath\|alias]]
                 if (!rowColumns[0].endsWith('\\')) new Notice(this.plugin.i18n.t('notices.tableSyntaxWarning'), 0)
-                rowColumns[0] = rowColumns[0] + '\|' + rowColumns[1];
+                rowColumns[0] = rowColumns[0] + '|' + rowColumns[1];
                 rowColumns.splice(1, 1);
             }
 
@@ -281,7 +282,7 @@ export class TableParser{
 
         if (dataColumns.length > 1 && dataColumns[0].includes('[[') && !dataColumns[0].includes(']]')) {
             // combine 2 columns with alias [[filePath\|alias]]
-            dataColumns[0] = dataColumns[0] + '\|' + dataColumns[1];
+            dataColumns[0] = dataColumns[0] + '|' + dataColumns[1];
             dataColumns.splice(1, 1);
         }
 
@@ -301,7 +302,7 @@ export class TableParser{
                     entry.fileName = match[2];
                 } else {
                     const noteInfo = recordNotePath;
-                    console.error('The captured value: ', value, ' could not match the regex:', "/^\[\[([^\]]+)\\\|([^\]]+)\]\]$/")
+                    console.error('The captured value: ', value, ' could not match the regex:', "/^\\[\\[([^\\]]+)\\|([^\\]]+)\\]\\]$/")
                     new Notice(this.plugin.i18n.t('notices.aliasMatchFailed', {noteInfo: noteInfo}), 0)
                     throw new Error (`❌Var template with note alias is not matched in ${noteInfo}!\nConsider checking if table syntax contains "\\|" in the first coloumn, or if table in periodic note is mixed with notes with alias and notes without alias`)
                 }
@@ -351,7 +352,7 @@ export class TableParser{
                         } else {
                             entry.lastModifiedTime = null;
                         }
-                    } catch (e) {
+                    } catch (_e) {
                         entry.lastModifiedTime = null;
                     }
                     break;                    
@@ -391,4 +392,4 @@ export class TableParser{
         return entry;
     }
     
-};
+}

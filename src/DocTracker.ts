@@ -1,32 +1,32 @@
 import { wordsCounter } from "./Utils/stats";
 import { isTableChange, tableWordDiff } from "./Utils/tableWordCount";
 import { conditionalSleep } from "./Utils/conditionalSleep";
-import Timer, { formatTime } from "./Timer";
+import Timer from "./Timer";
 import WordflowTrackerPlugin from "./main";
-import { debounce, Editor, EventRef, MarkdownView, MarkdownViewModeType, moment, Notice, TAbstractFile, TFile } from "obsidian";
+import { debounce, Editor, EventRef, MarkdownView, MarkdownViewModeType, moment, TFile } from "obsidian";
 import { historyField } from "@codemirror/commands";
 
 const DEBUG = false as const;
 
 export class DocTracker {
-    public lastDone: number = 0;
-    public lastUndone: number = 0;
-    public editedTimes: number = 0;
-    public editedWords: number = 0;
-    public addedWords: number = 0;
-    public deletedWords: number = 0;
-    public changedWords: number = 0;
-    public isActive: boolean = false;
-    public isResetting: boolean = false; // Flag to indicate tracker is being reset (avoid double-counting in Widget)
+    public lastDone = 0;
+    public lastUndone = 0;
+    public editedTimes = 0;
+    public editedWords = 0;
+    public addedWords = 0;
+    public deletedWords = 0;
+    public changedWords = 0;
+    public isActive = false;
+    public isResetting = false; // Flag to indicate tracker is being reset (avoid double-counting in Widget)
     public trackerResetTime: number; // unix timestamp
     public lastModifiedTime: number; // unix timestamp
-    public docLength: number = 0;
-    public docWords: number = 0;
-    public originalWords: number = 0;
-    public fileName: string = 'unknown';
-    public editTime: number = 0;
-    public readTime: number = 0;
-    public snapshotUpdated: boolean = false; // Flag to indicate if snapshot has been updated for this day
+    public docLength = 0;
+    public docWords = 0;
+    public originalWords = 0;
+    public fileName = 'unknown';
+    public editTime = 0;
+    public readTime = 0;
+    public snapshotUpdated = false; // Flag to indicate if snapshot has been updated for this day
 
     public editTimer: Timer | null = null;
     public readTimer: Timer | null = null;
@@ -41,7 +41,7 @@ export class DocTracker {
         private activeEditor: MarkdownView | null,
         private plugin: WordflowTrackerPlugin,
     ) {
-        this.initialize();
+        void this.initialize();
     }
 
     public updateStatusBarTracker() {
@@ -57,10 +57,10 @@ export class DocTracker {
         if (this.isActive && activeFileViewMode == this.prevViewMode) return; // do nothing
         else if (activeFileViewMode == 'source') { // cases: 1. from inactive to source, 2. from source to source, 3. from inactive to source when focused, 4. from inactive to preview when focused, 5. from source to preview when focused, 6. from preview to source when focused 7. from soure to source when focused 8. from preview to preview when focused,  
             this.deactivate();
-            this.trackEditing();
+            void this.trackEditing();
         } else if (this.plugin.Widget?.onFocusMode && activeFileViewMode == 'preview') {
             this.deactivate();
-            this.trackReading();
+            void this.trackReading();
         }
 
         this.isActive = true;
@@ -75,7 +75,7 @@ export class DocTracker {
         if (DEBUG) console.log(`Tracker released for: ${this.filePath}`);
         this.editTimer?.pause();
         this.readTimer?.pause();
-    };
+    }
 
     public async countWordsFullScan() {
         let file = this.activeEditor?.file;
@@ -192,7 +192,7 @@ export class DocTracker {
         this.debouncedTracker = debounce(this.trackChanges.bind(this), 1000, true); // Modified from official value 500 ms to 1000 ms, for execution delay. Modified from 1000 to 800 to test. 
 
         // 绑定编辑器事件
-        this.editorListener = this.plugin.app.workspace.on('editor-change', (editor: Editor, view: MarkdownView) => {
+        this.editorListener = this.plugin.app.workspace.on('editor-change', (_editor: Editor, _view: MarkdownView) => {
             if (this.debouncedTracker != null)
                 this.debouncedTracker();
             //console.log('DocTracker.activate: listener registered')
@@ -302,7 +302,7 @@ export class DocTracker {
         // only done events need to consider separated inputs that may not be caught by the debouncer function
         if ((doneDiff + historyCleared > 0) && currentDone > 1) {
             for (let i = (doneDiff + historyCleared); i > 0; i--) {
-                history.done[currentDone - i].changes.iterChanges((fromA: Number, toA: Number, fromB: Number, toB: Number, inserted: string | Text) => { // inserted is Text in cm, string|Text in Obsidian
+                history.done[currentDone - i].changes.iterChanges((fromA: number, toA: number, fromB: number, toB: number, inserted: string | Text) => { // inserted is Text in cm, string|Text in Obsidian
                     //@ts-expect-error
                     const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA, toA);
                     inserted = inserted.toString();
@@ -313,8 +313,8 @@ export class DocTracker {
                     let fixedToA = toA;
                     let nextIndex: number = currentDone - i + 1;
                     while (nextIndex <= currentDone - 1) {
-                        history.done[nextIndex].changes.iterChanges((nFromA: Number, nToA: Number, nFromB: Number, nToB: Number, nInserted: string | Text) => {
-                            if (fixedToA = nFromA) {
+                        history.done[nextIndex].changes.iterChanges((nFromA: number, nToA: number, _nFromB: number, _nToB: number, _nInserted: string | Text) => {
+                            if (fixedToA === nFromA) {
                                 fixedToA = nToA;
                             }
                         })
@@ -368,7 +368,7 @@ export class DocTracker {
 
         // done | when fixed doneDiff is detected minus, and done events is added to undone.
         if ((doneDiff + historyCleared < 0) && ((undoneDiff + doneDiff + historyCleared) == 0)) {
-            history.undone[currentUndone - 1].changes.iterChanges((fromA: Number, toA: Number, fromB: Number, toB: Number, inserted: string | Text) => { // inserted is Text in cm, string|Text in Obsidian               
+            history.undone[currentUndone - 1].changes.iterChanges((fromA: number, toA: number, fromB: number, toB: number, inserted: string | Text) => { // inserted is Text in cm, string|Text in Obsidian               
                 // @ts-expect-error
                 const theOther = this.activeEditor.editor.cm.state.sliceDoc(fromA, toA);
                 inserted = inserted.toString();
@@ -431,7 +431,7 @@ export class DocTracker {
                                 let tempContent = originalContent;
                                 
                                 // Iterate through the changes and apply them in reverse
-                                doneChange.changes.iterChanges((fromA: number, toA: number, fromB: number, toB: number, inserted: string | Text) => {
+                                doneChange.changes.iterChanges((fromA: number, toA: number, _fromB: number, _toB: number, inserted: string | Text) => {
                                     // For a done change, inserted is the old content, and the other part is the new content
                                     // To revert, we need to replace the new content with the old content
                                     inserted = inserted.toString();
@@ -449,7 +449,7 @@ export class DocTracker {
                             let tempContent = originalContent;
                             
                             // Iterate through the changes and apply them in reverse
-                            undoneChange.changes.iterChanges((fromA: number, toA: number, fromB: number, toB: number, inserted: string | Text) => {
+                            undoneChange.changes.iterChanges((fromA: number, toA: number, _fromB: number, _toB: number, _inserted: string | Text) => {
                                 // For an undone change, the other part is the old content, and inserted is the new content
                                 // To revert, we need to replace the new content with the old content
                                 // @ts-expect-error

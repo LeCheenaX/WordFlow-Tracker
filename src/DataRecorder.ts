@@ -6,7 +6,6 @@ import { BulletListParser } from './ListParser';
 import { MetaDataParser } from "./MetaDataParser";
 import { AIDiffManager } from "./AIDiffManager";
 import { moment, Notice, TFile, TFolder } from 'obsidian';
-import { stat } from "fs";
 
 export class DataRecorder {
     public existingDataMap: Map<string, ExistingData> = new Map();
@@ -263,7 +262,7 @@ export class DataRecorder {
                 
                 await this.createRecordNote(recordNotePath);
                 // Wait for file creation to complete
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                await sleep(2000);
                 recordNote = this.plugin.app.vault.getFileByPath(recordNotePath);
                 new Notice(this.plugin.i18n.t('notices.noteCreated', {
                     notePath: recordNotePath,
@@ -287,12 +286,13 @@ export class DataRecorder {
         }
         else { // now using Templates core plugin
             const templateFilePath = this.plugin.settings.templateFilePath;
-            const templateFile = this.plugin.app.vault.getAbstractFileByPath(templateFilePath) as TFile;
-            if (!templateFile) {
+            const templateAbstractFile = this.plugin.app.vault.getAbstractFileByPath(templateFilePath);
+            if (!(templateAbstractFile instanceof TFile)) {
                 new Notice(this.plugin.i18n.t('notices.templateNotFound'))
                 console.error("Error: Tempalte file not found in creating periodic note! Please check each of your recorder setting")
+                return;
             }
-            let content = await this.plugin.app.vault.read(templateFile);
+            let content = await this.plugin.app.vault.read(templateAbstractFile);
 
             // try applying templates as Obsidian Templates plugin does
             content = content
@@ -438,7 +438,7 @@ export class DataRecorder {
         else {
             console.groupCollapsed(`${recorderName}.backUpData: `);
             console.log('The following data is not recorded due to errors in the console. You can manually update these data to periodic notes.')
-            this.newDataMap.forEach((NewData, key) => {
+            this.newDataMap.forEach((NewData, _key) => {
                 console.log(
                     `File: ${NewData.filePath}`,
                     NewData
@@ -450,7 +450,6 @@ export class DataRecorder {
 
     public async updateNoteToBottom(recordNote: TFile, newContent: string): Promise<void> {
         const noteContent = await this.plugin.app.vault.read(recordNote);
-        const lines = noteContent.split('\n');
 
         const existingContent: string | null = await this.Parser.getContent(recordNote);
 

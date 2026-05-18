@@ -82,7 +82,7 @@ function backtrackIterative(dp: number[][], a: string[], b: string[]): DiffLine[
  * Format diff lines into a unified-diff-style string with context lines.
  * Only includes changed lines and surrounding context.
  */
-function formatDiff(diffLines: DiffLine[], contextLines: number = 2): string {
+function formatDiff(diffLines: DiffLine[], contextLines = 2): string {
     const output: string[] = [];
     const changed: number[] = [];
 
@@ -137,7 +137,7 @@ function formatDiff(diffLines: DiffLine[], contextLines: number = 2): string {
  * @param maxLength - Maximum character length of the output (truncated if exceeded)
  * @returns A unified-diff-style string showing changes
  */
-export function computeDiff(before: string, after: string, maxLength: number = 4000): string {
+export function computeDiff(before: string, after: string, maxLength = 4000): string {
     const aLines = before.split('\n');
     const bLines = after.split('\n');
 
@@ -156,7 +156,7 @@ export function computeDiff(before: string, after: string, maxLength: number = 4
     return result;
 }
 
-export function computeDiffForLLM(before: string, after: string, maxLength: number = 4000): string {
+export function computeDiffForLLM(before: string, after: string, maxLength = 4000): string {
     const aLines = before.split('\n');
     const bLines = after.split('\n');
 

@@ -321,7 +321,7 @@ export class TagColorManager {
         
         if (!dataMap) return filesWithTags;
         
-        dataMap.forEach((data, filePath) => {
+        dataMap.forEach((_data, filePath) => {
             const file = app.vault.getFileByPath(filePath);
             if (!file) {
                 this.plugin.executeOnce(`fileNotFound:${filePath}`,()=>{

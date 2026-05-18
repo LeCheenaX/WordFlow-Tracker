@@ -7,9 +7,9 @@ export default class Timer {
 
     private intervalId: number | null = null;
     private timeoutId: number | null = null;
-    private startTime: number = 0;
-    private accumulatedTime: number = 0;
-    private timeToNextUpdate: number = 0; // miliseconds until next update
+    private startTime = 0;
+    private accumulatedTime = 0;
+    private timeToNextUpdate = 0; // miliseconds until next update
 
     private startDebounceInterval: number = 1000 as const; 
     private readonly updateInterval: number = (this.plugin.settings.useSecondInWidget)? 1000: 60000; // 60 seconds

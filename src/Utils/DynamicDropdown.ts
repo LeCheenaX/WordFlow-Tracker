@@ -22,9 +22,9 @@ export class DynamicDropdown {
     private options: Map<string, string>; // value -> display text
     private currentValue: string;
     private changeCallback?: (value: string) => void;
-    private disabled: boolean = false;
+    private disabled = false;
     private alignment: DropdownAlignment;
-    private isMenuOpened: boolean = false;
+    private isMenuOpened = false;
 
     constructor(containerEl: HTMLElement, alignment: DropdownAlignment = 'left') {
         this.options = new Map();

@@ -9,7 +9,7 @@ const SNAPSHOT_FILE = 'wordflow-index.json';
 
 export class SnapshotManager {
     private data: SnapshotData;
-    private dirty: boolean = false;
+    private dirty = false;
 
     constructor(private plugin: WordflowTrackerPlugin) {
         this.data = { snapshots: {} };
@@ -172,7 +172,7 @@ export class SnapshotManager {
     private debouncedSave(): void {
         if (this.saveTimeout) clearTimeout(this.saveTimeout);
         this.saveTimeout = setTimeout(() => {
-            this.save();
+            void this.save();
         }, 5000);
     }
 }

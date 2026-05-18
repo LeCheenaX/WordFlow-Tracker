@@ -1,6 +1,6 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
 import { formatTime, restoreTimeString } from "./Timer";
-import { MetadataCache, moment, TFile } from 'obsidian';
+import { TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
 
 export class MetaDataParser{
@@ -241,4 +241,4 @@ export class MetaDataParser{
             });
         }
     }
-};
+}

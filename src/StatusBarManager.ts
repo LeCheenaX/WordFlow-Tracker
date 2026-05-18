@@ -6,7 +6,7 @@ import { MarkdownView } from "obsidian";
 
 export class StatusBarManager {
     private statusBarEl: HTMLElement;
-    private content: string = '';
+    private content = '';
 
     constructor(private plugin: WordflowTrackerPlugin) {
         this.statusBarEl = this.plugin.addStatusBarItem();

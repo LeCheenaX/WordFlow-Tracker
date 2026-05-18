@@ -60,10 +60,10 @@ export const changelog = {
 >
 >If you enjoy WordFlow Tracker, please consider giving it a star ⭐ on GitHub. 
 > Your support is the greatest encouragement for me to keep improving this plugin.  
->👉 [Star WordFlow Tracker on GitHub](https://github.com/LeCheenaX/WordFlow-Tracker)
+>👉 [Star WordFlow Tracker on GitHub](https://github.com/LeCheenaX/WordFlow-Tracker)
 >
->— _LeCheenaX_  
->Thank you for being part of this journey! 🙏
+>— _LeCheenaX_  
+>Thank you for being part of this journey! 🙏
 
 🚀 **Key Insights:**
 - New view: heatmap view is available for daily note recorder
@@ -162,10 +162,10 @@ export const changelog = {
 >
 >如果您喜欢 WordFlow Tracker，不妨在 GitHub 上为我们点亮一颗星星 ⭐。  
 >您的支持是我持续改进插件的最大动力。  
->👉 [在 GitHub 上为 WordFlow Tracker 点星](https://github.com/LeCheenaX/WordFlow-Tracker)
+>👉 [在 GitHub 上为 WordFlow Tracker 点星](https://github.com/LeCheenaX/WordFlow-Tracker)
 >
->— _LeCheenaX_  
->感谢您一路同行！ 🙏
+>— _LeCheenaX_  
+>感谢您一路同行！ 🙏
 
 🚀 **核心亮点：**
 - 新增视图：日记记录器现已支持热力图视图。
@@ -173,7 +173,7 @@ export const changelog = {
     - 增加视图切换按钮，提供三种模式（文件列表、标签列表、热力图）。
     - 增加笔记导航支持，便于回顾历史数据。
     - 记录器切换面板移至组件顶部。
-- 弃用：\`启用基于标签的视图\' 已被替换为小部件设置中的 \'打开时默认视图\'.
+- 弃用：\`启用基于标签的视图\` 已被替换为小部件设置中的 \`打开时默认视图\`.
 
 🔥 **主要更新：**
 - 热力图视图：*仅适用于日记*

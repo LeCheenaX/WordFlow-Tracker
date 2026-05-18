@@ -9,7 +9,7 @@ import { App, normalizePath, TFile } from 'obsidian';
  * @param sourcePath - The source file path for relative resolution (optional)
  * @returns Resolved absolute file path or original linkText if not found
  */
-export function resolveLinkToPath(app: App, linkText: string, sourcePath: string = ""): string {
+export function resolveLinkToPath(app: App, linkText: string, sourcePath = ""): string {
     if (!linkText || typeof linkText !== 'string') {
         return linkText;
     }
@@ -89,7 +89,7 @@ export function normalizeFilePath(rawPath: string): string {
  * @param sourcePath - Source file path for context (optional)
  * @returns Normalized absolute path
  */
-export function normalizeObsidianLinkPath(app: App, linkPath: string, sourcePath: string = ""): string {
+export function normalizeObsidianLinkPath(app: App, linkPath: string, sourcePath = ""): string {
     if (!linkPath || typeof linkPath !== 'string') {
         return linkPath;
     }

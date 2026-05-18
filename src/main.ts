@@ -5,7 +5,7 @@ import { StatusBarManager, updateStatusBarStyle, removeStatusBarStyle } from './
 import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, WidgetTab, ReferenceTab, AITab } from './settings';
 import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
 import { currentPluginVersion, changelog } from './changeLog';
-import { initI18n, SupportedLocale, I18nManager } from './i18n';
+import { initI18n, I18nManager } from './i18n';
 import { executeOnceWithKey } from './Utils/executeOnce';
 import { throttleLeadingEdge } from './Utils/throttle';
 import { SnapshotManager } from './SnapshotManager';
@@ -49,8 +49,9 @@ export default class WordflowTrackerPlugin extends Plugin {
 		this.registerView(
 			VIEW_TYPE_WORDFLOW_WIDGET,
 			(leaf) => {
-				this.Widget = new WordflowWidgetView(leaf, this);
-				return this.Widget;
+				const view = new WordflowWidgetView(leaf, this);
+				this.Widget = view;
+				return view;
 			}
 		);
 
@@ -70,7 +71,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		// This creates an icon in the left ribbon.
 		if (this.settings.showRecordRibbonIcon) {
-			const ribbonIconEl = this.addRibbonIcon('file-clock', 'Record wordflows from edited notes', async (evt: MouseEvent) => {
+			this.addRibbonIcon('file-clock', 'Record wordflows from edited notes', async (_evt: MouseEvent) => {
 				// Called when the user clicks the icon.
 				new Notice(this.i18n.t('notices.recordSuccess'), 3000);
 
@@ -79,7 +80,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		}
 
 		if (this.settings.showWidgetRibbonIcon) {
-			this.addRibbonIcon('chart-bar-decreasing', 'Reveal and refresh wordflow tracker widget', (evt: MouseEvent) => {
+			this.addRibbonIcon('chart-bar-decreasing', 'Reveal and refresh wordflow tracker widget', (_evt: MouseEvent) => {
 				this.activateView();
 			});
 		}
@@ -89,7 +90,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			if (this.settings.enableWidgetOnLoad) {
 				await sleep(500); // add delay to allow view to check if there's existing view, when plugin is updated through Obsidian community.
 				this.createWidgetView(); // Use createWidgetView instead of activateView
-			};
+			}
 		});
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
@@ -201,8 +202,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
 
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			//console.log('click', evt);
+		this.registerDomEvent(document, 'click', (_evt: MouseEvent) => {
 			//test to switch between editor
 			if (this.app.workspace.activeEditor?.file) {
 				//console.log(this.app.workspace.activeEditor.file?.path)
@@ -225,7 +225,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		// Update widget colors when file metadata (tags) changes
 		// Cache the last-seen tags per file so we only re-render when tags actually change.
 		const lastTagsCache = new Map<string, string>();
-		this.registerEvent(this.app.metadataCache.on('changed', (file, data, cache) => {
+		this.registerEvent(this.app.metadataCache.on('changed', (file, _data, cache) => {
 			if (file instanceof TFile && this.Widget) {
 				const newTags = (getAllTags(cache) ?? []).slice().sort().join(',');
 				const oldTags = lastTagsCache.get(file.path) ?? null;
@@ -304,13 +304,13 @@ export default class WordflowTrackerPlugin extends Plugin {
 			this.statusBarManager.clear(); // clear status bar
 			//if (DEBUG) console.log(`activeDocHandler: status bar cleared`);
 		}
-	};
+	}
 	private async recordTracker(tracker: DocTracker): Promise<void> {
 		if (tracker.meetThreshold()) {
 			await this.recorderManager.record(tracker);
 			//if (DEBUG) console.log (`Edits from ${tracker.filePath} are recorded.`);	
 		}
-	};
+	}
 
 
 	// create or activate DocTracker
@@ -329,7 +329,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				this.statusBarManager.clear();
 				this.Widget?.updateCurrentData();
 				return;
-			}; // restrict tracker creation, not affecting existing created trackers in case of frequently adjustments on the plugin settings. 
+			} // restrict tracker creation, not affecting existing created trackers in case of frequently adjustments on the plugin settings. 
 			const newTracker = new DocTracker(activeFilePath, activeEditor, this);
 			this.trackerMap.set(activeFilePath, newTracker);
 		}
@@ -338,7 +338,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			this.trackerMap.get(activeFilePath)?.activate(activeFileViewMode);
 		}
 		//await sleep(50); // for the process completion
-	};
+	}
 
 	async activateView() {
 		const existingLeafView = this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET);
@@ -408,10 +408,10 @@ export default class WordflowTrackerPlugin extends Plugin {
 	}
 
 	// get markdown files (with path) that are in edit mode from all leaves
-	private async getAllOpenedFilesWithMode(): Promise<Map<string, 'source' | 'preview' | unknown>> {
-		const fileMap = new Map<string, 'source' | 'preview' | unknown>();
+	private async getAllOpenedFilesWithMode(): Promise<Map<string, string>> {
+		const fileMap = new Map<string, string>();
 
-		const addFileWithMode = (filePath: string, mode: 'source' | 'preview' | unknown) => {
+		const addFileWithMode = (filePath: string, mode: string) => {
 			//if (fileMap.get(filePath) == 'source') return; // does not allow source overwrite preview mode, because item.state.state.mode may only return source and never return preview
 			fileMap.set(filePath, mode);
 			//console.log(filePath, ' changed to ', mode);
@@ -447,7 +447,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				if (leaf.view?.getState()?.mode) {
 					addFileWithMode(
 						(leaf.view.getState() as any)?.file,
-						leaf.view.getState().mode
+						leaf.view.getState().mode as string
 					); // get file path of TFile, or get file path directly, and then add to array | which to get depends on if the files have been opened or not.
 				}
 
@@ -464,11 +464,11 @@ export default class WordflowTrackerPlugin extends Plugin {
 			if (currentActiveLeaf) {
 				addFileWithMode(
 					(currentActiveLeaf?.getState() as any)?.file,
-					currentActiveLeaf?.getState()?.mode
+					currentActiveLeaf?.getState()?.mode as string
 				);
 			}
-		} catch (e) {
-			console.error("Error in getAllOpenedFilesWithMode", e);
+		} catch (_e) {
+			console.error("Error in getAllOpenedFilesWithMode", _e);
 		}
 
 		return fileMap;
@@ -487,7 +487,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		this.snapshotManager.save();
 
 		removeStatusBarStyle();
-		this.trackerMap.forEach((tracker, filePath) => {
+		this.trackerMap.forEach((tracker, _filePath) => {
 			this.recordTracker(tracker);
 			tracker.deactivate();
 			tracker.destroyTimers();
@@ -716,7 +716,7 @@ export class WordflowSettingTab extends PluginSettingTab {
 				separator.textContent = '|';
 			}
 
-			tab.addEventListener('click', (evt: MouseEvent) => {
+			tab.addEventListener('click', (_evt: MouseEvent) => {
 				this.switchTab(tabName);
 			});
 		});

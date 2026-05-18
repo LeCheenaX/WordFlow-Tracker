@@ -128,7 +128,7 @@ export function isTableCellChange(prevCh: string, subseqCh: string): boolean {
 export function isTableStructuralChange(oldText: string, newText: string): boolean {
     const isStructural = (s: string) => {
         const t = s.trim();
-        return t.includes('|') && t.includes('-') && /^[\|\-\:\s]+$/.test(t);
+        return t.includes('|') && t.includes('-') && /^[|\-:\s]+$/.test(t);
     };
     return isStructural(oldText) && isStructural(newText);
 }
@@ -143,7 +143,7 @@ export function isTableStructuralChange(oldText: string, newText: string): boole
  */
 export function isTablePaddingChange(oldText: string, newText: string, subseqCh: string): boolean {
     if (subseqCh !== '|') return false;
-    const isPadding = (s: string) => /^[\|\s]*$/.test(s);
+    const isPadding = (s: string) => /^[|\s]*$/.test(s);
     return isPadding(oldText) && isPadding(newText);
 }
 
@@ -186,7 +186,7 @@ function extractTableCellText(text: string): string {
             const t = line.trim();
             if (t === '') return false;
             // Drop separator rows (complete or truncated)
-            if (t.includes('|') && t.includes('-') && /^[\|\-\:\s]+$/.test(t)) return false;
+            if (t.includes('|') && t.includes('-') && /^[|\-:\s]+$/.test(t)) return false;
             return true;
         })
         .map(line =>

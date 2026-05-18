@@ -1,5 +1,5 @@
 import WordflowTrackerPlugin from './main';
-import { Notice, TFile, requestUrl } from 'obsidian';
+import { TFile, requestUrl } from 'obsidian';
 import { computeDiffForLLM } from './Utils/SimpleDiff';
 
 const DEBUG = false;
@@ -15,8 +15,8 @@ export interface DiffQueueItem {
 export class AIDiffManager {
     private requestQueue: DiffQueueItem[] = [];
     private activeRequests: Map<string, AbortController> = new Map();
-    private isProcessing: boolean = false;
-    private destroyed: boolean = false;
+    private isProcessing = false;
+    private destroyed = false;
 
     constructor(private plugin: WordflowTrackerPlugin) {}
 
@@ -30,7 +30,7 @@ export class AIDiffManager {
         this.requestQueue.push(item);
 
         if (!this.isProcessing) {
-            this.processQueue();
+            void this.processQueue();
         }
     }
 
@@ -55,8 +55,7 @@ export class AIDiffManager {
             try {
                 await this.processSingleItem(item, controller.signal);
             } catch (e: any) {
-                if (e.name === 'AbortError') {
-                } else {
+                if (e.name !== 'AbortError') {
                     console.error(`AIDiffManager: Error processing diff for ${item.filePath}`, e);
                     await this.replaceDiffMarker(item, '\u26A0\uFE0F', true);
                 }
@@ -109,7 +108,7 @@ export class AIDiffManager {
     }
 
     private async callLLM(diff: string, signal: AbortSignal): Promise<string> {
-        const { aiBaseURL, aiApiKey, aiModel, aiPrompt, aiProvider } = this.plugin.settings;
+        const { aiBaseURL, aiApiKey, aiModel, aiPrompt } = this.plugin.settings;
 
         if (!aiBaseURL || !aiApiKey || !aiModel) {
             throw new Error('AI configuration incomplete');
@@ -175,7 +174,7 @@ export class AIDiffManager {
         }
     }
 
-    private async replaceDiffMarker(item: DiffQueueItem, replacement: string, keepOldText: boolean = false): Promise<void> {
+    private async replaceDiffMarker(item: DiffQueueItem, replacement: string, keepOldText = false): Promise<void> {
         try {
             const recordNote = this.plugin.app.vault.getAbstractFileByPath(item.recordNotePath);
             if (!recordNote || !(recordNote instanceof TFile)) {

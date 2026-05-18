@@ -45,7 +45,7 @@ export function throttleLeadingEdge<T extends (...args: any[]) => any>(
         if (now - lastCallTime >= wait) {
             // Clear any existing cleanup timer
             if (timeoutId !== null) {
-                clearTimeout(timeoutId);
+                activeWindow.clearTimeout(timeoutId);
                 timeoutId = null;
             }
 
@@ -60,12 +60,12 @@ export function throttleLeadingEdge<T extends (...args: any[]) => any>(
                 pendingPromise = result;
                 
                 // Clear pendingPromise when done
-                result.finally(() => {
+                void result.finally(() => {
                     pendingPromise = null;
                 });
 
                 // Set a timer to allow new calls after wait period
-                timeoutId = window.setTimeout(() => {
+                timeoutId = activeWindow.setTimeout(() => {
                     timeoutId = null;
                 }, wait);
 
@@ -73,7 +73,7 @@ export function throttleLeadingEdge<T extends (...args: any[]) => any>(
             }
 
             // For sync functions, set timer and return result
-            timeoutId = window.setTimeout(() => {
+            timeoutId = activeWindow.setTimeout(() => {
                 timeoutId = null;
             }, wait);
 
