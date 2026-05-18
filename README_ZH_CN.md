@@ -3,7 +3,7 @@
 
 [中文文档](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/README_ZH_CN.md) | [English](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file)
 
-![image](https://github.com/user-attachments/assets/7a39fcb6-d660-4fd2-a658-b1a1076ddcf3)
+<img width="1200" height="900" alt="wordflow-banner" src="https://github.com/user-attachments/assets/8b53535d-b299-4263-865c-57500bfd0386" />
 
 ## 介绍
 WordFlow Tracker 是一个轻量级插件，可以跟踪每个笔记的专注时间和编辑统计数据，并自动记录到你的日记或周期性笔记中。
@@ -14,15 +14,9 @@ WordFlow Tracker 是一个轻量级插件，可以跟踪每个笔记的专注时
 ### 核心功能
 - 跟踪每个笔记的专注时间、编辑次数和编辑字数。
 - 通过多种视图显示统计数据比例：
-    - 文件列表视图：
-
-      <img width="410" height="240" alt="image" src="https://github.com/user-attachments/assets/afd8a8c7-45bb-43ab-b84a-96f3de4d08e0" />
+    - 文件列表视图。
     - 标签列表视图：*支持可折叠分组和双层进度条*
-
-      <img width="345" height="240" alt="image" src="https://github.com/user-attachments/assets/8ddd63b3-ab07-48fa-ac86-eb9407add280" />
     - 热力图视图：*支持自定义颜色渐变和笔记导航*
-
-	  <img width="349" height="319" alt="image" src="https://github.com/user-attachments/assets/90ed17df-e5c1-4578-b186-b46baaef1067" />
 - 支持通过字段别名自定义状态栏显示内容。
   
   ![image](https://github.com/user-attachments/assets/51ce15a6-a935-46c2-9676-5525bd6b092f)
@@ -30,16 +24,16 @@ WordFlow Tracker 是一个轻量级插件，可以跟踪每个笔记的专注时
   ![image](https://github.com/user-attachments/assets/8422a96d-0ab5-417a-a474-7a838825de1e)
 - 在笔记关闭时自动记录修改的数据。或者，使用命令或按钮记录所有笔记。
 - AI 驱动的更改追踪：通过 LLM 集成自动生成笔记修改的可读摘要。在记录语法中使用 `${diff}` 变量即可让 AI 总结你的更改——支持自定义提示词、多语言。
+- 以比例条样式显示更改，展示原始内容(黄色)与修改内容(红色：删除的字数，绿色：添加的字数)的比例。
 	
-  <img width="940" height="666" alt="image" src="https://github.com/user-attachments/assets/fc2e58f8-0a91-4faa-8d62-ab2b23cb72e3" />
-  
+  <img width="1108" height="544" alt="wordflow-table" src="https://github.com/user-attachments/assets/9efe00e4-77b5-4977-87c4-2809b3b245a5" />
 - 在侧栏组件中展示更改。
   
   ![Pasted image 20250706223743](https://github.com/user-attachments/assets/6edc1be0-f262-4054-8803-1b1b37caeec7)
-- 以比例条样式显示更改，展示原始内容(黄色)与修改内容(红色：删除的字数，绿色：添加的字数)的比例。
-
-  ![image](https://github.com/user-attachments/assets/6c977b5f-0aba-4481-847b-f0fda6c5cd98)
-
+- 支持自定义的状态栏追踪：
+  
+  ![image](https://github.com/user-attachments/assets/51ce15a6-a935-46c2-9676-5525bd6b092f)
+  ![image](https://github.com/user-attachments/assets/8422a96d-0ab5-417a-a474-7a838825de1e)
 - 将编辑统计数据（例如你今天编辑的总字数）记录到日记的 YAML（Frontmatter）中。其他插件可以使用这些元数据生成分析。
 - 自定义要记录的数据，使用 ${dataName} 语法，详见[支持的字符串插值](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/docs/%E8%AE%BE%E7%BD%AE%E6%96%87%E6%A1%A3.md#%E6%94%AF%E6%8C%81%E7%9A%84%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%8F%92%E5%80%BC)。
 - 自定义数据记录的方式，例如将表格或列表插入到笔记的指定位置。应用更改前可预览记录语法。
@@ -69,6 +63,7 @@ WordFlow Tracker 是一个轻量级插件，可以跟踪每个笔记的专注时
 
 注意：笔记记录后，跟踪器将重置为 0。
 
+<img width="471" height="416" alt="wordflow-switch" src="https://github.com/user-attachments/assets/cbb03688-f97c-49ad-9121-b9b638d3eb02" />
 ### 高级自定义指南
 #### 在记录之前将模板应用到新创建的笔记
 确保你的模板将应用到同一个[周期笔记文件夹](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/README_ZH_CN.md#%E5%9F%BA%E7%A1%80%E8%AE%BE%E7%BD%AE)下的笔记。
