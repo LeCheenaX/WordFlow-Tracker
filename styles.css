@@ -616,12 +616,13 @@
 
 .wordflow-widget-title-container .recorder-dropdown-container select.dropdown:hover {
     cursor: pointer;
-    background-color: hsla(var(--interactive-hover),0.2);
+    filter: brightness(2.5);
 }
 
 .wordflow-widget-title-container .recorder-dropdown-container .wordflow-dynamic-dropdown-button:hover {
     cursor: pointer;
-    background-color: hsla(var(--interactive-hover),0.2);
+    filter: brightness(2.5);
+    box-shadow: none;
 }
 
 /* View switcher styles */
@@ -694,8 +695,7 @@
 
 .wordflow-widget-control-container *> select.dropdown:hover {
     cursor: pointer;
-    background-color: hsla(var(--interactive-hover),0.2);
-    color: var(--text-accent-hover);
+    filter: brightness(2.5);
 }
 
 .wordflow-widget-control-container .wordflow-widget-control-leftgroup-container {
@@ -1494,6 +1494,8 @@
     background: none;
     border: none;
     outline: none;
+    box-shadow: none;
+    filter: brightness(2.5);
 }
 
 .wordflow-dynamic-dropdown-container .wordflow-dynamic-dropdown-button.is-disabled {
