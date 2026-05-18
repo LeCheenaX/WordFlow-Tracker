@@ -49,9 +49,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		this.registerView(
 			VIEW_TYPE_WORDFLOW_WIDGET,
 			(leaf) => {
-				const view = new WordflowWidgetView(leaf, this);
-				this.Widget = view;
-				return view;
+				return new WordflowWidgetView(leaf, this);
 			}
 		);
 
@@ -484,11 +482,11 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		// Clean up AI Diff managers
 		this.aiDiffManager.destroy();
-		this.snapshotManager.save();
+		void this.snapshotManager.save();
 
 		removeStatusBarStyle();
 		this.trackerMap.forEach((tracker, _filePath) => {
-			this.recordTracker(tracker);
+			void this.recordTracker(tracker);
 			tracker.deactivate();
 			tracker.destroyTimers();
 		})

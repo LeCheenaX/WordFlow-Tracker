@@ -363,9 +363,9 @@ export class WordflowWidgetView extends ItemView {
                     
                     const widthPercentage = (currentTotalValue / (currentNoteValue + this.totalFieldValue)) * 100;
                     //console.log('new: ', currentNoteValue, '\nExisting: ', existingFieldValue, '\nTotal: ', this.totalFieldValue)
-                    barContainer.offsetWidth; // may be deleted
-                    existingBar.offsetWidth;
-                    currentBar.offsetWidth;
+                    void barContainer.offsetWidth; // may be deleted
+                    void existingBar.offsetWidth;
+                    void currentBar.offsetWidth;
                     
 
                     const existingPercentage = (existingFieldValue / currentTotalValue) * 100;

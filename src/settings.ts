@@ -1284,12 +1284,13 @@ export class RecordersTab extends WordflowSubSettingsTab {
 		} else {
 			// For table and bulletList, use MarkdownRenderer
 			// Use renderMarkdown (async) instead of render to properly render tables
+			const renderComponent = new Component();
 			MarkdownRenderer.render(
 				this.plugin.app,
 				previewText,
 				previewContent,
 				'',
-				new Component()
+				renderComponent
 			);
 		}
 	}

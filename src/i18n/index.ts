@@ -93,45 +93,42 @@ export class I18nManager {
         params?: Record<string, any>,
         customBuilder?: (fragment: DocumentFragment) => void
     ): DocumentFragment {
-        const fragment = document.createDocumentFragment();
-        
         if (customBuilder) {
-            customBuilder(fragment);
-            return fragment;
+            return createFragment(f => customBuilder(f));
         }
 
         const content = this.getMultiLineContent(key);
         
-        if (typeof content === 'string') {
-            // Simple string - handle as single line with parameter interpolation
-            const text = this.formatWithParams(content, params);
-            fragment.appendChild(document.createTextNode(text));
-        } else if (this.isArrayFormat(content)) {
-            // Array format - join with <br> elements
-            content.forEach((segment, index) => {
-                if (index > 0) {
-                    fragment.appendChild(document.createElement('br'));
-                }
-                const text = this.formatWithParams(segment, params);
-                fragment.appendChild(document.createTextNode(text));
-            });
-        } else if (this.isObjectFormat(content)) {
-            // Object format - handle segments with inline link placeholders
-            content.segments.forEach((segment, index) => {
-                if (index > 0) {
-                    fragment.appendChild(document.createElement('br'));
-                }
-                
-                // Process segment text and replace link placeholders
-                this.processSegmentWithLinks(segment, content, params, fragment);
-            });
-        } else {
-            // Fallback - treat as key not found
-            console.warn(`[i18n] Invalid multi-line content format for key: ${key}`);
-            fragment.appendChild(document.createTextNode(key));
-        }
-        
-        return fragment;
+        return createFragment(fragment => {
+            if (typeof content === 'string') {
+                // Simple string - handle as single line with parameter interpolation
+                const text = this.formatWithParams(content, params);
+                fragment.createSpan({ text });
+            } else if (this.isArrayFormat(content)) {
+                // Array format - join with <br> elements
+                content.forEach((segment, index) => {
+                    if (index > 0) {
+                        fragment.createEl('br');
+                    }
+                    const text = this.formatWithParams(segment, params);
+                    fragment.createSpan({ text });
+                });
+            } else if (this.isObjectFormat(content)) {
+                // Object format - handle segments with inline link placeholders
+                content.segments.forEach((segment, index) => {
+                    if (index > 0) {
+                        fragment.createEl('br');
+                    }
+                    
+                    // Process segment text and replace link placeholders
+                    this.processSegmentWithLinks(segment, content, params, fragment);
+                });
+            } else {
+                // Fallback - treat as key not found
+                console.warn(`[i18n] Invalid multi-line content format for key: ${key}`);
+                fragment.createSpan({ text: key });
+            }
+        });
     }
 
     /**
@@ -216,7 +213,7 @@ export class I18nManager {
         
         if (!content.links || content.links.length === 0) {
             // No links, just add text
-            fragment.appendChild(document.createTextNode(text));
+            fragment.createSpan({ text });
             return;
         }
         
@@ -233,14 +230,11 @@ export class I18nManager {
                 // Add text before the link
                 if (match.index > lastIndex) {
                     const beforeText = text.substring(lastIndex, match.index);
-                    fragment.appendChild(document.createTextNode(beforeText));
+                    fragment.createSpan({ text: beforeText });
                 }
                 
                 // Add the link element
-                const linkElement = document.createElement('a');
-                linkElement.href = linkData.href;
-                linkElement.textContent = linkData.text;
-                fragment.appendChild(linkElement);
+                fragment.createEl('a', { href: linkData.href, text: linkData.text });
                 
                 lastIndex = match.index + match[0].length;
             }
@@ -249,7 +243,7 @@ export class I18nManager {
         // Add remaining text after the last link
         if (lastIndex < text.length) {
             const remainingText = text.substring(lastIndex);
-            fragment.appendChild(document.createTextNode(remainingText));
+            fragment.createSpan({ text: remainingText });
         }
     }
 
