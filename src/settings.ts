@@ -1768,29 +1768,9 @@ export class WidgetTab extends WordflowSubSettingsTab {
         let currentSuggestions: string[] = [];
         
         // 获取所有可用标签
-        const getAllTags = (): string[] => {
-            const allTags = new Set<string>();
-            const metadataCache = this.app.metadataCache;
-            const allFiles = this.app.vault.getMarkdownFiles();
-            
-            allFiles.forEach(file => {
-                const cache = metadataCache.getFileCache(file);
-                if (cache?.tags) {
-                    cache.tags.forEach(tagRef => {
-                        allTags.add(tagRef.tag.replace('#', ''));
-                    });
-                }
-                if (cache?.frontmatter?.tags) {
-                    const frontmatterTags = cache.frontmatter.tags;
-                    if (Array.isArray(frontmatterTags)) {
-                        frontmatterTags.forEach(tag => allTags.add(tag.replace('#', '')));
-                    } else if (typeof frontmatterTags === 'string') {
-                        allTags.add(frontmatterTags.replace('#', ''));
-                    }
-                }
-            });
-            
-            return Array.from(allTags);
+        const getAllTagsFn = (): string[] => {
+            const tagsObj = (this.app.metadataCache as any).getTags() as Record<string, number>;
+            return Object.keys(tagsObj).map(tag => tag.replace('#', ''));
         };
         
         // 获取已使用的标签
@@ -1810,7 +1790,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 return;
             }
             
-            const allTags = getAllTags();
+            const allTags = getAllTagsFn();
             const usedTags = getUsedTags();
             const currentTags = new Set(tagColor.tags || []);
             

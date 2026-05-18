@@ -242,9 +242,9 @@
 
 /* 修复移动端 tag colors 设置中 color picker 被拉伸的问题 */
 .is-mobile .wordflow-widget-tag-colors-container .setting-item-control input[type="color"] {
-    flex-shrink: 0 !important;
-    width: auto !important;
-    min-width: auto !important;
+    flex-shrink: 0;
+    width: auto;
+    min-width: auto;
 }
 
 /* ======================== */
@@ -267,10 +267,6 @@
 }
 
 /* Tag Colors 设置 - 让文本框占用最大可用宽度 */
-.wordflow-widget-mappings-container .setting-item .setting-item-info {
-    display: none; /* 隐藏名称和描述部分 */
-}
-
 .wordflow-widget-tag-colors-container .setting-item {
     width: 100%;
 }
@@ -291,13 +287,13 @@
 }
 
 .wordflow-widget-tag-colors-container .setting-item .setting-item-control input[type="color"] {
-    width: 27px !important;
+    width: 27px;
     border-radius: 50%;
 }
 
 .wordflow-widget-tag-colors-container .setting-item-control button {
     flex-shrink: 0;        /* 防止被压缩 */
-    max-width: 42px !important;     /* 最大宽度限制 */
+    max-width: 42px;     /* 最大宽度限制 */
     padding: 4px 12px;      /* 设置合理的内边距 */
 }
 
@@ -369,17 +365,17 @@
 }
 
 .wordflow-widget-tag-colors-container .tag-inline-input {
-    border: none !important;
-    background: transparent !important;
-    outline: none !important;
+    border: none;
+    background: transparent;
+    outline: none;
     flex: 1;
     min-width: 60px;
     padding: 2px 0;
     color: var(--text-normal);
     font-size: 14px;
-    box-shadow: none !important;
-    -webkit-appearance: none !important;
-    appearance: none !important;
+    box-shadow: none;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .tag-inline-input {
@@ -629,27 +625,27 @@
 }
 
 .wordflow-widget-title-container .recorder-dropdown-container .wordflow-dynamic-dropdown-button {
-    background-image: none !important;
-    background-blend-mode: normal !important;
-    background-color: unset !important;
-    background: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    padding-left: 0px !important;
-    padding-right: 4px !important;
-    margin: 0 !important;
-    font-size: var(--h2-size) !important;
-    font-weight: var(--h2-weight) !important;
-    line-height: var(--h2-line-height) !important;
-    color: var(--h2-color) !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    text-align: left !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-    display: block !important;
+    background-image: none;
+    background-blend-mode: normal;
+    background-color: unset;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    padding-left: 0px;
+    padding-right: 4px;
+    margin: 0;
+    font-size: var(--h2-size);
+    font-weight: var(--h2-weight);
+    line-height: var(--h2-line-height);
+    color: var(--h2-color);
+    width: 100%;
+    max-width: 100%;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
 }
 
 .wordflow-widget-title-container .recorder-dropdown-container select.dropdown:hover {
@@ -767,8 +763,8 @@
     transition: opacity 0.2s ease, color 0.2s ease; /* 平滑过渡 */
     pointer-events: none; /* 隐藏时不响应鼠标事件 */
     z-index: 10; /* 确保在文字上方 */
-    background: var(--background-secondary) !important;
-    border-radius: 0% !important;
+    background: var(--background-secondary);
+    border-radius: 0%;
     backdrop-filter: blur(16px);
 }
 
@@ -1509,43 +1505,43 @@
     display: inline-block;
 }
 
-.wordflow-dynamic-dropdown-button {
+.wordflow-dynamic-dropdown-container .wordflow-dynamic-dropdown-button {
     display: inline;
     padding: 0;
     background: none;
-    background-color: transparent !important;
+    background-color: transparent;
     border: none;
-    box-shadow: none !important;
-    color: var(--text-normal) !important;
-    font-size: inherit !important;
+    box-shadow: none;
+    color: var(--text-normal);
+    font-size: inherit;
     cursor: pointer;
     white-space: nowrap;
 }
 
-.wordflow-dynamic-dropdown-button::after {
+.wordflow-dynamic-dropdown-container .wordflow-dynamic-dropdown-button::after {
     display: none;
 }
 
-.wordflow-dynamic-dropdown-button:hover:not(.is-disabled),
-.wordflow-dynamic-dropdown-button:focus,
-.wordflow-dynamic-dropdown-button:active {
+.wordflow-dynamic-dropdown-container .wordflow-dynamic-dropdown-button:hover:not(.is-disabled),
+.wordflow-dynamic-dropdown-container .wordflow-dynamic-dropdown-button:focus,
+.wordflow-dynamic-dropdown-container .wordflow-dynamic-dropdown-button:active {
     background: none;
     border: none;
     outline: none;
 }
 
-.wordflow-dynamic-dropdown-button.is-disabled {
+.wordflow-dynamic-dropdown-container .wordflow-dynamic-dropdown-button.is-disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
 .menu.wordflow-dynamic-dropdown-menu-right-aligned .menu-item {
-    flex-direction: row-reverse !important;
+    flex-direction: row-reverse;
 }
 
 .menu.wordflow-dynamic-dropdown-menu-right-aligned .menu-item-title {
-    text-align: right !important;
-    flex: 1 !important;
+    text-align: right;
+    flex: 1;
 }
 
 
