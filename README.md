@@ -3,7 +3,7 @@
 
 [中文文档](https://github.com/LeCheenaX/WordFlow-Tracker/blob/main/README_ZH_CN.md) | [English](https://github.com/LeCheenaX/WordFlow-Tracker/tree/main?tab=readme-ov-file)
 
-![image](https://github.com/user-attachments/assets/7a39fcb6-d660-4fd2-a658-b1a1076ddcf3)
+<img width="1200" height="900" alt="wordflow-banner" src="https://github.com/user-attachments/assets/8b53535d-b299-4263-865c-57500bfd0386" />
 
 ## Introduction
 WordFlow Tracker is a lite plugin that tracks your focused time and edit statistics on each note and automatically records to your daily note or periodic notes. 
@@ -16,14 +16,8 @@ WordFlow Tracker is a lite plugin that tracks your focused time and edit statist
 - Record the modified data automatically when the note is closed. Alternatively, use command or button to record all notes.
 - Display the portions of statistics with multiple views:
     - file list view:
-
-      <img width="425" height="530" alt="wordflow-filelist" src="https://github.com/user-attachments/assets/fa29a689-865b-405e-87eb-1b7302590c18" />
     - tag list view: *with collapsible groups and dual-layer progress bars*
-      
-      <img width="425" height="574" alt="wordflow-taglist" src="https://github.com/user-attachments/assets/6ff3a5e7-75fb-494b-a405-1b644754f76f" />
     - heatmap view: *with custom color gradients and note navigation*
-
-	  <img width="425" height="518" alt="wordflow-heatmap" src="https://github.com/user-attachments/assets/35ebc80c-1145-485f-98e0-c64eb5c270e1" />
 - AI-Powered Change Tracking: Automatically generates human-readable summaries of note modifications using LLM integration. Use the `${diff}` variable in your recording syntax to have AI summarize what changed — with configurable prompts, multi-language support.
 - Display changes in a bar style to show the portion of original contents(yellow) v.s. modified contents(red: deleted words, green: added words).
 
