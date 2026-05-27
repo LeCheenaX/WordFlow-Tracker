@@ -127,20 +127,37 @@ export class DataRecorder {
         //console.log('try to Load Tracker of closed note:',tracker)
         // Load tracker data
         await this.loadTrackerData(tracker);
-        //this.backUpData();
-        /*
-        this.newDataMap.forEach((NewData)=>{
-            console.log('newData:', NewData.filePath, ' words:', NewData.editedWords)
-        })
-        */
+
         if (this.newDataMap.size == 0) return;
-        let trackedTime: number | undefined = this.newDataMap.values().next().value?.trackerResetTime;
-        if (moment(trackedTime).dayOfYear() !== moment(Date.now()).dayOfYear()) {
-            new Notice(this.plugin.i18n.t('notices.crossDayRecordsDetected'), 3000);
+
+        // Separate stale trackers (from a previous period) and record them to their own date first
+        const today = moment();
+        const staleEntries: Map<string, NewData> = new Map();
+        for (const [filePath, newData] of this.newDataMap.entries()) {
+            if (!moment(newData.trackerResetTime).isSame(today, 'day')) {
+                staleEntries.set(filePath, newData);
+                this.newDataMap.delete(filePath);
+            }
         }
-        //console.log("trackerResetTime: ", moment(trackedTime).dayOfYear())
+
+        if (staleEntries.size > 0) {
+            new Notice(this.plugin.i18n.t('notices.crossDayRecordsDetected'), 3000);
+            // Temporarily swap newDataMap to write stale data to their correct past date
+            const currentMap = this.newDataMap;
+            this.newDataMap = staleEntries;
+            const staleTime = staleEntries.values().next().value?.trackerResetTime;
+            await this.writeToNote(staleTime);
+            this.newDataMap = currentMap;
+        }
+
+        if (this.newDataMap.size == 0) return;
+        const trackedTime: number | undefined = undefined; // today
+        await this.writeToNote(trackedTime);
+    }
+
+    private async writeToNote(targetDate?: number): Promise<void> {
         // Get the target note file
-        const recordNote = await this.getOrCreateRecordNote(trackedTime);
+        const recordNote = await this.getOrCreateRecordNote(targetDate);
         if (!recordNote) {
             new Notice(this.plugin.i18n.t('notices.recordNoteGetFailed'), 0);
             console.error("⚠️ Failed to get or create record note");
@@ -197,7 +214,7 @@ export class DataRecorder {
                 break;
             case 'yaml':
                 await this.updateNoteToYAML(recordNote, newContent);
-                break
+                break;
             default: // default insert to bottom if not found
                 await this.updateNoteToBottom(recordNote, newContent);
                 break;

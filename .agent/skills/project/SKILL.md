@@ -48,3 +48,6 @@ Example:
 
 - [e.g., npm run dev to start development server]
 - [e.g., npm run version-bump to release new version]
+
+## 额外注意
+- 你在修复bug时，要先弄清case节点上的每个调用链条或逻辑链条，确认责任归属，解决方案需要链条上的哪些模块配合，之后给出方案。如果方案很简单，直接执行。如果方案涉及逻辑变更，向用户确认后才能执行。
