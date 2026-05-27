@@ -163,7 +163,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		/* Registered Events */
 		// Update tracking files after rename events
-		this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
+		this.registerEvent(this.app.vault.on('rename', async (file, oldPath) => {
 			if (file instanceof TFile) {
 				// Update trackerMap - move tracker from old path to new path
 				const tracker = this.trackerMap.get(oldPath);
@@ -175,6 +175,14 @@ export default class WordflowTrackerPlugin extends Plugin {
 				}
 				// Update snapshot key for AI Diff
 				this.snapshotManager.handleRename(oldPath, file.path);
+
+				// Fix broken wiki-links in record notes after rename:
+			// Obsidian strips \[[path\\|alias]] → [[path|alias]], breaking markdown tables.
+			// Deferred with setTimeout to avoid racing with Obsidian's internal link updater.
+			await sleep(100);
+			void this.repairRecordNoteTableLinksAfterRename(oldPath, file.path);
+
+			await this.Widget?.updateData();
 			}
 		}));
 
@@ -229,12 +237,14 @@ export default class WordflowTrackerPlugin extends Plugin {
 		// Update widget colors when file metadata (tags) changes
 		// Cache the last-seen tags per file so we only re-render when tags actually change.
 		const lastTagsCache = new Map<string, string>();
-		this.registerEvent(this.app.metadataCache.on('changed', (file, _data, cache) => {
+		this.registerEvent(this.app.metadataCache.on('changed', async (file, _data, cache) => {
 			if (file instanceof TFile && this.Widget) {
 				const newTags = (getAllTags(cache) ?? []).slice().sort().join(',');
 				const oldTags = lastTagsCache.get(file.path) ?? null;
 				lastTagsCache.set(file.path, newTags);
 				if (newTags === oldTags) return; // tags unchanged — skip re-render
+				// waiting noteName to be updated by the rename events
+				await sleep(200);
 				// Update only tagged colors since metadata changed
 				this.Widget.updateTaggedColorMap();
 				this.Widget.updateData();
@@ -413,6 +423,79 @@ export default class WordflowTrackerPlugin extends Plugin {
 		}
 		//console.log(file.path, " is not ignored.")
 		return false;
+	}
+
+	/**
+	 * Repair wiki-links in record note tables after a file rename.
+	 * Restores the backslash ([[path|alias]] → [[path\|alias]]) and
+	 * updates the alias to the new basename.
+	 */
+	private async repairRecordNoteTableLinksAfterRename(oldPath: string, newFilePath: string): Promise<void> {
+		const renamedFile = this.app.vault.getFileByPath(newFilePath);
+		if (!renamedFile) return;
+
+		const newBasename = renamedFile.basename;
+		const oldBasename = oldPath.replace(/\.md$/i, '').split('/').pop() || '';
+
+		const recordNotePaths = new Set<string>();
+		for (const recorder of this.recorderManager.getRecorders()) {
+			const note = recorder.getRecordNote();
+			if (note) recordNotePaths.add(note.path);
+		}
+
+		const resolvedLinks = this.app.metadataCache.resolvedLinks;
+		for (const [sourcePath, destinations] of Object.entries(resolvedLinks)) {
+			if (!(newFilePath in destinations) && !(oldPath in destinations)) continue;
+			if (!recordNotePaths.has(sourcePath)) continue;
+
+			const noteFile = this.app.vault.getFileByPath(sourcePath);
+			if (!noteFile) continue;
+
+			await this.app.vault.process(noteFile, (data) => {
+				const lines = data.split('\n');
+				let repaired = false;
+
+				const fixedLines = lines.map(line => {
+					if (!line.trim().startsWith('|')) return line;
+
+					return line.replace(
+						/\[\[([^\]|\\]+?)(\\?)\|([^\]]+?)\]\]/g,
+						(fullMatch, linkPath, _backslash, _alias) => {
+							const resolved = this.app.metadataCache.getFirstLinkpathDest(linkPath, sourcePath);
+							if (resolved) {
+								if (resolved.path === newFilePath || resolved.path === oldPath) {
+									repaired = true;
+									return `[[${linkPath}\\|${newBasename}]]`;
+								}
+							} else {
+								// Text fallback for when old path no longer resolves
+								const linkPathNorm = linkPath.toLowerCase();
+								const oldBaseNorm = oldBasename.toLowerCase();
+								const textMatch =
+									linkPathNorm === oldBaseNorm ||
+									linkPathNorm === oldBaseNorm + '.md' ||
+									linkPathNorm.endsWith('/' + oldBaseNorm) ||
+									linkPathNorm.endsWith('/' + oldBaseNorm + '.md');
+								if (textMatch) {
+									repaired = true;
+									return `[[${newBasename}\\|${newBasename}]]`;
+								}
+							}
+							return fullMatch;
+						}
+					);
+				});
+
+				if (repaired) {
+					new Notice(
+						this.i18n.t('notices.brokenLinkFixed', { noteInfo: noteFile.basename }),
+						4000
+					);
+				}
+
+				return fixedLines.join('\n');
+			});
+		}
 	}
 
 	// get markdown files (with path) that are in edit mode from all leaves

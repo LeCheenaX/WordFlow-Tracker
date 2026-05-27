@@ -49,9 +49,21 @@ export class TableParser{
 
                     for (const row of dataRows) {
                         if (row.trim().startsWith('|') && row.trim().endsWith('|')) {
-                            const parsedData = this.parseTableRow(row, headerRow, headerVarMapping, recordNote.path);
-                            if (parsedData) {
-                                existingDataMap.set(parsedData.filePath, parsedData);
+                            try {
+                                const parsedData = this.parseTableRow(row, headerRow, headerVarMapping, recordNote.path);
+                                if (parsedData) {
+                                    existingDataMap.set(parsedData.filePath, parsedData);
+                                }
+                            } catch (_e) {
+                                // Broken wiki-link ([[path|alias]] missing backslash)?
+                                // Repair and re-parse.
+                                if (this.hasBrokenLinksInTableRows(this.noteContent)) {
+                                    this.noteContent = this.repairBrokenLinksInContent(this.noteContent, recordNote.path);
+                                    await this.plugin.app.vault.modify(recordNote, this.noteContent);
+                                    // Re-parse with repaired content
+                                    return this.extractData(recordNote);
+                                }
+                                throw _e;
                             }
                         }
                     }
@@ -272,6 +284,41 @@ export class TableParser{
             return mapping;
         }
 
+
+    /** Check if table rows contain [[path|alias]] without backslash before pipe. */
+    private hasBrokenLinksInTableRows(content: string): boolean {
+        const lines = content.split('\n');
+        const brokenLinkPattern = /\[\[([^\]|\\]+?)\s*\|\s*([^\]]+?)\]\]/g;
+        return lines.some(line => {
+            if (!line.trim().startsWith('|')) return false;
+            return brokenLinkPattern.test(line);
+        });
+    }
+
+    /** Restore backslash in table-row wiki-links: [[path|alias]] → [[path\|alias]]. */
+    private repairBrokenLinksInContent(content: string, recordNotePath: string): string {
+        const lines = content.split('\n');
+        let repaired = false;
+
+        const repairedLines = lines.map(line => {
+            if (!line.trim().startsWith('|')) return line;
+
+            const brokenLinkPattern = /\[\[([^\]|\\]+?)\s*\|\s*([^\]]+?)\]\]/g;
+            if (!brokenLinkPattern.test(line)) return line;
+
+            brokenLinkPattern.lastIndex = 0;
+            const fixed = line.replace(brokenLinkPattern, '[[$1\\|$2]]');
+            repaired = true;
+            return fixed;
+        });
+
+        if (!repaired) return content;
+
+        const repairedContent = repairedLines.join('\n');
+        console.error(`⚠️ Broken wiki-link(s) detected and auto-repaired in "${recordNotePath}". Likely caused by Obsidian auto-rename.`);
+        new Notice(this.plugin.i18n.t('notices.brokenLinkFixed', { noteInfo: recordNotePath }), 5000);
+        return repairedContent;
+    }
 
     private parseTableRow(row: string, headerRow: string, headerVarMapping: Record<string, string>, recordNotePath: string): ExistingData | null {
         const entry = new ExistingData();

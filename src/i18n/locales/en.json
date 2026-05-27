@@ -481,6 +481,8 @@
   },
   "notices": {
     "aliasMatchFailed": "❌Var template with note alias is not matched in {noteInfo}!",
+    "brokenLinkDetected": "⚠️ Broken wiki-link detected in {noteInfo} (missing backslash before '|'). Auto-fixed.",
+    "brokenLinkFixed": "✅ Auto-fixed broken wiki-links in {noteInfo} caused by Obsidian auto-rename.",
     "crossDayRecordsDetected": "Cross-day records detected. Try recording to correct note.",
     "editsRecorded": "Edits from {filePath} are recorded.",
     "fieldSwitchUnavailable": "No available time field to switch in current recorder. \nStay on current field.",

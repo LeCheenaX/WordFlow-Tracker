@@ -481,6 +481,8 @@
   },
   "notices": {
     "aliasMatchFailed": "❌{noteInfo}中带有笔记别名的变量模板不匹配！",
+    "brokenLinkDetected": "⚠️ 在 {noteInfo} 中检测到损坏的 wiki 链接（'|' 前缺少反斜杠），已自动修复。",
+    "brokenLinkFixed": "✅ 已自动修复 {noteInfo} 中因 Obsidian 自动重命名导致的损坏 wiki 链接。",
     "crossDayRecordsDetected": "检测到跨日记录。尝试记录到正确的笔记。",
     "editsRecorded": "来自 {filePath} 的编辑已记录。",
     "fieldSwitchUnavailable": "当前记录器中没有可切换的时间字段。\n保持当前字段。",
