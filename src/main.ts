@@ -309,6 +309,10 @@ export default class WordflowTrackerPlugin extends Plugin {
 			//if (DEBUG) console.log(`activeDocHandler: status bar cleared`);
 		}
 	}
+	public async updatePluginToNewDay(): Promise<void> {
+		await this.Widget?.updateAll();
+	}
+
 	private async recordTracker(tracker: DocTracker): Promise<void> {
 		if (tracker.meetThreshold()) {
 			await this.recorderManager.record(tracker);

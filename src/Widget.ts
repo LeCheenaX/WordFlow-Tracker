@@ -268,6 +268,7 @@ export class WordflowWidgetView extends ItemView {
                 this.onFocusMode = false;
                 this.updateButtons_Quit();
             }
+            await this.checkAndUpdateIfNewDay();
             await this.plugin.recorderManager.record();
             new Notice(this.plugin.i18n.t('notices.recordSuccess'), 3000);
             })();
@@ -290,6 +291,7 @@ export class WordflowWidgetView extends ItemView {
                 this.onFocusMode = false;
                 this.updateButtons_Pause();
             }
+            void (async ()=>{ this.checkAndUpdateIfNewDay()});
         });
     }
 
@@ -619,6 +621,14 @@ export class WordflowWidgetView extends ItemView {
             this.updatePeriodicNoteName();
             this.updateNavigationButtons();
             await this.updateData();
+        }
+    }
+
+    private async checkAndUpdateIfNewDay(): Promise<void> {
+        if (!this.selectedRecorder) return;
+        const todayFileName = moment().format(this.selectedRecorder.periodicNoteFormat);
+        if (this.selectedNoteName !== todayFileName) {
+            await this.plugin.updatePluginToNewDay();
         }
     }
 

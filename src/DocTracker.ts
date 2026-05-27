@@ -234,9 +234,8 @@ export class DocTracker {
         //if (DEBUG) console.log("lastTrackedDate: ", moment(this.trackerResetTime).format('YYYY-MM-DD'), "\ncurrentDate: ", moment(Date.now()).format('YYYY-MM-DD'));
 
         if (moment(this.trackerResetTime).dayOfYear() !== moment(Date.now()).dayOfYear()) {
-            await (async () => {
-                await this.plugin.recorderManager.record();
-            })();
+            await this.plugin.recorderManager.record();
+            await this.plugin.updatePluginToNewDay();
         }
         //if (DEBUG) console.log("DocTracker.trackChanges: tracking history changes of ", this.activeEditor?.file?.path);
 
