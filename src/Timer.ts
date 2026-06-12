@@ -173,12 +173,12 @@ export function formatTime(ms: number, useSecond?: boolean): string {
         const minutes = duration.minutes();
         const seconds = duration.seconds();
         
-        return (hours>0)? `${hours} h ${minutes} min ${seconds} s`: `${minutes} min ${seconds} s`;
+        return (hours>0)? `${hours}\u202Fh\u202F${minutes}\u202Fmin\u202F${seconds}\u202Fs`: `${minutes}\u202Fmin\u202F${seconds}\u202Fs`;
     }
 
     const hours = Math.floor(duration.asHours());
     const minutes = duration.minutes();
-    return (hours>0)? `${hours} h ${minutes} min`: `${minutes} min`;
+    return (hours>0)? `${hours}\u202Fh\u202F${minutes}\u202Fmin`: `${minutes}\u202Fmin`;
 }
 
 export function restoreTimeString(timeStr: string): number {
@@ -186,7 +186,7 @@ export function restoreTimeString(timeStr: string): number {
     const hoursMatch = timeStr.match(/(\d+)\s*h/);
     if (hoursMatch) hours = parseInt(hoursMatch[1], 10);
 
-    const minutesMatch = timeStr.match(/(\d+)\s*min/);
+    const minutesMatch = timeStr.match(/(\d+)\s*(?:min\b|m(?!in))/);
     if (minutesMatch) minutes = parseInt(minutesMatch[1], 10);
 
     return (hours*3600000 + minutes*60000);

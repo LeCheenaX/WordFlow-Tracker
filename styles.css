@@ -431,8 +431,10 @@
 .wordflow-widget-current-note-text-container {
     display: flex;
     align-items: baseline; /* Align text baselines */
+    justify-content: space-between; /* Push value to the right */
     margin-bottom: 0px; /* Space between text and progress bar */
     min-width: 0; /* Allow text container to shrink */
+    /*width: 100%;  Stretch to fill parent despite containment */
     
     container-type: inline-size;
     container-name: wordflow-widget-current-note-text-container;
@@ -441,7 +443,6 @@
 .wordflow-widget-current-note-label {
     font-weight: bold;
     color: var(--text-normal);
-    margin-right: 16px;
 
     overflow:hidden;
     text-overflow: ellipsis;
@@ -467,8 +468,8 @@
     white-space: nowrap;
 }
 
-/* 当容器宽度小于300px时 */
-@container wordflow-widget-current-note-text-container (max-width: 200px) {
+/* 当容器宽度小于240px时 */
+@container wordflow-widget-current-note-text-container (max-width: 225px) {
     .wordflow-widget-current-note-label,
     .wordflow-widget-current-note-faint-label,
     .wordflow-widget-current-note-value {
@@ -476,12 +477,29 @@
     }
 }
 
-/* 当容器宽度小于200px时 */
-@container wordflow-widget-current-note-text-container (max-width: 160px) {
+/* 当容器宽度小于190px时 */
+@container wordflow-widget-current-note-text-container (max-width: 200px) {
+    .wordflow-widget-current-note-label,
+    .wordflow-widget-current-note-faint-label,
+    .wordflow-widget-current-note-value {
+        font-size: 15px;
+    }
+}
+
+/* 当容器宽度小于165px时 */
+@container wordflow-widget-current-note-text-container (max-width: 175px) {
     .wordflow-widget-current-note-label,
     .wordflow-widget-current-note-faint-label,
     .wordflow-widget-current-note-value {
         font-size: 14px;
+    }
+}
+
+@container wordflow-widget-current-note-text-container (max-width: 150px) {
+    .wordflow-widget-current-note-label,
+    .wordflow-widget-current-note-faint-label,
+    .wordflow-widget-current-note-value {
+        font-size: 13px;
     }
 }
 
