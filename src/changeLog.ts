@@ -1,8 +1,16 @@
-export const currentPluginVersion = '2.2.5';
+export const currentPluginVersion = '2.2.6';
 
 export const changelog = {
 'en': 
 `
+### 2.2.6 updates
+🐛 **Bug Fixed:**
+- AI diff request was sent even when there were no edits to the note.
+- Timed-out or failed AI diff requests left a stale loading icon permanently in periodic notes.
+
+🎨 **UI Optimization:**
+- Improved font size adaptation to the width of the widget view.
+
 ### 2.2.5 updates
 ✨ **New Features:**
 - Auto update link alias to the latest file name after the note is renamed.
@@ -55,6 +63,14 @@ export const changelog = {
 `,
 'zh-CN': 
 `
+### 2.2.6 更新说明
+🐛 **问题修复：**
+- 修复即使笔记没有任何编辑时 AI diff 请求仍会发送的问题。
+- 修复超时或失败的 AI diff 请求会在周期笔记中留下永久残留加载图标的问题。
+
+🎨 **界面优化：**
+- 改进字体大小对组件视图宽度的自适应。
+
 ### 2.2.5 更新说明
 ✨ **新功能：**
 - 笔记重命名后自动更新链接别名为最新文件名。
