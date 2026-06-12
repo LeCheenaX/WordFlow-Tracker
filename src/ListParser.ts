@@ -166,7 +166,10 @@ export class BulletListParser{
                 if (groupData.editTime !== undefined) ListData.editTime = restoreTimeString(groupData.editTime);
                 if (groupData.readTime !== undefined) ListData.readTime = restoreTimeString(groupData.readTime);
                 if (groupData.readEditTime !== undefined) ListData.readEditTime = restoreTimeString(groupData.readEditTime);
-                if (groupData.diff !== undefined) ListData.diff = groupData.diff ?? '\u200B';
+                if (groupData.diff !== undefined) {
+                    const rawDiff = groupData.diff ?? '\u200B';
+                    ListData.diff = rawDiff.replace(/<!--\/?wf-diff:\w+-->/g, '').replace(/<svg\s+class="wf-diff-loading"[\s\S]*?<\/svg>/g, '').trim() || '\u200B';
+                }
 
                 existingDataMap.set(ListData.filePath, ListData);
  

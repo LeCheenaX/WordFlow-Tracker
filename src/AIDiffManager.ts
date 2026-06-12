@@ -219,6 +219,42 @@ export class AIDiffManager {
         return { html, id };
     }
 
+    /**
+     * Scan recent record notes and strip any stale wf-diff marker blocks left by
+     * interrupted AI requests (plugin unload, network failure, etc.).
+     * Called once on layout-ready so broken notes are repaired without
+     * requiring the user to trigger a new record.
+     */
+    public async cleanupStaleMarkers(): Promise<void> {
+        const staleBlockRegex = /<!--wf-diff:\w+-->[\s\S]*?<!--\/wf-diff:\w+-->/g;
+        const recorders = this.plugin.recorderManager.getRecorders();
+
+        for (const recorder of recorders) {
+            // Check recent notes (today + past 7 days) to avoid scanning everything
+            for (let daysAgo = 0; daysAgo <= 7; daysAgo++) {
+                const targetDate = Date.now() - daysAgo * 86400000;
+                const note = recorder.getRecordNote(targetDate);
+                if (!note) continue;
+
+                try {
+                    let hadStale = false;
+                    await this.plugin.app.vault.process(note, (data) => {
+                        if (!staleBlockRegex.test(data)) return data;
+                        hadStale = true;
+                        staleBlockRegex.lastIndex = 0; // reset after test()
+                        return data.replace(staleBlockRegex, '\u200B');
+                    });
+                    if (hadStale) {
+                        console.log(`AIDiffManager: Cleaned stale diff markers in ${note.path}`);
+                    }
+                } catch (e) {
+                    console.error(`AIDiffManager: Failed to clean stale markers in ${note.path}`, e);
+                }
+                staleBlockRegex.lastIndex = 0;
+            }
+        }
+    }
+
     public destroy(): void {
         this.destroyed = true;
         for (const [, controller] of this.activeRequests) {

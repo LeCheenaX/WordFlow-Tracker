@@ -189,6 +189,10 @@ export class DataRecorder {
             for (const data of mergedData) {
                 if (data.filePath === '|M|E|T|A|D|A|T|A|') continue;
                 if (!this.newDataMap.has(data.filePath)) continue;
+                
+                const newData = this.newDataMap.get(data.filePath)!;
+                if (!newData.editedTimes) continue; // Skip if no edits
+                
                 const { html: diffHtml, id: diffId } = AIDiffManager.buildDiffLoading(data.filePath);
                 const oldDiff = data.diff && data.diff !== '\u200B' ? data.diff.replace(/<!--wf-diff:\w+-->|<!--\/wf-diff:\w+-->/g, '') : '';
                 const endMarker = `<!--/wf-diff:${diffId}-->`;

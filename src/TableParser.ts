@@ -413,7 +413,9 @@ export class TableParser{
                     entry.comment = value??'\u200B'; // 1.4.3 fix: never set to empty, or will introduce sever issues that hard to fix without severe performance lost;
                     break;
                 case 'diff':
-                    entry.diff = value??'\u200B';
+                    entry.diff = value
+                        ? value.replace(/<!--\/?wf-diff:\w+-->/g, '').replace(/<svg\s+class="wf-diff-loading"[\s\S]*?<\/svg>/g, '').trim() || '\u200B'
+                        : '\u200B';
                     break;
                 case 'editTime':
                     entry.editTime = restoreTimeString(value);

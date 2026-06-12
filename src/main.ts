@@ -95,6 +95,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				await sleep(500); // add delay to allow view to check if there's existing view, when plugin is updated through Obsidian community.
 				this.createWidgetView(); // Use createWidgetView instead of activateView
 			}
+			void this.aiDiffManager.cleanupStaleMarkers();
 		});
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
