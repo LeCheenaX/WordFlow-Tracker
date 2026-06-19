@@ -6,6 +6,7 @@
 import WordflowTrackerPlugin from "src/main";
 import { UniqueColorGenerator } from "./UniqueColorGenerator";
 import { buildFixedHueSlPalette, getBisectedHue, MAX_SL_LEVELS_PER_HUE } from "./HslColorPalette";
+import { App, TFile } from "obsidian";
 
 export interface TagColorConfig {
     tags: string[]; // 支持多个标签共享同一颜色
@@ -295,7 +296,7 @@ export class TagColorManager {
     /**
      * Build a map of tag -> array of file paths for saturation calculation
      */
-    public buildFilesWithTagsMap(app: any, dataMap: Map<string, any>): Map<string, string[]> {
+    public buildFilesWithTagsMap(app: App, dataMap: Map<string, unknown>): Map<string, string[]> {
         const filesWithTags = new Map<string, string[]>();
         
         if (!dataMap) return filesWithTags;
@@ -329,7 +330,7 @@ export class TagColorManager {
     /**
      * Get tags from a file's frontmatter only (excluding inline tags)
      */
-    public getFileTags(app: any, file: any): string[] {
+    public getFileTags(app: App, file: TFile): string[] {
         if (!file) {
             console.warn('[Wordflow Tracker] getFileTags called with null file');
             return [];

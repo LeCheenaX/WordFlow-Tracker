@@ -54,8 +54,8 @@ export class AIDiffManager {
 
             try {
                 await this.processSingleItem(item, controller.signal);
-            } catch (e: any) {
-                if (e.name !== 'AbortError') {
+            } catch (e: unknown) {
+                if (!(typeof e === 'object' && e !== null && 'name' in e && (e as { name?: unknown }).name === 'AbortError')) {
                     console.error(`AIDiffManager: Error processing diff for ${item.filePath}`, e);
                     await this.replaceDiffMarker(item, '\u26A0\uFE0F', true);
                 }
@@ -166,8 +166,8 @@ export class AIDiffManager {
             }
 
             return content;
-        } catch (e: any) {
-            if (signal.aborted || e.name === 'AbortError') {
+        } catch (e: unknown) {
+            if (signal.aborted || (typeof e === 'object' && e !== null && 'name' in e && (e as { name?: unknown }).name === 'AbortError')) {
                 throw new DOMException('Aborted', 'AbortError');
             }
             throw e;

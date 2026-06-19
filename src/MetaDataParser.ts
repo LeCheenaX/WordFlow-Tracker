@@ -3,6 +3,11 @@ import { formatTime, restoreTimeString } from "./Timer";
 import { TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
 
+interface MetadataPattern {
+    start: string;
+    end: string;
+}
+
 export class MetaDataParser{
     //private recordType: string;
     private timeFormat: string;
@@ -12,7 +17,7 @@ export class MetaDataParser{
     //private noteContent: string | null;
 
     // special variables
-    private patterns: any[] = [];
+    private patterns: MetadataPattern[] = [];
 
     constructor(
         private DataRecorder: DataRecorder,
@@ -183,7 +188,7 @@ export class MetaDataParser{
 
         // Parse new content to get new properties
         const newLines = newContent.trim().split('\n');
-        const newProperties: Record<string, any> = {};
+        const newProperties: Record<string, string | number> = {};
         for (const line of newLines) {
             const colonIndex = line.indexOf(':');
             if (colonIndex > 0) {

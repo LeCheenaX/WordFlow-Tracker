@@ -1,5 +1,7 @@
 import WordflowTrackerPlugin from './main';
 import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, MarkdownRenderer, Component, setIcon, TFile, requestUrl } from 'obsidian';
+
+declare const activeDocument: Document;
 import { DataRecorder, MergedData } from './DataRecorder';
 import { moment, normalizePath } from 'obsidian';
 import { SupportedLocale, I18nManager, getI18n } from './i18n';
@@ -183,7 +185,7 @@ export abstract class WordflowSubSettingsTab {
     /**
      * Create a multi-line description using i18n
      */
-    protected createMultiLineDesc(key: string, params?: Record<string, any>): DocumentFragment {
+    protected createMultiLineDesc(key: string, params?: Record<string, string | number | boolean>): DocumentFragment {
         return this.i18n.buildFragment(key, params);
     }
 }
@@ -399,7 +401,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     .setIcon('trash')
                     .setWarning()
                     .onClick(() => {
-                        this.removeRecorder(this.activeRecorderIndex - 1);
+                        void this.removeRecorder(this.activeRecorderIndex - 1);
                     })
                 );
         }
@@ -427,7 +429,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 .setIcon('pencil')
                 .setTooltip(this.i18n.t('settings.recorders.actions.rename'))
                 .onClick(() => {
-                    this.renameRecorder(this.activeRecorderIndex -1);
+                    void this.renameRecorder(this.activeRecorderIndex -1);
                 })
             )
             .addButton(btn => btn
@@ -439,7 +441,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     new ConfirmationModal(
                         this.app,
                         this.i18n.t('settings.recorders.confirmations.addRecorder'),
-                        async () => {this.createNewRecorder();}
+                        async () => { void this.createNewRecorder(); }
                     ).open()
                 })
             );
@@ -577,7 +579,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         this.settingsContainer.empty();
         
         // Get the correct settings object based on the active index
-        let settings: any;
+        let settings: WordflowRecorderConfigs;
         let recorderInstance: DataRecorder;
         const recorders = this.plugin.recorderManager.getRecorders();
         
@@ -595,7 +597,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         this.createRecorderSettingsUI(settings, recorderInstance, index);
     }
     
-    private createRecorderSettingsUI(settings: any, recorderInstance: DataRecorder, index: number) {
+    private createRecorderSettingsUI(settings: WordflowRecorderConfigs, recorderInstance: DataRecorder, index: number) {
         const container = this.settingsContainer; // do not use containerEl, instead, use container to pass the new container element
 
         //container.classList.add('wordflow-setting-tab'); // for styles.css
@@ -880,7 +882,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     // Update preview when record type changes
                     const previewContainer = this.settingsContainer.querySelector('.wordflow-syntax-preview-container') as HTMLElement;
                     if (previewContainer) {
-                        this.updateSyntaxPreview(settings, previewContainer);
+                        void this.updateSyntaxPreview(settings, previewContainer);
                     }
                 })
             );
@@ -921,10 +923,10 @@ export class RecordersTab extends WordflowSubSettingsTab {
                         text.onChange(async (value) => {
                             currentSyntax = value;
                             // Update preview with temporary syntax
-                            this.updateSyntaxPreview(settings, previewContainer, currentSyntax);
+                            void this.updateSyntaxPreview(settings, previewContainer, currentSyntax);
                         });
                         // Save on blur with confirmation if changed
-                        text.inputEl.addEventListener('blur', async () => {
+                        text.inputEl.addEventListener('blur', () => { void (async () => {
                             await this.handleSyntaxBlur(settings, originalSyntax, currentSyntax, 'table', recorderInstance, previewContainer);
                             // Update originalSyntax and currentSyntax based on what was actually saved
                             if (settings.tableSyntax !== originalSyntax) {
@@ -935,17 +937,17 @@ export class RecordersTab extends WordflowSubSettingsTab {
                                 // User cancelled - reset currentSyntax to original
                                 currentSyntax = originalSyntax;
                             }
-                        });
+                        })(); });
                     }
                     if (settings.recordType == 'bulletList'){
                         text.setValue(settings.bulletListSyntax);
                         text.onChange((value) => {
                             currentSyntax = value;
                             // Update preview with temporary syntax
-                            this.updateSyntaxPreview(settings, previewContainer, currentSyntax);
+                            void this.updateSyntaxPreview(settings, previewContainer, currentSyntax);
                         });
                         // Save on blur with confirmation if changed
-                        text.inputEl.addEventListener('blur', async () => {
+                        text.inputEl.addEventListener('blur', () => { void (async () => {
                             await this.handleSyntaxBlur(settings, originalSyntax, currentSyntax, 'bulletList', recorderInstance, previewContainer);
                             // Update originalSyntax and currentSyntax based on what was actually saved
                             if (settings.bulletListSyntax !== originalSyntax) {
@@ -956,7 +958,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                                 // User cancelled - reset currentSyntax to original
                                 currentSyntax = originalSyntax;
                             }
-                        });
+                        })(); });
                     }
                     if (settings.recordType == 'metadata'){
                         text.setValue(settings.metadataSyntax);
@@ -965,10 +967,10 @@ export class RecordersTab extends WordflowSubSettingsTab {
                             // Store in temporary variable instead
                             currentSyntax = value;
                             // Update preview with temporary syntax (don't await for real-time updates)
-                            this.updateSyntaxPreview(settings, previewContainer, currentSyntax);
+                            void this.updateSyntaxPreview(settings, previewContainer, currentSyntax);
                         });
                         // Save on blur with confirmation if changed
-                        text.inputEl.addEventListener('blur', async () => {
+                        text.inputEl.addEventListener('blur', () => { void (async () => {
                             await this.handleSyntaxBlur(settings, originalSyntax, currentSyntax, 'metadata', recorderInstance, previewContainer);
                             // Update originalSyntax and currentSyntax based on what was actually saved
                             if (settings.metadataSyntax !== originalSyntax) {
@@ -979,7 +981,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                                 // User cancelled - reset currentSyntax to original
                                 currentSyntax = originalSyntax;
                             }
-                        });
+                        })(); });
                     }		
                 });
         
@@ -989,7 +991,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         container.insertBefore(syntaxSetting.settingEl, previewContainer);
         
         // Initial preview render
-        this.updateSyntaxPreview(settings, previewContainer);
+        void this.updateSyntaxPreview(settings, previewContainer);
 
         new Setting(container)
             .setName(this.i18n.t('settings.recorders.recordingContents.insertPlace.name'))
@@ -1117,7 +1119,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             );
     }
 
-	private async handleSyntaxBlur(settings: any, originalSyntax: string, currentSyntax: string, syntaxType: string, recorderInstance: DataRecorder, previewContainer: HTMLElement): Promise<void> {
+	private async handleSyntaxBlur(settings: WordflowRecorderConfigs, originalSyntax: string, currentSyntax: string, syntaxType: string, recorderInstance: DataRecorder, previewContainer: HTMLElement): Promise<void> {
 		// Check if syntax actually changed
 		if (originalSyntax === currentSyntax) {
 			return; // No change, nothing to do
@@ -1169,7 +1171,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 		modal.open();
 	}
 
-	private async updateSyntax(settings: any) {
+	private async updateSyntax(settings: WordflowRecorderConfigs) {
 		if (!this.SyntaxComponent) return;
 		switch (settings.recordType){
 			case 'table': this.SyntaxComponent.setValue(settings.tableSyntax); break;
@@ -1178,7 +1180,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 		}
 	}
 
-	private async updateSyntaxPreview(settings: any, previewContainer: HTMLElement, temporarySyntax?: string) {
+	private async updateSyntaxPreview(settings: WordflowRecorderConfigs, previewContainer: HTMLElement, temporarySyntax?: string) {
 		// Clear existing preview content
 		const previewContent = previewContainer.querySelector('.wordflow-syntax-preview-content') as HTMLElement;
 		if (!previewContent) return;
@@ -1203,7 +1205,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 		this.renderPreview(settings, previewText, previewContent);
 	}
 
-	private generateSamplePreview(settings: any, syntax: string): string {
+	private generateSamplePreview(settings: WordflowRecorderConfigs, syntax: string): string {
 		const sampleData = this.createSampleData(settings);
 		
 		// Replace placeholders with sample data
@@ -1222,7 +1224,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 		return previewText;
 	}
 
-	private createSampleData(settings: any): Record<string, string> {
+	private createSampleData(settings: WordflowRecorderConfigs): Record<string, string> {
 		return {
 			modifiedNote: 'Folder/Example Note.md',
 			noteTitle: 'Example Note',
@@ -1248,7 +1250,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 		};
 	}
 
-	private renderPreview(settings: any, previewText: string, previewContent: HTMLElement): void {
+	private renderPreview(settings: WordflowRecorderConfigs, previewText: string, previewContent: HTMLElement): void {
 		// For metadata type, render as Obsidian-style properties panel
 		if (settings.recordType === 'metadata') {
 			const propertiesContainer = previewContent.createDiv({ cls: 'metadata-properties-container' });
@@ -1288,7 +1290,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 			// For table and bulletList, use MarkdownRenderer
 			// Use renderMarkdown (async) instead of render to properly render tables
 			const renderComponent = new Component();
-			MarkdownRenderer.render(
+			void MarkdownRenderer.render(
 				this.plugin.app,
 				previewText,
 				previewContent,
@@ -1299,7 +1301,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 	}
 
 	
-	private async updateInsertPlace(settings: any): Promise<void>{
+	private async updateInsertPlace(settings: WordflowRecorderConfigs): Promise<void>{
 		if (!this.InsertPlaceComponent) return;
 		this.InsertPlaceComponent.selectEl.textContent = '';
 		if (settings.recordType == 'metadata'){
@@ -1317,27 +1319,27 @@ export class RecordersTab extends WordflowSubSettingsTab {
 	}
 
     private toggleTemplatePluginSettings(show: boolean) {
-        const templatePluginSettingsContainer = document.getElementById("wordflow-recorder-templatePlugin-settings");
+        const templatePluginSettingsContainer = activeDocument.getElementById("wordflow-recorder-templatePlugin-settings");
         if (templatePluginSettingsContainer)
             templatePluginSettingsContainer.style.display = show ? "block" : "none";
     }
 
 	private toggleCustomPositionSettings(show: boolean) {
-        const customSettingsContainer = document.getElementById("wordflow-recorder-custom-position-settings");
+        const customSettingsContainer = activeDocument.getElementById("wordflow-recorder-custom-position-settings");
         if (customSettingsContainer) {
             customSettingsContainer.style.display = show ? "block" : "none";
         }
     }
 
 	private toggleSortByVisibility(show: boolean) {
-        const sortBySettingsContainer = document.getElementById("wordflow-recorder-sortby-settings");
+        const sortBySettingsContainer = activeDocument.getElementById("wordflow-recorder-sortby-settings");
         if (sortBySettingsContainer) {
             sortBySettingsContainer.style.display = show ? "block" : "none";
         }
     }
 
 	private toggleMTimeVisibility(show: boolean) {
-        const mTimeFormatSettingsContainer = document.getElementById("wordflow-recorder-mtime-format-settings");
+        const mTimeFormatSettingsContainer = activeDocument.getElementById("wordflow-recorder-mtime-format-settings");
         if (mTimeFormatSettingsContainer) {
             mTimeFormatSettingsContainer.style.display = show ? "block" : "none";
         }
@@ -1435,7 +1437,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 .onChange( async (value) => {
                     this.plugin.settings.defaultViewOnOpen = value;
                     await this.plugin.saveSettings();
-                    this.plugin.Widget?.updateData();
+                    void this.plugin.Widget?.updateData();
             }));
 
         let switchToFieldOnFocusPreviewText: HTMLSpanElement
@@ -1547,7 +1549,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 colorPicker.onChange(async (value) => {
                     this.plugin.settings.heatmapBaseColor = value;
                     await this.plugin.saveSettings();
-                    this.plugin.Widget?.updateData();
+                    void this.plugin.Widget?.updateData();
                 });
             });
 
@@ -1561,7 +1563,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 slider.onChange(async (value) => {
                     this.plugin.settings.heatmapGradientLevels = value;
                     await this.plugin.saveSettings();
-                    this.plugin.Widget?.updateData();
+                    void this.plugin.Widget?.updateData();
                 });
             });
 
@@ -1575,7 +1577,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 slider.onChange(async (value) => {
                     this.plugin.settings.heatmapWeeksToShow = value;
                     await this.plugin.saveSettings();
-                    this.plugin.Widget?.updateData();
+                    void this.plugin.Widget?.updateData();
                 });
             });
 
@@ -1589,7 +1591,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 dropdown.onChange(async (value) => {
                     this.plugin.settings.heatmapStartOfWeek = parseInt(value);
                     await this.plugin.saveSettings();
-                    this.plugin.Widget?.updateData();
+                    void this.plugin.Widget?.updateData();
                 });
             });
     }
@@ -1620,7 +1622,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     text.onChange(async (value) => {
                         mappings[index].key = value;
                         await this.plugin.saveSettings();
-                        this.plugin.Widget?.updateUIandData();
+                        void this.plugin.Widget?.updateUIandData();
                     });
                 })
                 .addButton(button => {
@@ -1630,7 +1632,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                         mappings.splice(index, 1);
                         await this.plugin.saveSettings();
                         // 刷新侧栏组件以更新字段显示名称
-                        this.plugin.Widget?.updateUIandData();
+                        void this.plugin.Widget?.updateUIandData();
                         this.display(); // Re-render the settings tab to reflect changes
                     });
                 });
@@ -1645,7 +1647,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     mappings.push({ key: '', value: '' }); // Default new mapping
                     await this.plugin.saveSettings();
                     // 刷新侧栏组件以更新字段显示名称
-                    this.plugin.Widget?.updateUIandData();
+                    void this.plugin.Widget?.updateUIandData();
                     this.display(); // Re-render the settings tab to reflect changes
                 });
             });
@@ -1675,7 +1677,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
             
             // 创建建议列表容器
             const suggestionsContainer = tagInputContainer.createDiv('tag-suggestions');
-            suggestionsContainer.style.display = 'none';
+            suggestionsContainer.setCssProps({ display: 'none' });
             
             // 设置输入框事件
             this.setupInlineTagInput(input, suggestionsContainer, tagColor, index, tagColors, inputWrapper);
@@ -1687,7 +1689,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     .onChange(async (value) => {
                         tagColors[index].groupName = value.trim() || undefined;
                         await this.plugin.saveSettings();
-                        this.plugin.Widget?.updateTagColors();
+                        void this.plugin.Widget?.updateTagColors();
                     });
             });
             
@@ -1699,7 +1701,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     // 保存完整的颜色值
                     tagColors[index].color = value;
                     await this.plugin.saveSettings();
-                    this.plugin.Widget?.updateTagColors();
+                    void this.plugin.Widget?.updateTagColors();
                 });
             });
             
@@ -1710,7 +1712,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 button.onClick(async () => {
                     tagColors.splice(index, 1);
                     await this.plugin.saveSettings();
-                    this.plugin.Widget?.updateTagColors();
+                    void this.plugin.Widget?.updateTagColors();
                     this.display();
                 });
             });
@@ -1729,7 +1731,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                     button.onClick(async () => {
                         tagColors.push({ tags: [], color: '#3366cc', groupName: undefined });
                         await this.plugin.saveSettings();
-                        this.plugin.Widget?.updateTagColors();
+                        void this.plugin.Widget?.updateTagColors();
                         this.display();
                     });
                 }
@@ -1761,7 +1763,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
                 e.stopPropagation();
                 tagColors[configIndex].tags.splice(tagIndex, 1);
                 await this.plugin.saveSettings();
-                this.plugin.Widget?.updateTagColors();
+                void this.plugin.Widget?.updateTagColors();
                 this.renderInlineTags(container, tagColors[configIndex].tags, configIndex, tagColors);
                 // 更新输入框占位符
                 const inputEl = container.querySelector('.tag-inline-input') as HTMLInputElement;
@@ -1785,7 +1787,9 @@ export class WidgetTab extends WordflowSubSettingsTab {
         
         // 获取所有可用标签
         const getAllTagsFn = (): string[] => {
-            const tagsObj = (this.app.metadataCache as any).getTags() as Record<string, number>;
+            const tagsObj = (this.app.metadataCache as typeof this.app.metadataCache & {
+                getTags(): Record<string, number>;
+            }).getTags();
             return Object.keys(tagsObj).map(tag => tag.replace('#', ''));
         };
         
@@ -1802,7 +1806,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
         input.addEventListener('input', () => {
             const value = input.value.trim();
             if (value.length === 0) {
-                suggestionsContainer.style.display = 'none';
+                suggestionsContainer.setCssProps({ display: 'none' });
                 return;
             }
             
@@ -1823,17 +1827,17 @@ export class WidgetTab extends WordflowSubSettingsTab {
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                this.addInlineTag(input.value.trim(), tagColor, configIndex, tagColors, inputWrapper);
+                void this.addInlineTag(input.value.trim(), tagColor, configIndex, tagColors, inputWrapper);
                 input.value = '';
-                suggestionsContainer.style.display = 'none';
+                suggestionsContainer.setCssProps({ display: 'none' });
             } else if (e.key === 'Escape') {
-                suggestionsContainer.style.display = 'none';
+                suggestionsContainer.setCssProps({ display: 'none' });
             } else if (e.key === 'Backspace' && input.value === '' && tagColor.tags && tagColor.tags.length > 0) {
                 // 当输入框为空且按退格键时，删除最后一个标签
                 e.preventDefault();
                 tagColor.tags.pop();
-                this.plugin.saveSettings();
-                this.plugin.Widget?.updateTagColors();
+                void this.plugin.saveSettings();
+                void this.plugin.Widget?.updateTagColors();
                 this.renderInlineTags(inputWrapper, tagColor.tags, configIndex, tagColors);
                 input.placeholder = tagColor.tags.length === 0 ? 
                     this.i18n.t('settings.widget.tagColors.tagPlaceholder') : '';
@@ -1842,8 +1846,8 @@ export class WidgetTab extends WordflowSubSettingsTab {
         
         // 失去焦点时隐藏建议
         input.addEventListener('blur', () => {
-            setTimeout(() => {
-                suggestionsContainer.style.display = 'none';
+            window.setTimeout(() => {
+                suggestionsContainer.setCssProps({ display: 'none' });
             }, 200);
         });
         
@@ -1867,19 +1871,19 @@ export class WidgetTab extends WordflowSubSettingsTab {
         container.empty();
         
         if (suggestions.length === 0) {
-            container.style.display = 'none';
+            container.setCssProps({ display: 'none' });
             return;
         }
         
-        container.style.display = 'block';
+        container.setCssProps({ display: 'block' });
         
         suggestions.forEach(suggestion => {
             const suggestionEl = container.createDiv('tag-suggestion-item');
             suggestionEl.textContent = suggestion;
             suggestionEl.onclick = () => {
-                this.addInlineTag(suggestion, tagColor, configIndex, tagColors, inputWrapper);
+                void this.addInlineTag(suggestion, tagColor, configIndex, tagColors, inputWrapper);
                 input.value = '';
-                container.style.display = 'none';
+                container.setCssProps({ display: 'none' });
             };
         });
     }
@@ -1905,7 +1909,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
         
         tagColor.tags.push(cleanTag);
         await this.plugin.saveSettings();
-        this.plugin.Widget?.updateTagColors();
+        void this.plugin.Widget?.updateTagColors();
         this.renderInlineTags(inputWrapper, tagColor.tags, configIndex, tagColors);
         
         // 更新输入框占位符
@@ -2189,8 +2193,12 @@ export class AITab extends WordflowSubSettingsTab {
                             const errorMessage = response.json?.error?.message || response.json?.message || 'Unknown error';
                             new Notice(this.i18n.t('settings.ai.testFailed', { error: `HTTP ${response.status}: ${errorMessage}` }), 5000);
                         }
-                    } catch (e: any) {
-                        const errorDetails = e.response?.json?.error?.message || e.response?.json?.message || e.message || 'Unknown error';
+                    } catch (e: unknown) {
+                        const error = e as {
+                            response?: { json?: { error?: { message?: string }; message?: string } };
+                            message?: string;
+                        };
+                        const errorDetails = error.response?.json?.error?.message || error.response?.json?.message || error.message || 'Unknown error';
                         new Notice(this.i18n.t('settings.ai.testFailed', { error: errorDetails }), 5000);
                     } finally {
                         button.setDisabled(false);
@@ -2230,7 +2238,7 @@ export class ReferenceTab extends WordflowSubSettingsTab {
         const markdownContainer = tabContent.createDiv('wordflow-reference-container');
         
         // Use Obsidian's markdown renderer (same as ChangelogModal)
-        MarkdownRenderer.render(
+        void MarkdownRenderer.render(
             this.app,
             content,
             markdownContainer,
@@ -2287,7 +2295,7 @@ export class ConfirmationModal extends Modal {
 		const messagePara = contentEl.createDiv("confirm-message");
 
 		const renderComponent = new Component();
-		MarkdownRenderer.render(this.app, this.message, messagePara, '', renderComponent);
+		void MarkdownRenderer.render(this.app, this.message, messagePara, '', renderComponent);
 
 		// Add "never show again" checkbox if enabled
 		if (this.showNeverShowAgainCheckbox) {
@@ -2296,7 +2304,7 @@ export class ConfirmationModal extends Modal {
 			const checkboxMarkdown = `- [ ] ${checkboxText}`;
 			
 			const checkboxComponent = new Component();
-			MarkdownRenderer.render(this.app, checkboxMarkdown, checkboxContainer, '', checkboxComponent);
+			void MarkdownRenderer.render(this.app, checkboxMarkdown, checkboxContainer, '', checkboxComponent);
 			
 			// Make the checkbox interactive
 			const checkbox = checkboxContainer.querySelector('input[type="checkbox"]') as HTMLInputElement;
@@ -2348,7 +2356,6 @@ class RecorderRenameModal extends Modal { // this should be updated to text inpu
 
 		new Setting(contentEl)
 			.setName(i18n.t('modals.renameRecorder.title'))
-			.setHeading
 
         // create new input container
         const inputContainer = contentEl.createDiv('wordflow-text-input-container');
@@ -2388,11 +2395,12 @@ class SyntaxChangeConfirmationModal extends Modal {
 	private oldContent: string = '';
 	private newContent: string = '';
 	private hasExistingData: boolean = false;
+	private previewComponents: Component[] = [];
 
 	constructor(
 		app: App,
 		private plugin: WordflowTrackerPlugin,
-		private settings: any,
+		private settings: WordflowRecorderConfigs,
 		private recorder: DataRecorder,
 		private oldSyntax: string,
 		private newSyntax: string,
@@ -2423,12 +2431,16 @@ class SyntaxChangeConfirmationModal extends Modal {
             contentEl.createEl("p", { text: i18n.t('modals.syntaxChange.confirmMerge') });
 			contentEl.createEl("p", { text: i18n.t('modals.syntaxChange.before') });
 			const beforeContainer = contentEl.createDiv('wordflow-syntax-preview-content');
-			await MarkdownRenderer.render(this.app, this.oldContent, beforeContainer, '', new Component());
+			const beforeComponent = new Component();
+			this.previewComponents.push(beforeComponent);
+			await MarkdownRenderer.render(this.app, this.oldContent, beforeContainer, '', beforeComponent);
 
 			// Show after section
 			contentEl.createEl("p", { text: i18n.t('modals.syntaxChange.after') });
 			const afterContainer = contentEl.createDiv('wordflow-syntax-preview-content');
-			await MarkdownRenderer.render(this.app, this.newContent, afterContainer, '', new Component());
+			const afterComponent = new Component();
+			this.previewComponents.push(afterComponent);
+			await MarkdownRenderer.render(this.app, this.newContent, afterContainer, '', afterComponent);
 		}
 
 		const buttonContainer = contentEl.createDiv("syntax-change-buttons");
@@ -2608,6 +2620,8 @@ class SyntaxChangeConfirmationModal extends Modal {
 	}
 
 	onClose() {
+		this.previewComponents.forEach((component) => component.unload());
+		this.previewComponents = [];
 		const { contentEl } = this;
 		contentEl.empty();
 	}

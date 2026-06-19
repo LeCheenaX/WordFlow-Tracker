@@ -14,6 +14,8 @@
 
 import { Menu } from 'obsidian';
 
+declare const activeDocument: Document;
+
 export type DropdownAlignment = 'left' | 'right';
 
 export class DynamicDropdown {
@@ -70,7 +72,7 @@ export class DynamicDropdown {
         
         // Reset state when menu closes
         menu.onHide(() => {
-            setTimeout(() => {
+            window.setTimeout(() => {
                 this.isMenuOpened = false;
             }, 200); // should have minimum delay of 100ms, because the clicking event listener has a natural delay for rouhgly 100ms。
         });
@@ -106,7 +108,7 @@ export class DynamicDropdown {
         
         // Add CSS class for right alignment if needed
         if (this.alignment === 'right') {
-            const menuEls = document.querySelectorAll('.menu');
+            const menuEls = activeDocument.querySelectorAll('.menu');
             const menuEl = menuEls[menuEls.length - 1] as HTMLElement;
             if (menuEl) {
                 menuEl.classList.add('wordflow-dynamic-dropdown-menu-right-aligned');

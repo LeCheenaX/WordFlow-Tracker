@@ -189,7 +189,7 @@ export class WordflowWidgetView extends ItemView {
                 if (!filePath) return;
                 
                 const inNewTab: boolean = evt.ctrlKey || evt.metaKey;
-                this.plugin.app.workspace.openLinkText(filePath, filePath, inNewTab);
+                void this.plugin.app.workspace.openLinkText(filePath, filePath, inNewTab);
             } else {
                 // Note doesn't exist, show confirmation modal
                 const targetDate = parseInt(this.periodicNoteNameContainer.dataset.targetDate || '0');
@@ -207,7 +207,7 @@ export class WordflowWidgetView extends ItemView {
                         if (createdNote) {
                             // Open the newly created note
                             const inNewTab: boolean = evt.ctrlKey || evt.metaKey;
-                            this.plugin.app.workspace.openLinkText(createdNote.path, createdNote.path, inNewTab);
+                            void this.plugin.app.workspace.openLinkText(createdNote.path, createdNote.path, inNewTab);
                             
                             // Update the UI to reflect the note now exists
                             await this.updateNotesMap();
@@ -251,14 +251,14 @@ export class WordflowWidgetView extends ItemView {
 
         this.dataContainer = container.createDiv();
 
-        this.updateAll();
+        void this.updateAll();
         this.registerDomEvent(this.dataContainer, 'click', (evt: MouseEvent) => {
             const target = evt.target as HTMLSpanElement;
             const filePathSpan = target.closest('.wordflow-widget-data-row-file-path') as HTMLSpanElement;
             if (!filePathSpan || !filePathSpan.dataset.filePath) return;
             const filePath = filePathSpan.dataset.filePath;
             const inNewTab: boolean = evt.ctrlKey || evt.metaKey;
-            this.plugin.app.workspace.openLinkText(filePath, filePath, inNewTab);
+            void this.plugin.app.workspace.openLinkText(filePath, filePath, inNewTab);
         });
         
         const buttonContainer = this.currentNoteDataContainer.createDiv({ cls: 'wordflow-widget-current-note-buttons' });
@@ -297,7 +297,7 @@ export class WordflowWidgetView extends ItemView {
                 this.onFocusMode = false;
                 this.updateButtons_Pause();
             }
-            void (async ()=>{ this.checkAndUpdateIfNewDay()});
+            void (async ()=>{ void this.checkAndUpdateIfNewDay()})();
         });
     }
 
@@ -363,9 +363,9 @@ export class WordflowWidgetView extends ItemView {
                         barContainer = leftContentWrapper.createDiv({ cls: 'wordflow-widget-current-note-bar-container' });
                         existingBar = barContainer.createSpan({ cls: 'wordflow-widget-current-note-bar-existing' });
                         currentBar = barContainer.createSpan({ cls: 'wordflow-widget-current-note-bar-current' });
-                        barContainer.style.width = '0';
-                        existingBar.style.width = '0';
-                        currentBar.style.width = '0';
+                        barContainer.setCssProps({ width: '0' });
+                        existingBar.setCssProps({ width: '0' });
+                        currentBar.setCssProps({ width: '0' });
                     }
                     
                     const widthPercentage = (currentTotalValue / (currentNoteValue + this.totalFieldValue)) * 100;
@@ -698,9 +698,9 @@ export class WordflowWidgetView extends ItemView {
         let needsRerender = false;
         
         if (isDailyNote) {
-            heatmapBtn.style.display = '';
+            heatmapBtn.setCssProps({ display: '' });
         } else {
-            heatmapBtn.style.display = 'none';
+            heatmapBtn.setCssProps({ display: 'none' });
             // If currently in heatmap view, switch to file-list view
             if (this.currentView === 'heatmap') {
                 this.currentView = 'file-list';
@@ -714,7 +714,7 @@ export class WordflowWidgetView extends ItemView {
         }
         
         // Update last-visible class for proper border radius
-        const allButtons = this.viewSwitcher.querySelectorAll('.view-switch-btn') as NodeListOf<HTMLElement>;
+        const allButtons = this.viewSwitcher.querySelectorAll<HTMLElement>('.view-switch-btn');
         let lastVisibleBtn: HTMLElement | null = null;
         
         allButtons.forEach(btn => {
@@ -819,7 +819,7 @@ export class WordflowWidgetView extends ItemView {
         // Create extended dataMap that includes the new file for accurate saturation calculation
         const extendedDataMap = new Map(this.dataMap);
         if (!extendedDataMap.has(filePath)) {
-            extendedDataMap.set(filePath, {} as any); // Add placeholder data
+            extendedDataMap.set(filePath, {} as ExistingData); // Add placeholder data
         }
         
         const allFilesWithTags = this.tagColorManager.buildFilesWithTagsMap(this.plugin.app, extendedDataMap);
@@ -1114,7 +1114,7 @@ export class WordflowWidgetView extends ItemView {
                 cls: 'wordflow-widget-tag-segment' 
             });
             unconfiguredSegment.style.width = `${percentage}%`;
-            unconfiguredSegment.style.backgroundColor = '#999999'; // Medium-light grey
+            unconfiguredSegment.setCssProps({ backgroundColor: '#999999' }); // Medium-light grey
             
             // 使用 Obsidian 的 setTooltip 方法
             setTooltip(unconfiguredSegment, this.plugin.i18n.t('widget.prompts.unconfiguredTags'), {
@@ -1304,7 +1304,7 @@ export class WordflowWidgetView extends ItemView {
         const fileListContainer = container.createDiv({ 
             cls: isUnconfiguredGroup ? 'wordflow-widget-tag-files-container wordflow-widget-unconfigured-files-container' : 'wordflow-widget-tag-files-container'
         });
-        fileListContainer.style.display = 'none'; // Initially hidden
+        fileListContainer.setCssProps({ display: 'none' }); // Initially hidden
 
         // Filter files based on group type
         let groupFiles: ExistingData[];
@@ -1457,7 +1457,7 @@ export class WordflowWidgetView extends ItemView {
      */
     private handleTagSegmentClick(clickedTagName: string) {
         // Find all tag group rows in the list
-        const tagGroupRows = this.dataContainer.querySelectorAll('.wordflow-widget-tag-group-row') as NodeListOf<HTMLElement>;
+        const tagGroupRows = this.dataContainer.querySelectorAll<HTMLElement>('.wordflow-widget-tag-group-row');
         
         tagGroupRows.forEach(tagRow => {
             const tagNameElement = tagRow.querySelector('.wordflow-widget-tag-group-name') as HTMLElement;
@@ -1474,14 +1474,14 @@ export class WordflowWidgetView extends ItemView {
                 // For the clicked tag: expand if collapsed, keep expanded if already expanded
                 if (isCurrentlyCollapsed) {
                     tagRow.dataset.collapsed = 'false';
-                    fileListContainer.style.display = 'block';
+                    fileListContainer.setCssProps({ display: 'block' });
                     arrowElement.textContent = '▲';
                 }
                 // If already expanded, keep it expanded (no change)
             } else {
                 // For all other tags: collapse them
                 tagRow.dataset.collapsed = 'true';
-                fileListContainer.style.display = 'none';
+                fileListContainer.setCssProps({ display: 'none' });
                 arrowElement.textContent = '▼';
             }
         });
@@ -1489,8 +1489,8 @@ export class WordflowWidgetView extends ItemView {
 
     private handleHover(hoveredTagGroup: TagGroupData | null, isHovering: boolean) {
         // 获取所有文件段落和标签段落
-        const fileSegments = this.dataContainer.querySelectorAll('.wordflow-widget-file-segment') as NodeListOf<HTMLElement>;
-        const tagSegments = this.dataContainer.querySelectorAll('.wordflow-widget-tag-segment') as NodeListOf<HTMLElement>;
+        const fileSegments = this.dataContainer.querySelectorAll<HTMLElement>('.wordflow-widget-file-segment');
+        const tagSegments = this.dataContainer.querySelectorAll<HTMLElement>('.wordflow-widget-tag-segment');
         
         if (isHovering) {
             // 悬浮状态：高亮相关元素，强烈变暗无关元素
@@ -1521,11 +1521,10 @@ export class WordflowWidgetView extends ItemView {
                 
                 if (shouldHighlight) {
                     // 相关文件：高亮显示
-                    segment.style.opacity = '1';
-                    segment.style.filter = 'brightness(1.05)';
+                    segment.setCssProps({ opacity: '1', filter: 'brightness(1.05)' });
                 } else {
                     // 无关文件：强烈变暗变灰
-                    segment.style.filter = 'grayscale(30%) brightness(0.75)';
+                    segment.setCssProps({ filter: 'grayscale(30%) brightness(0.75)' });
                 }
             });
             
@@ -1543,24 +1542,21 @@ export class WordflowWidgetView extends ItemView {
                 
                 if (isCurrentHovered) {
                     // 当前悬浮的标签：保持正常状态
-                    segment.style.opacity = '1';
-                    segment.style.filter = 'brightness(1.05)';
+                    segment.setCssProps({ opacity: '1', filter: 'brightness(1.05)' });
                 } else {
                     // 其他标签：强烈变暗变灰
-                    segment.style.filter = 'grayscale(30%) brightness(0.75)';
+                    segment.setCssProps({ filter: 'grayscale(30%) brightness(0.75)' });
                 }
             });
             
         } else {
             // 离开悬浮：恢复所有元素的正常状态
             fileSegments.forEach(segment => {
-                segment.style.opacity = '1';
-                segment.style.filter = 'none';
+                segment.setCssProps({ opacity: '1', filter: 'none' });
             });
             
             tagSegments.forEach(segment => {
-                segment.style.opacity = '1';
-                segment.style.filter = 'none';
+                segment.setCssProps({ opacity: '1', filter: 'none' });
             });
         }
     }
@@ -1842,7 +1838,7 @@ export class WordflowWidgetView extends ItemView {
         };
 
         // Initial sync after rendering
-        requestAnimationFrame(syncLegendCellSize);
+        window.requestAnimationFrame(syncLegendCellSize);
 
         // Set up ResizeObserver to sync on container size changes
         this.heatmapResizeObserver = new ResizeObserver(() => {
@@ -2007,8 +2003,10 @@ export class WordflowWidgetView extends ItemView {
                     } else {
                         // Set color dynamically based on value
                         if (value === 0) {
-                            cell.style.backgroundColor = 'var(--background-modifier-hover)';
-                            cell.style.opacity = '0.6';
+                            cell.setCssProps({
+                                backgroundColor: 'var(--background-modifier-hover)',
+                                opacity: '0.6'
+                            });
                         } else {
                             const color = heatmapColorManager.getColorForValue(value, allValues);
                             cell.style.backgroundColor = color;
@@ -2038,7 +2036,7 @@ export class WordflowWidgetView extends ItemView {
                             if (recordNote) {
                                 // Note exists, open it and switch to it
                                 const inNewTab: boolean = evt.ctrlKey || evt.metaKey;
-                                this.plugin.app.workspace.openLinkText(recordNote.path, recordNote.path, inNewTab);
+                                void this.plugin.app.workspace.openLinkText(recordNote.path, recordNote.path, inNewTab);
                                 
                                 // Switch selectedNoteName to the clicked date
                                 this.selectedNoteName = noteFileName;
@@ -2060,7 +2058,7 @@ export class WordflowWidgetView extends ItemView {
                                         if (createdNote) {
                                             // Open the newly created note
                                             const inNewTab: boolean = evt.ctrlKey || evt.metaKey;
-                                            this.plugin.app.workspace.openLinkText(createdNote.path, createdNote.path, inNewTab);
+                                            void this.plugin.app.workspace.openLinkText(createdNote.path, createdNote.path, inNewTab);
                                             
                                             // Update the notes map to include the newly created note
                                             await this.updateNotesMap();
@@ -2154,8 +2152,10 @@ export class WordflowWidgetView extends ItemView {
             const legendCell0 = container.createDiv({
                 cls: 'wordflow-heatmap-legend-cell'
             });
-            legendCell0.style.backgroundColor = 'var(--background-modifier-hover)';
-            legendCell0.style.opacity = '0.6';
+            legendCell0.setCssProps({
+                backgroundColor: 'var(--background-modifier-hover)',
+                opacity: '0.6'
+            });
 
             // Add tooltip for zero value
             setTooltip(legendCell0, 'no data or 0', {

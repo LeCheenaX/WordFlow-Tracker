@@ -167,11 +167,11 @@ export class SnapshotManager {
         }
     }
 
-    private saveTimeout: ReturnType<typeof setTimeout> | null = null;
+    private saveTimeout: number | null = null;
 
     private debouncedSave(): void {
-        if (this.saveTimeout) clearTimeout(this.saveTimeout);
-        this.saveTimeout = setTimeout(() => {
+        if (this.saveTimeout) window.clearTimeout(this.saveTimeout);
+        this.saveTimeout = window.setTimeout(() => {
             void this.save();
         }, 5000);
     }

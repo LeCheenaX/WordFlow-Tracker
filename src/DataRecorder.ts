@@ -378,7 +378,7 @@ export class DataRecorder {
 
         // Sort the merged data
         mergedData.sort((a, b) => {
-            let aVal: any, bVal: any;
+            let aVal: number | string, bVal: number | string;
 
             switch (this.sortBy) {
                 case 'lastModifiedTime':
@@ -518,7 +518,7 @@ export class DataRecorder {
     public async updateNoteToYAML(recordNote: TFile, newContent: string): Promise<void> {
         // Parse the newContent to extract key-value pairs
         const contentLines = newContent.trim().split('\n');
-        const updates: Record<string, any> = {};
+        const updates: Record<string, string | number> = {};
 
         for (const line of contentLines) {
             const colonIndex = line.indexOf(':');
