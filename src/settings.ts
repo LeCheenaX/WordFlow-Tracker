@@ -1211,7 +1211,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 		});
 
 		// Replace ${property.xxx} with a sample value for preview
-		previewText = previewText.replace(/\$\{property\.([\w.]+)\}/g, (_, propKey: string) => {
+		previewText = previewText.replace(/\$\{property\.([\w.-]+)\}/g, (_, propKey: string) => {
 			if (propKey === 'tags') return '🏷️example-tag';
 			return `[${propKey}]`;
 		});

@@ -1707,7 +1707,7 @@ export class WordflowWidgetView extends ItemView {
         const standardFields = availableFields.filter(field => syntax.includes(`\${${field}}`));
 
         // Detect ${property.xxx} tokens in the syntax — only include number-type properties
-        const propertyFieldRegex = /\$\{property\.([\w.]+)\}/g;
+        const propertyFieldRegex = /\$\{property\.([\w.-]+)\}/g;
         const propertyFields: string[] = [];
         let match: RegExpExecArray | null;
         while ((match = propertyFieldRegex.exec(syntax)) !== null) {

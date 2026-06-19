@@ -290,7 +290,7 @@ export class BulletListParser{
                 .replace(/\${readEditTime}/g, formatTime(data.readEditTime))
                 .replace(/\${diff}/g, data.diff ?? '\u200B')
                 // Handle ${property.xxx} — look up frontmatter of the tracked note
-                .replace(/\$\{property\.([\w.]+)\}/g, (_, propKey: string) => {
+                .replace(/\$\{property\.([\w.-]+)\}/g, (_, propKey: string) => {
                     const resolved = resolveNoteProperty(this.plugin, data.filePath, propKey);
                     return resolved === '' ? '\u200B' : resolved;
                 });
