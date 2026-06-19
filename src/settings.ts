@@ -6,6 +6,7 @@ import { SupportedLocale, I18nManager, getI18n } from './i18n';
 import { updateStatusBarStyle } from './StatusBarManager';
 import { TagColorConfig } from './Utils/TagColorManager';
 import { getDateValidationErrorResult } from './Utils/dateFormatValidator';
+import { getAllRecorderFieldOptions } from './Utils/fieldOptions';
 
 // Obsidian supports only string and boolean for settings. numbers are not supported. 
 export interface WordflowRecorderConfigs {
@@ -1477,7 +1478,7 @@ export class WidgetTab extends WordflowSubSettingsTab {
             .setName(this.i18n.t('settings.widget.fieldAlias.name'))
             .setDesc(this.i18n.t('settings.widget.fieldAlias.desc'))
 
-        this.renderValueMappingSetting(tabContent, this.plugin.settings.fieldAlias, this.plugin.Widget?.getFieldOptions() || []);
+        this.renderValueMappingSetting(tabContent, this.plugin.settings.fieldAlias, getAllRecorderFieldOptions(this.plugin));
         
         new Setting(tabContent).setName(this.i18n.t('settings.widget.randomColorGeneration')).setHeading();
 

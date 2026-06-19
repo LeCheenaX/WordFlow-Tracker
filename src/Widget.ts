@@ -9,6 +9,7 @@ import { TagColorManager, TagColorVariationSettings } from "./Utils/TagColorMana
 import { HeatmapColorManager } from "./Utils/HeatmapColorManager";
 import { DynamicDropdown } from "./Utils/DynamicDropdown";
 import { resolveNoteProperty } from "./Utils/notePropertyResolver";
+import { getRecorderFieldOptions } from "./Utils/fieldOptions";
 import { IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon, setTooltip, TFile, TFolder } from "obsidian";
 
 export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
@@ -1708,44 +1709,9 @@ export class WordflowWidgetView extends ItemView {
             return [this.plugin.i18n.t('widget.prompts.noFieldinSyntax')];
         }
 
-        const syntax = this.selectedRecorder.getParser().getSyntax();
-        const availableFields = [
-            'editedWords',
-            'editedTimes',
-            'addedWords',
-            'deletedWords',
-            'changedWords',
-            'docWords',
-            'editTime',
-            'readTime',
-            'readEditTime',
-        ];
-
-        const standardFields = availableFields.filter(field => syntax.includes(`\${${field}}`));
-
-        // Detect ${property.xxx} tokens in the syntax — only include number-type properties
-        const propertyFieldRegex = /\$\{property\.([\w.-]+)\}/g;
-        const propertyFields: string[] = [];
-        let match: RegExpExecArray | null;
-        while ((match = propertyFieldRegex.exec(syntax)) !== null) {
-            const propKey = match[1];
-            const token = `property.${propKey}`;
-            if (propertyFields.includes(token)) continue;
-
-            // Look up the property type from the vault-wide property registry.
-            // `metadataTypeManager.properties` is keyed by lowercase property name.
-            // The type is stored in the `widget` field (not `type`).
-            // @ts-expect-error — internal API
-            const allProps = this.plugin.app.metadataTypeManager?.properties;
-            const propInfo = allProps?.[propKey.toLowerCase()];
-            const propType: string | undefined = propInfo?.type ?? propInfo?.widget;
-            if (propType === 'number') {
-                propertyFields.push(token);
-            }
-        }
-
-        return [...standardFields, ...propertyFields].length > 0
-            ? [...standardFields, ...propertyFields]
+        const fields = getRecorderFieldOptions(this.plugin, this.selectedRecorder);
+        return fields.length > 0
+            ? fields
             : [this.plugin.i18n.t('widget.prompts.noFieldinSyntax')];
     }
 
