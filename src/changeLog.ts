@@ -1,17 +1,24 @@
-export const currentPluginVersion = '2.2.7';
+export const currentPluginVersion = '2.2.8';
 
 export const changelog = {
 'en': 
 `
+### 2.2.8 updates
+🐛 **Bug Fixed:**
+- Widget view may appear at an unexpected location when the plugin is re-enabled. 
+
+⚡ **Enhancements:**
+- Fixed ES-Lint issues as per Obsidian regulation. 
+
 ### 2.2.7 updates
-✨ New Features:
+✨ **New Features**:
 - File colors under the same tag are easier to distinguish by controling the range slider.
 
 🐛 **Bug Fixed:**
 - Note properties with hyphens \`modified-date\` is not recognized by the recorder. 
 - Field Alias not recognize data fields from other recorders.
 
-🎨 UI Optimization:
+🎨 **UI Optimization**:
 - Clarified widget settings for easier understanding
 - Files under one tag will be easier to distinguish
 
@@ -52,6 +59,13 @@ export const changelog = {
 `,
 'zh-CN': 
 `
+### 2.2.8 更新说明
+🐛 **Bug 修复：**
+- 修复了插件重新启用时，Widget 视图可能出现在意外位置的问题。
+
+⚡ **功能增强：**
+- 根据 Obsidian 规范修复了 ES-Lint 相关问题。
+
 ### 2.2.7 更新说明
 ✨ **新功能：**
 - 新增色相范围滑块，可调整同一标签下各文件颜色的区分程度。
