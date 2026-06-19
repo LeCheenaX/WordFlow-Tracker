@@ -5,7 +5,7 @@ import { MetaDataParser } from "./MetaDataParser";
 import { DocTracker } from "./DocTracker";
 import { ConfirmationModal } from "./settings"
 import { UniqueColorGenerator } from "./Utils/UniqueColorGenerator";
-import { TagColorManager } from "./Utils/TagColorManager";
+import { TagColorManager, TagColorVariationSettings } from "./Utils/TagColorManager";
 import { HeatmapColorManager } from "./Utils/HeatmapColorManager";
 import { DynamicDropdown } from "./Utils/DynamicDropdown";
 import { resolveNoteProperty } from "./Utils/notePropertyResolver";
@@ -80,10 +80,15 @@ export class WordflowWidgetView extends ItemView {
         super(leaf);
         this.plugin = plugin;
         this.colorGenerator = new UniqueColorGenerator(
-                                    parseInt(this.plugin.settings.colorGroupLightness), 
-                                    this.plugin.settings.colorGroupSaturation
-                                );
-        this.tagColorManager = new TagColorManager(this.plugin, this.plugin.settings.tagColors, this.colorGenerator);
+            parseInt(this.plugin.settings.colorGroupLightness),
+            this.plugin.settings.colorGroupSaturation
+        );
+        this.tagColorManager = new TagColorManager(
+            this.plugin,
+            this.plugin.settings.tagColors,
+            this.colorGenerator,
+            this.getTagColorVariationSettings()
+        );
         this.selectedNoteName = ''; // Will be set when recorder is selected
         this.currentView = this.plugin.settings.defaultViewOnOpen;
         this.availableNotes = new Map();
@@ -841,6 +846,18 @@ export class WordflowWidgetView extends ItemView {
         await this.updateDataMap();
         await this.updateTaggedColorMap(); // must update color first
         await this.updateData();
+    }
+
+    public async updateTagColorVariationSettings(): Promise<void> {
+        this.tagColorManager.updateVariationSettings(this.getTagColorVariationSettings());
+        await this.updateTaggedColorMap();
+        await this.updateData();
+    }
+
+    private getTagColorVariationSettings(): TagColorVariationSettings {
+        return {
+            hueRange: Math.max(10, Math.min(60, this.plugin.settings.tagColorHueRange))
+        };
     }
 
     private initRecorderDropdown() {

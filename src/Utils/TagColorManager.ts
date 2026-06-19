@@ -5,6 +5,7 @@
 
 import WordflowTrackerPlugin from "src/main";
 import { UniqueColorGenerator } from "./UniqueColorGenerator";
+import { buildFixedHueSlPalette, getBisectedHue, MAX_SL_LEVELS_PER_HUE } from "./HslColorPalette";
 
 export interface TagColorConfig {
     tags: string[]; // 支持多个标签共享同一颜色
@@ -24,16 +25,17 @@ export interface RGB {
     b: number; // 0-255
 }
 
+export interface TagColorVariationSettings {
+    hueRange: number;
+}
+
 export class TagColorManager {
     private tagColors: Map<string, string> = new Map(); // tag -> hex color
-    private readonly lightness: number = 60; // Fixed lightness (保留用于向后兼容)
-    private readonly minSaturation: number = 50;
-    private readonly maxSaturation: number = 86;
-
     constructor(
         public plugin: WordflowTrackerPlugin,
         private tagColorConfigs: TagColorConfig[], 
-        private uniqueColorGenerator: UniqueColorGenerator
+        private uniqueColorGenerator: UniqueColorGenerator,
+        private variationSettings: TagColorVariationSettings
     ) {
         this.updateTagColors(this.tagColorConfigs);
     }
@@ -64,6 +66,10 @@ export class TagColorManager {
                 });
             }
         });
+    }
+
+    public updateVariationSettings(variationSettings: TagColorVariationSettings): void {
+        this.variationSettings = variationSettings;
     }
 
     /**
@@ -109,15 +115,14 @@ export class TagColorManager {
         // 避免随机颜色生成器生成相同的颜色
         if (this.uniqueColorGenerator && resultColor) {
             // 直接添加到 generatedColors 集合中
-            (this.uniqueColorGenerator as any).generatedColors.add(resultColor);
+            this.uniqueColorGenerator.reserve(resultColor);
         }
         
         return resultColor;
     }
 
     /**
-     * Get matching tag colors with saturation grading for file colors (not tag colors)
-     * This extracts hue from user-configured colors and applies dynamic saturation
+     * Build stable per-file S/L shades while keeping each configured tag's hue fixed.
      */
     private getMatchingTagColorsForFile(
         fileTags: string[], 
@@ -132,44 +137,22 @@ export class TagColorManager {
             const configuredColor = this.tagColors.get(cleanTag);
             
             if (configuredColor) {
-                // 从用户配置的颜色中提取hue值
                 const hsl = this.hexToHsl(configuredColor);
-                const filesWithThisTag = allFilesWithTags.get(cleanTag) || [];
-                const saturation = this.calculateSaturation(filePath, filesWithThisTag);
-                
-                matchingColors.push({
-                    h: hsl.h, // 使用用户配置颜色的hue
-                    s: saturation, // 动态计算的饱和度
-                    l: this.lightness // 固定亮度
-                });
+                const filesWithThisTag = [...(allFilesWithTags.get(cleanTag) || [])].sort();
+                const fileIndex = filesWithThisTag.indexOf(filePath);
+                const safeFileIndex = fileIndex >= 0 ? fileIndex : 0;
+                const hueGroupIndex = Math.floor(safeFileIndex / MAX_SL_LEVELS_PER_HUE);
+                const hue = getBisectedHue(hsl.h, this.variationSettings.hueRange, hueGroupIndex);
+                const palette = buildFixedHueSlPalette(
+                    hue,
+                    Math.min(filesWithThisTag.length, MAX_SL_LEVELS_PER_HUE)
+                );
+
+                matchingColors.push(palette[safeFileIndex % MAX_SL_LEVELS_PER_HUE]);
             }
         });
         
         return matchingColors;
-    }
-
-    /**
-     * Calculate saturation based on file position among files with the same tag
-     */
-    private calculateSaturation(filePath: string, filesWithTag: string[]): number {
-        const fileCount = filesWithTag.length;
-        if (fileCount === 0) return 60; // Default saturation
-        if (fileCount === 1) return 60; // Single file gets middle saturation
-        
-        // Find the index of current file in the sorted array
-        const sortedFiles = [...filesWithTag].sort();
-        const fileIndex = sortedFiles.indexOf(filePath);
-        
-        if (fileIndex === -1) return 60; // Fallback
-        
-        if (fileCount === 2) {
-            // Special case for 2 files: 52, 69
-            return fileIndex === 0 ? 52 : 69;
-        }
-        
-        // For 3+ files: distribute evenly between 35-85
-        const step = (this.maxSaturation - this.minSaturation) / (fileCount - 1);
-        return Math.round(this.minSaturation + step * fileIndex);
     }
 
     /**
@@ -191,10 +174,6 @@ export class TagColorManager {
         
         // Convert back to HSL
         const blendedHsl = this.rgbToHsl(avgRgb);
-        
-        // Adjust lightness and saturation as specified
-        blendedHsl.l = Math.max(0, Math.min(100, blendedHsl.l - 6)); // Lower lightness
-        blendedHsl.s = Math.max(0, Math.min(100, blendedHsl.s + 8));  // Slightly higher saturation
         
         return this.hslToHex(blendedHsl);
     }

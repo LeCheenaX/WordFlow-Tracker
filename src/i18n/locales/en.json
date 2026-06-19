@@ -328,28 +328,32 @@
         "placeholder": "Enter display name",
         "noOptions": "No options available"
       },
-      "randomColorGeneration": "Random color generation",
+      "randomColorGeneration": "Colors for file entries without a configured tag",
       "colorGroupLightness": {
         "name": "Random color group lightness",
-        "desc": "Specify the lightness from 0-100 in hsl to generate random colors for file entries.",
+        "desc": "Specify the lightness from 0-100 in hsl to generate random colors for file entries that do not have a configured tag.",
         "placeholder": "66"
       },
       "colorGroupSaturation": {
         "name": "Random color group saturation",
         "desc": [
-          "Specify the saturation from 0-100 in hsl to generate random colors for file entries.",
+          "Specify the saturation from 0-100 in hsl to generate random colors for file entries that do not have a configured tag.",
           "You can use space \" \" to separate numbers to offer multiple options.",
           "If the current saturation options below does not change, the input should be invalid."
         ],
         "preview": "Current saturation options: "
       },
-      "tagListView": "Tag list view",
+      "tagListView": "Colors for file entries with the following tags",
+      "tagColorHueRange": {
+        "name": "Color distinction range",
+        "desc": "Controls how far file colors may spread around a tag's chosen color on the color wheel. A larger range distinguishes more files, but the colors may look less pure. Increase this when some files in the widget look too similar."
+      },
       "tagColors": {
         "name": "Configure colors for tags",
         "desc": [
           "Compatible for both file-based view and tag-based view.",
           "The file with multiple tags will have colors blended.",
-          "Different files with the same tag will auto distinct by saturations. "
+          "Each hue supports up to nine synchronized saturation/lightness shades; additional files expand the hue by interval bisection."
         ],
         "addButton": "configure tag color",
         "deleteButton": "Delete",

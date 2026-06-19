@@ -61,6 +61,7 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
     colorGroupLightness: string; // required to restart widget or plugin
     colorGroupSaturation: number[]; // required to restart widget or plugin
     tagColors: TagColorConfig[]; // tag-based color configurations
+    tagColorHueRange: number; // configured-tag hue expansion radius
     heatmapBaseColor: string; // base color for heatmap (hex format)
     heatmapGradientLevels: number; // number of gradient levels (4-10)
     heatmapWeeksToShow: number; // number of weeks to show in heatmap (5-13)
@@ -145,6 +146,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     colorGroupLightness: '66',
     colorGroupSaturation: [60, 85],
     tagColors: [], // 修改为支持完整颜色的数组结构
+    tagColorHueRange: 30,
     heatmapBaseColor: '#33C15E',
     heatmapGradientLevels: 5,
     heatmapWeeksToShow: 12, // default 12 weeks
@@ -1520,6 +1522,19 @@ export class WidgetTab extends WordflowSubSettingsTab {
             .setDesc(this.createMultiLineDesc('settings.widget.tagColors.desc'));
 
         this.renderTagColorSetting(tabContent, this.plugin.settings.tagColors);
+
+        new Setting(tabContent)
+            .setName(this.i18n.t('settings.widget.tagColorHueRange.name'))
+            .setDesc(this.i18n.t('settings.widget.tagColorHueRange.desc'))
+            .addSlider(slider => slider
+                .setLimits(10, 60, 10)
+                .setValue(Math.max(10, Math.min(60, this.plugin.settings.tagColorHueRange)))
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.tagColorHueRange = value;
+                    await this.plugin.saveSettings();
+                    await this.plugin.Widget?.updateTagColorVariationSettings();
+                }));
 
         new Setting(tabContent).setName(this.i18n.t('settings.widget.heatmapView')).setHeading();
 
