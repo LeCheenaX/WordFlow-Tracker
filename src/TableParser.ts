@@ -177,7 +177,7 @@ export class TableParser{
             })
             .map(data => {
                 return rowTemplate.replace(
-                    /\$\{([\w.]+)\}/g,
+                    /\$\{([\w.-]+)\}/g,
                     (_, varName: string) => {
                         // Handle ${property.xxx} — look up frontmatter of the tracked note
                         if (varName.startsWith('property.')) {
@@ -354,7 +354,7 @@ export class TableParser{
                     throw new Error (`❌Var template with note alias is not matched in ${noteInfo}!\nConsider checking if table syntax contains "\\|" in the first coloumn, or if table in periodic note is mixed with notes with alias and notes without alias`)
                 }
             } else {
-                const matches = varTemplate.match(/\$\{([\w.]+)\}/); // single variable matching (supports property.xxx)
+                const matches = varTemplate.match(/\$\{([\w.-]+)\}/); // single variable matching (supports property.xxx)
                 const varName = (matches && matches[1])? matches[1]: 'undefined';
 
                 // Handle ${property.xxx} columns — store numeric value keyed by propKey

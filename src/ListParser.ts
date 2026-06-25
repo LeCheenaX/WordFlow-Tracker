@@ -5,6 +5,14 @@ import WordflowTrackerPlugin from "./main";
 import { resolveLinkToPath } from "./Utils/pathNormalizer";
 import { resolveNoteProperty } from "./Utils/notePropertyResolver";
 
+interface ListPattern {
+    start: string;
+    end: string;
+    varName?: string;
+    varNames?: string[];
+    isCompound?: boolean;
+}
+
 export class BulletListParser{
     //private recordType: string;
     private timeFormat: string;
@@ -14,8 +22,8 @@ export class BulletListParser{
     private noteContent: string | null;
 
     // special variables
-    private patterns: any[] = [];
-    private bulletListPatterns: any[] = [];
+    private patterns: ListPattern[] = [];
+    private bulletListPatterns: ListPattern[] = [];
     private patternLineNum: number;
 
     constructor(
@@ -290,7 +298,7 @@ export class BulletListParser{
                 .replace(/\${readEditTime}/g, formatTime(data.readEditTime))
                 .replace(/\${diff}/g, data.diff ?? '\u200B')
                 // Handle ${property.xxx} — look up frontmatter of the tracked note
-                .replace(/\$\{property\.([\w.]+)\}/g, (_, propKey: string) => {
+                .replace(/\$\{property\.([\w.-]+)\}/g, (_, propKey: string) => {
                     const resolved = resolveNoteProperty(this.plugin, data.filePath, propKey);
                     return resolved === '' ? '\u200B' : resolved;
                 });

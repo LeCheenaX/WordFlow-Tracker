@@ -25,27 +25,27 @@
  * // ... after 1000ms ...
  * await saveData('C'); // Executes immediately with new data
  */
-export function throttleLeadingEdge<T extends (...args: any[]) => any>(
-    fn: T,
+export function throttleLeadingEdge<TArgs extends unknown[], TResult>(
+    fn: (...args: TArgs) => TResult,
     wait: number
-): (...args: Parameters<T>) => ReturnType<T> extends Promise<infer U> ? Promise<U> : ReturnType<T> {
+): (...args: TArgs) => TResult {
     let lastCallTime = 0;
     let timeoutId: number | null = null;
-    let pendingPromise: Promise<any> | null = null;
+    let pendingPromise: Promise<unknown> | null = null;
 
-    return function (this: any, ...args: Parameters<T>) {
+    return function (this: unknown, ...args: TArgs): TResult {
         const now = Date.now();
 
         // If there's already an execution in progress, return that Promise
         if (pendingPromise) {
-            return pendingPromise as any;
+            return pendingPromise as unknown as TResult;
         }
 
         // Run immediately if enough time has passed
         if (now - lastCallTime >= wait) {
             // Clear any existing cleanup timer
             if (timeoutId !== null) {
-                activeWindow.clearTimeout(timeoutId);
+                window.clearTimeout(timeoutId);
                 timeoutId = null;
             }
 
@@ -65,23 +65,23 @@ export function throttleLeadingEdge<T extends (...args: any[]) => any>(
                 });
 
                 // Set a timer to allow new calls after wait period
-                timeoutId = activeWindow.setTimeout(() => {
+                timeoutId = window.setTimeout(() => {
                     timeoutId = null;
                 }, wait);
 
-                return result as any;
+                return result as unknown as TResult;
             }
 
             // For sync functions, set timer and return result
-            timeoutId = activeWindow.setTimeout(() => {
+            timeoutId = window.setTimeout(() => {
                 timeoutId = null;
             }, wait);
 
-            return result as any;
+            return result;
         }
 
         // Throttled: return resolved Promise for async, undefined for sync
         // This shouldn't happen if pendingPromise check works correctly
-        return Promise.resolve() as any;
+        return Promise.resolve() as unknown as TResult;
     };
 }

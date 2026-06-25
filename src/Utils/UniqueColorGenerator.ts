@@ -86,6 +86,11 @@ export class UniqueColorGenerator {
         this.generatedColors.add(color);
         return color;
     }
+
+    public reserve(color: string): void {
+        this.generatedColors.add(color);
+    }
+
 }
 
 // 使用示例

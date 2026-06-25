@@ -245,6 +245,10 @@ export interface WidgetSettingsResources {
         desc: string;
         placeholder: string;
     };
+    tagColorHueRange: {
+        name: string;
+        desc: string;
+    };
     colorGroupSaturation: {
         name: string;
         desc: DescriptionType;

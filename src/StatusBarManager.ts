@@ -4,6 +4,8 @@ import { formatTime } from "./Timer";
 import { WordflowSettings } from "./settings";
 import { MarkdownView } from "obsidian";
 
+declare const activeDocument: Document;
+
 export class StatusBarManager {
     private statusBarEl: HTMLElement;
     private content = '';
@@ -113,12 +115,12 @@ export class StatusBarManager {
 
 export function updateStatusBarStyle(settings: WordflowSettings): void {
     if (settings.enableMobileStatusBar) {
-        document.body.classList.add('wordflow-status-bar-container');
+        activeDocument.body.classList.add('wordflow-status-bar-container');
     } else {
         removeStatusBarStyle();
     }
 }
 
 export function removeStatusBarStyle(): void {
-    document.body.classList.remove('wordflow-status-bar-container');
+    activeDocument.body.classList.remove('wordflow-status-bar-container');
 }

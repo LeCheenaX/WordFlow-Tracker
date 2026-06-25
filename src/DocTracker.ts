@@ -33,8 +33,8 @@ export class DocTracker {
     public prevViewMode: MarkdownViewModeType;
     private debouncedTracker: ReturnType<typeof debounce> | null;
     private editorListener: EventRef | null = null;
-    private addWordsCt: Function
-    private deleteWordsCt: Function
+    private addWordsCt: (input: string, prevCh?: string, subseqCh?: string) => number;
+    private deleteWordsCt: (input: string, prevCh?: string, subseqCh?: string) => number;
 
     constructor(
         public filePath: string,

@@ -6,7 +6,7 @@
  * @param fn - The original function to be executed only once
  * @returns A new function with the same signature that executes the original function only once
  */
-export function executeOnce<T extends (...args: any[]) => void>(fn: T): (...args: Parameters<T>) => void {
+export function executeOnce<T extends (...args: unknown[]) => void>(fn: T): (...args: Parameters<T>) => void {
     let hasExecuted = false;
     
     return (...args: Parameters<T>): void => {
@@ -28,7 +28,7 @@ export function executeOnce<T extends (...args: any[]) => void>(fn: T): (...args
 export function executeOnceWithKey() {
     const executedKeys = new Set<string>();
     
-    return <T extends any[]>(key: string, fn: (...args: T) => void, ...args: T): void => {
+    return <T extends unknown[]>(key: string, fn: (...args: T) => void, ...args: T): void => {
         if (!executedKeys.has(key)) {
             executedKeys.add(key);
             fn(...args); 

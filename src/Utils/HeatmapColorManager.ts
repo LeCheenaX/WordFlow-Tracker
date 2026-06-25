@@ -1,3 +1,5 @@
+import { MAX_SL_LEVELS_PER_HUE, MIN_HSL_VARIATION_STEP } from './HslColorPalette';
+
 interface HSL {
     h: number;
     s: number;
@@ -32,7 +34,7 @@ export class HeatmapColorManager {
         this.colorScale = [];
 
         // 配置：最大等级数以及在该等级下首尾中点的目标值
-        const maxLevels = 9;                 // 最大等级数（可修改）
+        const maxLevels = MAX_SL_LEVELS_PER_HUE;
         const targetFirstLight = 80;         // 第1个颜色（最小值）的亮度目标
         const targetLastLight  = 25;         // 第maxLevels个颜色（最大值）的亮度目标
         const targetFirstSat   = 90;         // 第1个颜色的饱和度目标
@@ -47,7 +49,7 @@ export class HeatmapColorManager {
         // dL = (targetFirstLight - targetLastLight) / (maxLevels - 1)
         // L_high = targetFirstLight + dL/2
         // L_low  = targetLastLight  - dL/2
-        const dL = (targetFirstLight - targetLastLight) / (maxLevels - 1);
+        const dL = MIN_HSL_VARIATION_STEP;
         const L_high = targetFirstLight + dL / 2;
         const L_low  = targetLastLight  - dL / 2;
         // 同理，饱和度（从鲜艳到灰暗）

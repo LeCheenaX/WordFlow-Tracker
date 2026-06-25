@@ -2,7 +2,7 @@ import { DocTracker } from './DocTracker';
 import { DataRecorder } from './DataRecorder';
 import { RecorderManager } from './RecorderManager';
 import { StatusBarManager, updateStatusBarStyle, removeStatusBarStyle } from './StatusBarManager';
-import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowSettings, WordflowSubSettingsTab, WidgetTab, ReferenceTab, AITab } from './settings';
+import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowRecorderConfigs, WordflowSettings, WordflowSubSettingsTab, WidgetTab, ReferenceTab, AITab } from './settings';
 import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
 import { currentPluginVersion, changelog } from './changeLog';
 import { initI18n, I18nManager } from './i18n';
@@ -10,8 +10,10 @@ import { executeOnceWithKey } from './Utils/executeOnce';
 import { throttleLeadingEdge } from './Utils/throttle';
 import { SnapshotManager } from './SnapshotManager';
 import { AIDiffManager } from './AIDiffManager';
+import { getDateValidationErrorResult } from './Utils/dateFormatValidator';
 import { App, Component, getAllTags, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
 
+declare const activeDocument: Document;
 
 // Remember to rename these classes and interfaces!
 const DEBUG = false as const;
@@ -85,7 +87,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		if (this.settings.showWidgetRibbonIcon) {
 			this.addRibbonIcon('chart-bar-decreasing', 'Reveal and refresh wordflow tracker widget', (_evt: MouseEvent) => {
-				this.activateView();
+				void this.activateView();
 			});
 		}
 		// Perform additional things with the ribbon
@@ -93,7 +95,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		this.app.workspace.onLayoutReady(async () => {
 			if (this.settings.enableWidgetOnLoad) {
 				await sleep(500); // add delay to allow view to check if there's existing view, when plugin is updated through Obsidian community.
-				this.createWidgetView(); // Use createWidgetView instead of activateView
+				void this.createWidgetView(); // Use createWidgetView instead of activateView
 			}
 			void this.aiDiffManager.cleanupStaleMarkers();
 		});
@@ -115,7 +117,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			id: 'reveal-and-refresh-wordflow-tracker-widget',
 			name: this.i18n.t('commands.revealWidget.name'),
 			callback: () => {
-				this.activateView();
+				void this.activateView();
 			}
 		});
 
@@ -123,9 +125,9 @@ export default class WordflowTrackerPlugin extends Plugin {
 			id: 'refresh-widget-with-random-colors',
 			name: this.i18n.t('commands.refreshWidget.name'),
 			callback: () => {
-				this.Widget?.updateTaggedColorMap();
-				this.Widget?.updateUnconfiguredColorMap();
-				this.activateView();
+				void this.Widget?.updateTaggedColorMap();
+				void this.Widget?.updateUnconfiguredColorMap();
+				void this.activateView();
 			}
 		});
 		/*
@@ -215,7 +217,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
 
-		this.registerDomEvent(document, 'click', (_evt: MouseEvent) => {
+		this.registerDomEvent(activeDocument, 'click', (_evt: MouseEvent) => {
 			//test to switch between editor
 			if (this.app.workspace.activeEditor?.file) {
 				//console.log(this.app.workspace.activeEditor.file?.path)
@@ -229,9 +231,11 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		if (this.settings.autoRecordInterval && Number(this.settings.autoRecordInterval) != 0) {
-			this.registerInterval(window.setInterval(async () => {
-				await this.recorderManager.record();
-				new Notice(this.i18n.t('notices.recordAutoSuccess'), 3000);
+			this.registerInterval(window.setInterval(() => {
+				void (async () => {
+					await this.recorderManager.record();
+					new Notice(this.i18n.t('notices.recordAutoSuccess'), 3000);
+				})();
 			}, Number(this.settings.autoRecordInterval) * 1000));
 		}
 
@@ -247,8 +251,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 				// waiting noteName to be updated by the rename events
 				await sleep(200);
 				// Update only tagged colors since metadata changed
-				this.Widget.updateTaggedColorMap();
-				this.Widget.updateData();
+				void this.Widget.updateTaggedColorMap();
+				void this.Widget.updateData();
 			}
 		}));
 	}
@@ -268,24 +272,26 @@ export default class WordflowTrackerPlugin extends Plugin {
 			const activeEditor = this.app.workspace.getActiveViewOfType(MarkdownView);
 			if (DEBUG) console.log("Editing file:", this.app.workspace.activeEditor?.file?.basename) // debug
 
-			this.activateTracker(activeEditor); // activate without delay
+			void this.activateTracker(activeEditor); // activate without delay
 
 			await sleep(100); // set delay for getting the correct opened files for deactivating and deleting Map
 			this.lastActiveFile.path = activeEditor?.file?.path ?? this.lastActiveFile.path;
 			this.lastActiveFile.mode = activeEditor?.getMode() ?? this.lastActiveFile.mode;
 			const potentialEditors = await this.getAllOpenedFilesWithMode();
 			//console.log(potentialEditors) // debug
-			this.trackerMap.forEach(async (tracker, filePath) => {
-				if (!potentialEditors.has(filePath)) {
-					tracker.deactivate();
-					await this.recordTracker(tracker);
-					tracker.destroyTimers();
-					this.trackerMap.delete(filePath);
-					//console.log("Closed file:", filePath, " is recorded.")
-				}
-				else {
-					if (filePath !== this.lastActiveFile.path) tracker.deactivate(); // 1.5.0: no longer deactivate tracker when clicked elsewhere
-				}
+			this.trackerMap.forEach((tracker, filePath) => {
+				void (async () => {
+					if (!potentialEditors.has(filePath)) {
+						tracker.deactivate();
+						await this.recordTracker(tracker);
+						tracker.destroyTimers();
+						this.trackerMap.delete(filePath);
+						//console.log("Closed file:", filePath, " is recorded.")
+					}
+					else {
+						if (filePath !== this.lastActiveFile.path) tracker.deactivate(); // 1.5.0: no longer deactivate tracker when clicked elsewhere
+					}
+				})();
 			});
 			this.isModeSwitch = false;
 		}
@@ -296,24 +302,26 @@ export default class WordflowTrackerPlugin extends Plugin {
 			this.lastActiveFile.mode = this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() ?? this.lastActiveFile.mode;
 			const potentialEditors = await this.getAllOpenedFilesWithMode();
 			//console.log(potentialEditors) // debug
-			this.trackerMap.forEach(async (tracker, filePath) => {
-				tracker.deactivate();
-				if (!potentialEditors.has(filePath)) {
-					await this.recordTracker(tracker);
-					tracker.destroyTimers();
-					this.trackerMap.delete(filePath);
-					//console.log("Closed file:", filePath, " is recorded.")
-				}
-				//else if (this.isModeSwitch && potentialEditors.get(filePath) == 'preview'){// now preview mode}
-				else if (this.isModeSwitch && filePath == this.lastActiveFile.path) {
-					//console.log ('Try recording', filePath, ' current mode: ', potentialEditors.get(filePath));
-					await this.recordTracker(tracker);
-				}
-				else if (this.isModeSwitch && this.settings.noteToRecord == 'all' && potentialEditors.get(filePath) == 'source') {
-					//console.log ('This note is under edit mode after switching mode: ', filePath);	
-					await this.recordTracker(tracker);
-				}
-				// else console.log('Layout changed but no mode switched');*/
+			this.trackerMap.forEach((tracker, filePath) => {
+				void (async () => {
+					tracker.deactivate();
+					if (!potentialEditors.has(filePath)) {
+						await this.recordTracker(tracker);
+						tracker.destroyTimers();
+						this.trackerMap.delete(filePath);
+						//console.log("Closed file:", filePath, " is recorded.")
+					}
+					//else if (this.isModeSwitch && potentialEditors.get(filePath) == 'preview'){// now preview mode}
+					else if (this.isModeSwitch && filePath == this.lastActiveFile.path) {
+						//console.log ('Try recording', filePath, ' current mode: ', potentialEditors.get(filePath));
+						await this.recordTracker(tracker);
+					}
+					else if (this.isModeSwitch && this.settings.noteToRecord == 'all' && potentialEditors.get(filePath) == 'source') {
+						//console.log ('This note is under edit mode after switching mode: ', filePath);	
+						await this.recordTracker(tracker);
+					}
+					// else console.log('Layout changed but no mode switched');*/
+				})();
 			});
 			this.isModeSwitch = false;
 			this.statusBarManager.clear(); // clear status bar
@@ -354,7 +362,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		}
 		else {
 			const activeFileViewMode = activeEditor?.getMode();
-			this.trackerMap.get(activeFilePath)?.activate(activeFileViewMode);
+			void this.trackerMap.get(activeFilePath)?.activate(activeFileViewMode);
 		}
 		//await sleep(50); // for the process completion
 	}
@@ -368,10 +376,10 @@ export default class WordflowTrackerPlugin extends Plugin {
 			});
 		}
 
-		this.app.workspace.revealLeaf(
+		void this.app.workspace.revealLeaf(
 			this.app.workspace.getLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET)[0]
 		);
-		this.Widget?.updateAll();
+		void this.Widget?.updateAll();
 	}
 
 	async createWidgetView() {
@@ -382,7 +390,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				active: false, // Don't make it active automatically
 			});
 		}
-		this.Widget?.updateAll();
+		void this.Widget?.updateAll();
 	}
 	/*
 			if(DEBUG){	
@@ -509,7 +517,10 @@ export default class WordflowTrackerPlugin extends Plugin {
 			//console.log(filePath, ' changed to ', mode);
 		};
 
-		const processLeafHistory = (historyItems: any) => {
+		type HistoryItem = { state?: { state?: { file: string; mode: string } } };
+		type LeafHistory = { backHistory?: HistoryItem[]; forwardHistory?: HistoryItem[] };
+
+		const processLeafHistory = (historyItems?: HistoryItem[]) => {
 			if (!historyItems?.length) return;
 
 			for (const item of historyItems) {
@@ -536,16 +547,17 @@ export default class WordflowTrackerPlugin extends Plugin {
 				//console.log(leaf);
 				//if (leaf.view?.getMode() == 'source'){ // Warning: file must have been opened to have function 'getMode()', this influences only start up loading files in saved workspace 
 				// Use getState() instead of getMode() and getFile()
-				if (leaf.view?.getState()?.mode) {
+				const leafState = leaf.view?.getState();
+				if (typeof leafState?.mode === 'string' && typeof leafState.file === 'string') {
 					addFileWithMode(
-						(leaf.view.getState() as any)?.file,
-						leaf.view.getState().mode as string
+						leafState.file,
+						leafState.mode
 					); // get file path of TFile, or get file path directly, and then add to array | which to get depends on if the files have been opened or not.
 				}
 
 				// 处理历史记录（避免滥用 @ts-expect-error）
 				if ('history' in leaf) {
-					const history = (leaf as any).history;
+					const history = (leaf as typeof leaf & { history?: LeafHistory }).history;
 					processLeafHistory(history?.backHistory);
 					processLeafHistory(history?.forwardHistory);
 				}
@@ -554,9 +566,11 @@ export default class WordflowTrackerPlugin extends Plugin {
 			// override the mode with the current active leaf, when multiple leaves of the same file exist
 			const currentActiveLeaf = this.app.workspace.getActiveViewOfType(MarkdownView);
 			if (currentActiveLeaf) {
+				const activeState = currentActiveLeaf.getState();
+				if (typeof activeState.file !== 'string' || typeof activeState.mode !== 'string') return fileMap;
 				addFileWithMode(
-					(currentActiveLeaf?.getState() as any)?.file,
-					currentActiveLeaf?.getState()?.mode as string
+					activeState.file,
+					activeState.mode
 				);
 			}
 		} catch (_e) {
@@ -571,8 +585,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 
 	onunload() {
-		// 首先清理 Widget view
-		this.app.workspace.detachLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET);
+		// should not detach leaves as per Obsidian regulation since June 2026
+		// this.app.workspace.detachLeavesOfType(VIEW_TYPE_WORDFLOW_WIDGET);
 
 		// Clean up AI Diff managers
 		this.aiDiffManager.destroy();
@@ -592,7 +606,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		// Migrate old hue-based tag colors to new color-based format
 		// Can be deleted in future versions
-		if (this.settings.tagColors?.some((config: any) => config.hue !== undefined)) {
+		if (this.settings.tagColors?.some((config) => 'hue' in config)) {
 			await this.migrateTagColorsFromHueToColor();
 		}
 
@@ -645,12 +659,14 @@ export default class WordflowTrackerPlugin extends Plugin {
 			message,
 			async () => {}, // onConfirm - just close
 			true, // showNeverShowAgainCheckbox
-			async (checked: boolean) => {
-				// onNeverShowAgainChange callback
-				if (checked) {
-					this.settings.MsgNeverShowAgain.push('validateDateFormats');
-					await this.saveSettings();
-				}
+			(checked: boolean) => {
+				void (async () => {
+					// onNeverShowAgainChange callback
+					if (checked) {
+						this.settings.MsgNeverShowAgain.push('validateDateFormats');
+						await this.saveSettings();
+					}
+				})();
 			}
 		).open();
 	}
@@ -658,10 +674,8 @@ export default class WordflowTrackerPlugin extends Plugin {
 	/**
 	 * Check date formats for a single recorder
 	 */
-	private checkRecorderDateFormats(recorderName: string, config: any, errors: string[]): void {
-		const { getDateValidationErrorResult } = require('./Utils/dateFormatValidator');
-		
-		const fieldsToCheck = [
+	private checkRecorderDateFormats(recorderName: string, config: WordflowRecorderConfigs, errors: string[]): void {
+		const fieldsToCheck: { key: 'periodicNoteFormat' | 'timeFormat' | 'templateDateFormat' | 'templateTimeFormat'; i18nKey: string }[] = [
 			{ key: 'periodicNoteFormat', i18nKey: 'settings.recorders.periodicNote.format.name' },
 			{ key: 'timeFormat', i18nKey: 'settings.recorders.recordingContents.timeFormat.name' },
 			{ key: 'templateDateFormat', i18nKey: 'settings.recorders.templatePlugin.dateFormat.name' },
@@ -695,7 +709,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 
 		let needsSave = false;
 
-		this.settings.tagColors.forEach((config: any) => {
+		this.settings.tagColors.forEach((config: typeof this.settings.tagColors[number] & { hue?: number }) => {
 			// Check if config has old hue field but no color field
 			if (config.hue !== undefined &&
 				typeof config.hue === 'number' &&
@@ -846,7 +860,7 @@ class ChangelogModal extends Modal {
 		const container = contentEl.createDiv('wordflow-changelog-container');
 
 		// render markdown contents
-		MarkdownRenderer.render(
+		void MarkdownRenderer.render(
 			this.app,
 			displayContent,
 			container,
