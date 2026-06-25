@@ -179,7 +179,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     aiApiKeys: {}, // Store API keys per provider
     // Context Management
     aiGenerateSummary: false,
-    aiIncludeHeadingTree: true, // Whether to include heading tree in context
+    aiIncludeHeadingTree: false, // Whether to include heading tree in context
     aiContextMode: 'none',
     aiHeadingLevel: 3,
     aiContextSentenceRange: 0, // Number of sentences before/after
