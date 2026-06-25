@@ -450,15 +450,51 @@
         "desc": "The model identifier to use for generating diff summaries (e.g., gpt-4o-mini)."
       },
       "prompt": {
-        "name": "Custom Prompt",
+        "name": "Custom System Prompt",
         "desc": "The system prompt sent to the AI model along with the diff content.",
         "defaultPrompt": "Based on the diff, summarize what was modified. Follow this format by change amount:\n\n1. Few (1-3 items): single sentence. Example: \"added greeting section, fixed title typo\"\n2. Moderate (4-8 items): numbered list (<br> between items). Max 4 points, total ≤20 words. Example: \"1. Added FAQ section;<br>2. Updated installation steps;<br>3. Fixed broken links;<br>4. Removed deprecated page.\"\n3. Extensive (>8 items): category(optional): + <br> + numbered list (<br> between items). Max 6 points, ≤50 words total. Example: \"Content restructure:<br>1. Reorganized background, outlook chapter and conclusion chapter;<br>2. Deleted chapter regarding significance<br>;3. Updated code examples.<br>Attachments changed:1. Removed outdated appendices;<br>2. Pictures in background are replaced.<br>Fixed formatting issues.\"\n\nRules: Output is a single-line string. Use <br> ONLY after colon before numbered list and between numbered items. Never use actual newlines. Reply in same language as this prompt. Output only the result.",
         "afterSysPrompt": "Recognize the following md syntax:\n\"- [ ]\" means todo;\n\"- \" or \"1.\", \"2.\" means list;\n\"## \" means heading;\n\"[[notename]]\" with no file extension or .md extension means reference;\n\"[[abc.png]]\" with non-md extension means attachment;\n\">[!]\" or \"``` ad- ```\" means callout or tip;\nContent between \"```cpp ```\" means code (e.g. cpp here).\nYou must respond in the same language as the prompt above, regardless of the language used in the modified content.",
         "userContent": "The modified content is as follows:"
       },
       "maxDiffLength": {
-        "name": "Max Diff Length",
+        "name": "Max Context Length",
         "desc": "Maximum length of diff text to send to the AI model, in kilobytes (1k = 1024 characters). Larger values cost more tokens."
+      },
+      "advanced": {
+        "heading": "Advanced"
+      },
+      "contextManagement": {
+        "heading": "Context Management",
+        "mode": {
+          "name": "Include context around modified sections",
+          "desc": "When enabled, sends surrounding context along with the changes to provide the AI with better understanding of the document structure.",
+          "options": {
+            "none": "Disabled (default)",
+            "sentence": "Chunked by sentences",
+            "block": "Chunked by blocks",
+            "heading": "Chunked by headings"
+          }
+        },
+        "sentenceRange": {
+          "name": "Sentences before/after",
+          "desc": "Specify how many sentences to include before and after the modification. 0 = only the sentence with changes; 1 = previous + current + next sentence (3 total); and so on."
+        },
+        "blockRange": {
+          "name": "Blocks before/after",
+          "desc": "Specify how many Obsidian blocks to include before and after the modification. 0 = only the block with changes; 1 = previous + current + next block (3 total); and so on."
+        },
+        "headingLevel": {
+          "name": "Heading level to include",
+          "desc": "When using heading context mode, specify which heading level (H1-H6) to extend to. For example, if a change occurs under #### 2.2.3 and you select H3 (###), the entire section from ### 2.2 to the next ### heading will be included."
+        },
+        "includeHeadingTree": {
+          "name": "Include document heading tree",
+          "desc": "When enabled, the document's heading structure will be extracted and sent to AI along with changes, helping AI understand the document organization."
+        },
+        "generateSummary": {
+          "name": "Generate document summary",
+          "desc": "On first snapshot creation, ask AI to generate an overall document summary. This summary will be sent along with diffs to help AI understand the document better."
+        }
       },
       "testConnection": "Test Connection",
       "testSuccess": "Connection successful!",

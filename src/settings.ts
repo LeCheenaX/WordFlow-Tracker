@@ -77,9 +77,18 @@ export interface WordflowSettings extends WordflowRecorderConfigs{
     aiBaseURL: string;
     aiApiKey: string;
     aiModel: string;
-    aiPrompt: string;
-    aiMaxDiffLength: string;
     aiApiKeys: Record<string, string>; // Store API keys per provider
+    // Context Management
+    aiGenerateSummary: boolean; // whether to generate document summary
+    aiIncludeHeadingTree: boolean; // Whether to include heading tree in context
+    aiContextMode: string; // 'none' | 'sentence' | 'block' | 'heading'
+    aiContextSentenceRange: number; // Number of sentences before/after for sentence mode
+    aiContextBlockRange: number; // Number of blocks before/after for block mode
+    aiHeadingLevel: number; // 1-6, for heading context mode
+    aiMaxDiffLength: string; // Maximum length of context to send to AI
+
+    // Advanced
+    aiPrompt: string; // Custom system prompt for AI
 }
 
 export interface RecorderConfig extends WordflowRecorderConfigs {
@@ -162,9 +171,18 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
     aiBaseURL: 'https://api.openai.com/v1',
     aiApiKey: '',
     aiModel: 'gpt-4o-mini',
-    aiPrompt: '',
-    aiMaxDiffLength: '128',
     aiApiKeys: {}, // Store API keys per provider
+    // Context Management
+    aiGenerateSummary: false,
+    aiIncludeHeadingTree: true, // Whether to include heading tree in context
+    aiContextMode: 'none',
+    aiHeadingLevel: 3,
+    aiContextSentenceRange: 0, // Number of sentences before/after
+    aiContextBlockRange: 0, // Number of blocks before/after
+    aiMaxDiffLength: '128', // Maximum length of context to send to AI
+
+    // Advanced
+    aiPrompt: '', // Custom system prompt for AI
 }
 
 
@@ -2118,32 +2136,7 @@ export class AITab extends WordflowSubSettingsTab {
                     await this.plugin.saveSettings();
                 }));
 
-        const promptSetting = new Setting(this.aiSettingsContainer)
-            .setName(this.i18n.t('settings.ai.prompt.name'))
-            .setDesc(this.i18n.t('settings.ai.prompt.desc'))
-            .addTextArea(text => text
-                .setPlaceholder(this.i18n.t('settings.ai.prompt.defaultPrompt'))
-                .setValue(this.plugin.settings.aiPrompt)
-                .onChange(async (value) => {
-                    this.plugin.settings.aiPrompt = value;
-                    await this.plugin.saveSettings();
-                }));
-        makeMultilineTextSetting(promptSetting);
-
-        new Setting(this.aiSettingsContainer)
-            .setName(this.i18n.t('settings.ai.maxDiffLength.name'))
-            .setDesc(this.i18n.t('settings.ai.maxDiffLength.desc'))
-            .addText(text => text
-                .setPlaceholder('128')
-                .setValue(this.plugin.settings.aiMaxDiffLength)
-                .onChange(async (value) => {
-                    const num = parseInt(value);
-                    if (!isNaN(num) && num > 0) {
-                        this.plugin.settings.aiMaxDiffLength = value;
-                        await this.plugin.saveSettings();
-                    }
-                }));
-
+        // Test Connection - placed right after Model
         new Setting(this.aiSettingsContainer)
             .setName(this.i18n.t('settings.ai.testConnection'))
             .addButton(button => button
@@ -2180,6 +2173,131 @@ export class AITab extends WordflowSubSettingsTab {
                         button.setDisabled(false);
                     }
                 }));
+
+        // Context Management Section
+        new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.contextManagement.heading'))
+            .setHeading();
+
+        // Generate Document Summary - first in Context Management
+        new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.contextManagement.generateSummary.name'))
+            .setDesc(this.i18n.t('settings.ai.contextManagement.generateSummary.desc'))
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.aiGenerateSummary)
+                .onChange(async (value) => {
+                    this.plugin.settings.aiGenerateSummary = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        // Include Document Heading Tree - second in Context Management
+        new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.contextManagement.includeHeadingTree.name'))
+            .setDesc(this.i18n.t('settings.ai.contextManagement.includeHeadingTree.desc'))
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.aiIncludeHeadingTree)
+                .onChange(async (value) => {
+                    this.plugin.settings.aiIncludeHeadingTree = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.contextManagement.mode.name'))
+            .setDesc(this.i18n.t('settings.ai.contextManagement.mode.desc'))
+            .addDropdown(dropdown => {
+                dropdown
+                    .addOption('none', this.i18n.t('settings.ai.contextManagement.mode.options.none'))
+                    .addOption('sentence', this.i18n.t('settings.ai.contextManagement.mode.options.sentence'))
+                    .addOption('block', this.i18n.t('settings.ai.contextManagement.mode.options.block'))
+                    .addOption('heading', this.i18n.t('settings.ai.contextManagement.mode.options.heading'))
+                    .setValue(this.plugin.settings.aiContextMode)
+                    .onChange(async (value) => {
+                        this.plugin.settings.aiContextMode = value;
+                        await this.plugin.saveSettings();
+                        this.display(); // Refresh to show/hide heading level
+                    });
+            });
+
+        // Heading level slider (only visible when heading mode is selected)
+        if (this.plugin.settings.aiContextMode === 'heading') {
+            new Setting(this.aiSettingsContainer)
+                .setName(this.i18n.t('settings.ai.contextManagement.headingLevel.name'))
+                .setDesc(this.i18n.t('settings.ai.contextManagement.headingLevel.desc'))
+                .addSlider(slider => slider
+                    .setLimits(1, 6, 1)
+                    .setValue(this.plugin.settings.aiHeadingLevel)
+                    .setDynamicTooltip()
+                    .onChange(async (value) => {
+                        this.plugin.settings.aiHeadingLevel = value;
+                        await this.plugin.saveSettings();
+                    }));
+        }
+
+        // Sentence range (only visible when sentence mode is selected)
+        if (this.plugin.settings.aiContextMode === 'sentence') {
+            new Setting(this.aiSettingsContainer)
+                .setName(this.i18n.t('settings.ai.contextManagement.sentenceRange.name'))
+                .setDesc(this.i18n.t('settings.ai.contextManagement.sentenceRange.desc'))
+                .addText(text => text
+                    .setPlaceholder('0')
+                    .setValue(this.plugin.settings.aiContextSentenceRange.toString())
+                    .onChange(async (value) => {
+                        const num = parseInt(value);
+                        if (!isNaN(num) && num >= 0) {
+                            this.plugin.settings.aiContextSentenceRange = num;
+                            await this.plugin.saveSettings();
+                        }
+                    }));
+        }
+
+        // Block range (only visible when block mode is selected)
+        if (this.plugin.settings.aiContextMode === 'block') {
+            new Setting(this.aiSettingsContainer)
+                .setName(this.i18n.t('settings.ai.contextManagement.blockRange.name'))
+                .setDesc(this.i18n.t('settings.ai.contextManagement.blockRange.desc'))
+                .addText(text => text
+                    .setPlaceholder('0')
+                    .setValue(this.plugin.settings.aiContextBlockRange.toString())
+                    .onChange(async (value) => {
+                        const num = parseInt(value);
+                        if (!isNaN(num) && num >= 0) {
+                            this.plugin.settings.aiContextBlockRange = num;
+                            await this.plugin.saveSettings();
+                        }
+                    }));
+        }
+
+        // Max Context Length - at the bottom of Context Management
+        new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.maxDiffLength.name'))
+            .setDesc(this.i18n.t('settings.ai.maxDiffLength.desc'))
+            .addText(text => text
+                .setPlaceholder('128')
+                .setValue(this.plugin.settings.aiMaxDiffLength)
+                .onChange(async (value) => {
+                    const num = parseInt(value);
+                    if (!isNaN(num) && num > 0) {
+                        this.plugin.settings.aiMaxDiffLength = value;
+                        await this.plugin.saveSettings();
+                    }
+                }));
+
+        // Advanced Section - after Context Management
+        new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.advanced.heading'))
+            .setHeading();
+
+        const promptSetting = new Setting(this.aiSettingsContainer)
+            .setName(this.i18n.t('settings.ai.prompt.name'))
+            .setDesc(this.i18n.t('settings.ai.prompt.desc'))
+            .addTextArea(text => text
+                .setPlaceholder(this.i18n.t('settings.ai.prompt.defaultPrompt'))
+                .setValue(this.plugin.settings.aiPrompt)
+                .onChange(async (value) => {
+                    this.plugin.settings.aiPrompt = value;
+                    await this.plugin.saveSettings();
+                }));
+        makeMultilineTextSetting(promptSetting);
 
         // Initially set visibility
         this.toggleAISettings(this.plugin.settings.enableAIDiff);

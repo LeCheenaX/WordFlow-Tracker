@@ -90,7 +90,23 @@ export class AIDiffManager {
         if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
 
         const maxDiffLength = (parseInt(this.plugin.settings.aiMaxDiffLength) || 128) * 1024;
-        const diff = computeDiffForLLM(snapshot, currentContent, maxDiffLength);
+        
+        // Get snapshot metadata
+        const snapshotData = this.plugin.snapshotManager.getSnapshotData(item.groupKey, item.filePath);
+        
+        // Prepare context options
+        const contextOptions = {
+            contextMode: this.plugin.settings.aiContextMode as 'none' | 'sentence' | 'block' | 'heading',
+            sentenceRange: this.plugin.settings.aiContextSentenceRange,
+            blockRange: this.plugin.settings.aiContextBlockRange,
+            headingLevel: this.plugin.settings.aiHeadingLevel,
+            includeHeadingTree: this.plugin.settings.aiIncludeHeadingTree,
+            headingTree: snapshotData?.headingTree,
+            summary: snapshotData?.summary,
+            fileName: file.basename
+        };
+        
+        const diff = computeDiffForLLM(snapshot, currentContent, maxDiffLength, contextOptions);
 
         if (!diff || diff.trim() === '') {
             await this.replaceDiffMarker(item, '\u200B');
