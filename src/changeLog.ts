@@ -1,8 +1,18 @@
-export const currentPluginVersion = '2.2.8';
+export const currentPluginVersion = '2.2.9';
 
 export const changelog = {
 'en': 
 `
+### 2.2.9 updates
+✨ **New Features:**
+- Context Management: AI can now understand changes better by:
+    - Document summary: AI can generate a document summary when first indexing a note, providing better understanding of the overall document structure.
+    - Document Headings: Heading tree structure can be included with AI requests for better document organization awareness.
+    - File chunking: including surrounding context (sentences, paragraphs, or heading sections) around modified areas.
+
+🎨 **UI Optimization**:
+- Reorganized AI settings page: added dedicated "Context Management" section and "Advanced" section for clearer configuration.
+
 ### 2.2.8 updates
 🐛 **Bug Fixed:**
 - Widget view may appear at an unexpected location when the plugin is re-enabled. 
@@ -59,6 +69,19 @@ export const changelog = {
 `,
 'zh-CN': 
 `
+### 2.2.9 更新说明
+✨ **新功能：**
+- 上下文管理：AI 差异分析现在可以包含修改位置周围的上下文（按句子、段落或标题切片），让 AI 更准确地理解文档变更。
+- 新增文档摘要生成功能：首次建立快照时，AI 可自动生成文档整体摘要，辅助后续差异分析。
+- 可随 AI 请求发送文档的标题树结构，帮助 AI 理解文档的组织架构。
+
+⚡ **功能增强：**
+- 重新组织 AI 设置页面：新增「上下文管理」分区和「高级」分区，配置更清晰。
+- 精简了 Widget 颜色设置的描述文字，移除了冗余选项。
+
+🐛 **问题修复：**
+- 属性别名现在能正确从 Widget 获取字段选项，而非静态列表。
+
 ### 2.2.8 更新说明
 🐛 **Bug 修复：**
 - 修复了插件重新启用时，Widget 视图可能出现在意外位置的问题。
