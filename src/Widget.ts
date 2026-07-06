@@ -863,38 +863,32 @@ export class WordflowWidgetView extends ItemView {
 
     private initRecorderDropdown() {
         this.recorderDropdown.clear();
-        let availableRecorders = 0;
-        const recorders = this.plugin.recorderManager.getRecorders();
+        const recorders = this.plugin.recorderManager.getPeriodicRecorders();
+        const availableRecorders = recorders.filter(recorder => !(recorder.getParser() instanceof MetaDataParser));
 
-        for (let index = 0; index < recorders.length; ++index){
-            if (recorders[index].getParser() instanceof MetaDataParser) continue;
-            let recorderName: string;
-            if (index !== 0) {
-                recorderName = this.plugin.settings.Recorders[index-1].name;
-            } else {
-                recorderName = this.plugin.settings.name;
-            }
-            ++availableRecorders;
+        for (let index = 0; index < availableRecorders.length; ++index){
+            const recorder = availableRecorders[index];
+            const recorderName = recorder.config?.name ?? this.plugin.settings.name;
             this.recorderDropdown.addOption(index.toString(), recorderName);
         }
 
-        if (!availableRecorders) {
+        if (!availableRecorders.length) {
             this.selectedRecorder = null;
             this.recorderDropdown.addOption('tempError', this.plugin.i18n.t('widget.prompts.noRecorder'));
             return;
         }
 
         // Set initial selected recorder and its display name
-        if (!this.selectedRecorder) {
+        if (!this.selectedRecorder || !availableRecorders.includes(this.selectedRecorder)) {
             const defaultIndex = 0;
-            this.selectedRecorder = recorders[defaultIndex];
+            this.selectedRecorder = availableRecorders[defaultIndex];
             this.selectedNoteName = moment().format(this.selectedRecorder.periodicNoteFormat);
             this.recorderDropdown.setValue(defaultIndex.toString());
         }
 
         this.recorderDropdown.onChange((value) => {
             void (async () => {
-            this.selectedRecorder = recorders[parseInt(value)];
+            this.selectedRecorder = availableRecorders[parseInt(value)];
             this.selectedNoteName = moment().format(this.selectedRecorder.periodicNoteFormat);
             await this.updateAll(); // Redraw the entire widget when recorder changes
             this.recorderDropdown.setValue(value); // put after draw to render correct selection

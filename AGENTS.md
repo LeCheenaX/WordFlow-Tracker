@@ -42,6 +42,12 @@ Usage notes:
 </skill>
 
 <skill>
+<name>release-new-version</name>
+<description>Project-specific release workflow for Wordflow Tracker. Load when bumping versions, writing changelog entries, tagging releases, re-releasing packages, or updating release statistics.</description>
+<location>project</location>
+</skill>
+
+<skill>
 <name>project</name>
 <description>Project-specific architecture, maintenance tasks, and unique conventions for this repository. Load when performing project-wide maintenance or working with the core architecture.</description>
 <location>project</location>

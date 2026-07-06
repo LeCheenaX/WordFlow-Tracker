@@ -1,5 +1,5 @@
 import WordflowTrackerPlugin from './main';
-import { App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, MarkdownRenderer, Component, setIcon, TFile, requestUrl } from 'obsidian';
+import { AbstractInputSuggest, App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, ToggleComponent, MarkdownRenderer, Component, setIcon, TFile, TFolder, requestUrl } from 'obsidian';
 
 declare const activeDocument: Document;
 import { DataRecorder, MergedData } from './DataRecorder';
@@ -9,10 +9,12 @@ import { updateStatusBarStyle } from './StatusBarManager';
 import { TagColorConfig } from './Utils/TagColorManager';
 import { getDateValidationErrorResult } from './Utils/dateFormatValidator';
 import { getAllRecorderFieldOptions } from './Utils/fieldOptions';
+import { isPeriodicRecorderTarget, RECORDER_TARGET_TYPES, RecorderTargetType } from './RecorderTarget';
 
 // Obsidian supports only string and boolean for settings. numbers are not supported. 
 export interface WordflowRecorderConfigs {
     name: string;
+    enabled: boolean;
     enableDynamicFolder: boolean;
     periodicNoteFolder: string;
     periodicNoteFormat: string;
@@ -116,6 +118,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 	// Recorders tab for multiple recorders
 	Recorders: [],
 	name: 'Default Recorder',
+    enabled: true,
 	enableDynamicFolder: false,
 	periodicNoteFolder: '',
 	periodicNoteFormat: 'YYYY-MM-DD',
@@ -127,7 +130,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 	recordType: 'table',
 	insertPlace: 'bottom',
 	tableSyntax: `| Note                                              | Edited Words    | Percentage | Focused             | Last Modified Time   |\n| ------------------------------------ | ----------------- | ------------- | ----------------- | ---------------------- |\n| [[\${modifiedNote}\\|\${noteTitle}]] | \${editedWords} | \${statBar}    | \${readEditTime} | \${lastModifiedTime} |`,
-	bulletListSyntax: `- \${modifiedNote}|\${noteTitle}\n    - Edits: \${editedTimes}\n    - Edited Words: \${editedWords}\n    - Focused Time: \${readEditTime}`,
+	bulletListSyntax: `- [[\${modifiedNote}|\${noteTitle}]]\n    - Edits: \${editedTimes}\n    - Edited Words: \${editedWords}\n    - Focused Time: \${readEditTime}`,
 	metadataSyntax: `total edits: \${totalEdits}\ntotal words: \${totalWords}\ntotal time: \${totalTime}`,
 	timeFormat: 'HH:mm',
 	sortBy: 'lastModifiedTime',
@@ -205,6 +208,33 @@ export abstract class WordflowSubSettingsTab {
      */
     protected createMultiLineDesc(key: string, params?: Record<string, string | number | boolean>): DocumentFragment {
         return this.i18n.buildFragment(key, params);
+    }
+}
+
+class FolderSuggest extends AbstractInputSuggest<TFolder> {
+    constructor(app: App, inputEl: HTMLInputElement, private onChoose: (folderPath: string) => void | Promise<void>) {
+        super(app, inputEl);
+    }
+
+    protected getSuggestions(query: string): TFolder[] {
+        const normalizedQuery = query.toLowerCase();
+        return this.app.vault
+            .getAllLoadedFiles()
+            .filter((file): file is TFolder => file instanceof TFolder)
+            .filter(folder => folder.path !== '' && folder.path !== '/')
+            .filter(folder => folder.path.toLowerCase().includes(normalizedQuery))
+            .slice(0, 50);
+    }
+
+    renderSuggestion(folder: TFolder, el: HTMLElement): void {
+        el.setText(folder.path);
+    }
+
+    selectSuggestion(folder: TFolder): void {
+        const folderPath = folder.path;
+        this.setValue(folderPath);
+        void this.onChoose(folderPath);
+        this.close();
     }
 }
 
@@ -391,13 +421,39 @@ export class GeneralTab extends WordflowSubSettingsTab {
 // 记录器管理标签页
 // ========================================
 export class RecordersTab extends WordflowSubSettingsTab {
-    public activeRecorderIndex: number = 0;
+    public activeRecorderIndex: number = -1;
     private settingsContainer: HTMLElement;
     private PeriodicFolderComponent?: TextComponent;
 	private SyntaxComponent?: TextAreaComponent;
     private InsertPlaceComponent?: DropdownComponent;
+    private recordTypeOptions: Array<'table' | 'bulletList' | 'metadata'> = ['table', 'bulletList', 'metadata'];
+    private rawSyntaxEditorIndexes: Set<number> = new Set();
+    private metadataTotalVariables = ['totalEdits', 'totalWords', 'totalEditTime', 'totalReadTime', 'totalTime'];
+    private metadataModifiedNoteVariables = ['readEditTime', 'editedWords', 'editedTimes', 'addedWords', 'deletedWords', 'changedWords', 'docWords', 'editTime', 'readTime', 'lastModifiedTime'];
+    private noteRecordVariables = ['noteLink', 'modifiedNote', 'noteTitle', 'editedWords', 'editedTimes', 'addedWords', 'deletedWords', 'changedWords', 'docWords', 'readEditTime', 'readTime', 'editTime', 'editedPercentage', 'statBar', 'lastModifiedTime', 'comment', 'diff'];
+    private notePathSyntaxOptions = ['${modifiedNote}', '[[${modifiedNote}]]', '[[${modifiedNote}|${noteTitle}]]'];
+    private tableNotePathSyntaxOptions = ['${modifiedNote}', '[[${modifiedNote}]]', '[[${modifiedNote}\\|${noteTitle}]]'];
 
     display() {
+        this.container.empty();
+        const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
+        const listContainer = tabContent.createDiv('wordflow-recorder-list');
+
+        for (let index = 0; index < this.getRecorderCount(); index++) {
+            this.renderRecorderRow(listContainer, index);
+        }
+
+        new Setting(tabContent)
+            .addButton(btn => btn
+                .setButtonText(this.i18n.t('settings.recorders.actions.add'))
+                .setIcon('plus')
+                .setTooltip(this.i18n.t('settings.recorders.actions.add'))
+                .onClick(() => {
+                    void this.createNewRecorder();
+                })
+            );
+        return;
+
         this.container.empty();
         // Create recorder selection
         const recorderSelectionContainer = this.container.createDiv('recorder-selection-container');
@@ -487,12 +543,794 @@ export class RecordersTab extends WordflowSubSettingsTab {
         this.display();
     }
 
+    private getRecorderCount(): number {
+        return this.plugin.settings.Recorders.length + 1;
+    }
+
+    private getRecorderSettings(index: number): WordflowRecorderConfigs {
+        return index === 0 ? this.plugin.settings : this.plugin.settings.Recorders[index - 1];
+    }
+
+    private getRecorderInstance(index: number): DataRecorder {
+        return this.plugin.recorderManager.getRecorders()[index];
+    }
+
+    private renderRecorderRow(container: HTMLElement, index: number): void {
+        const settings = this.getRecorderSettings(index);
+        const recorderInstance = this.getRecorderInstance(index);
+        const rowContainer = container.createDiv('wordflow-recorder-item');
+        const summaryRow = rowContainer.createDiv('wordflow-recorder-summary-row');
+        const isExpanded = this.activeRecorderIndex === index;
+
+        summaryRow.addEventListener('click', (evt: MouseEvent) => {
+            const target = evt.target as HTMLElement;
+            if (target.closest('input, select, button, textarea')) return;
+            this.activeRecorderIndex = this.activeRecorderIndex === index ? -1 : index;
+            this.display();
+        });
+
+        const expandContainer = summaryRow.createDiv('wordflow-recorder-summary-expand');
+        expandContainer.setAttribute('aria-label', isExpanded ? 'Collapse' : 'Expand');
+        setIcon(expandContainer, isExpanded ? 'chevron-down' : 'chevron-right');
+
+        const nameContainer = summaryRow.createDiv('wordflow-recorder-summary-name');
+        new TextComponent(nameContainer)
+            .setValue(settings.name)
+            .onChange(async (value) => {
+                settings.name = value.trim() || this.getFallbackRecorderName(index);
+                await this.plugin.saveSettings();
+                recorderInstance.loadSettings();
+                await this.plugin.Widget?.updateUIandData();
+            });
+
+        const targetContainer = summaryRow.createDiv('wordflow-recorder-summary-target');
+        const targetDropdown = new DropdownComponent(targetContainer);
+        this.populateTargetDropdown(targetDropdown, settings.periodicNoteType);
+        targetDropdown.onChange(async (value) => {
+            settings.periodicNoteType = value;
+            if (!isPeriodicRecorderTarget(value)) {
+                settings.recordType = 'metadata';
+                settings.insertPlace = 'yaml';
+            } else if (!this.canUseRecordType(settings, index, settings.recordType as 'table' | 'bulletList' | 'metadata')) {
+                const available = this.getAvailableRecordTypes(settings, index);
+                if (available.length > 0) settings.recordType = available[0];
+            }
+            await this.plugin.saveSettings();
+            recorderInstance.loadSettings();
+            this.display();
+        });
+
+        const recordTypeContainer = summaryRow.createDiv('wordflow-recorder-summary-format');
+        const recordTypeDropdown = new DropdownComponent(recordTypeContainer);
+        this.populateRecordTypeDropdown(recordTypeDropdown, settings, index);
+        recordTypeDropdown.selectEl.disabled = !isPeriodicRecorderTarget(settings.periodicNoteType);
+        recordTypeDropdown.onChange(async (value) => {
+            const recordType = value as 'table' | 'bulletList' | 'metadata';
+            if (!this.canUseRecordType(settings, index, recordType)) {
+                recordTypeDropdown.setValue(settings.recordType);
+                return;
+            }
+            settings.recordType = recordType;
+            await this.plugin.saveSettings();
+            await this.updateSyntax(settings);
+            await this.updateInsertPlace(settings);
+            recorderInstance.loadSettings();
+            this.display();
+        });
+
+        const enabledContainer = summaryRow.createDiv('wordflow-recorder-summary-enabled');
+        new ToggleComponent(enabledContainer)
+            .setValue(settings.enabled ?? true)
+            .onChange(async (value) => {
+                settings.enabled = value;
+                await this.plugin.saveSettings();
+                recorderInstance.loadSettings();
+                await this.plugin.Widget?.updateAll();
+            });
+
+        if (index > 0) {
+            const deleteContainer = summaryRow.createDiv('wordflow-recorder-summary-delete');
+            new ButtonComponent(deleteContainer)
+                .setIcon('trash')
+                .setTooltip(this.i18n.t('settings.recorders.actions.delete'))
+                .setWarning()
+                .onClick(() => {
+                    void this.removeRecorder(index - 1);
+                });
+        } else {
+            summaryRow.createDiv('wordflow-recorder-summary-delete');
+        }
+
+        const currentConflictOwner = this.getRecordTypeConflictOwner(
+            settings,
+            index,
+            settings.recordType as 'table' | 'bulletList' | 'metadata'
+        );
+        if (currentConflictOwner && isPeriodicRecorderTarget(settings.periodicNoteType)) {
+            rowContainer.createDiv({
+                cls: 'wordflow-recorder-conflict-hint',
+                text: `${this.getRecordTypeLabel(settings.recordType)} conflicts with ${currentConflictOwner} for the same record note.`
+            });
+        }
+
+        if (isExpanded) {
+            this.settingsContainer = rowContainer.createDiv('recorder-settings-container');
+            if (isPeriodicRecorderTarget(settings.periodicNoteType)) {
+                this.createRecorderSettingsUI(settings, recorderInstance, index);
+            } else {
+                this.renderModifiedNoteSettings(this.settingsContainer, settings, recorderInstance, index);
+            }
+        }
+    }
+
+    private getFallbackRecorderName(index: number): string {
+        return index === 0 ? DEFAULT_SETTINGS.name : `Recorder ${index}`;
+    }
+
+    private populateTargetDropdown(dropdown: DropdownComponent, currentValue: string): void {
+        for (const type of RECORDER_TARGET_TYPES) {
+            dropdown.addOption(type, this.getTargetLabel(type));
+        }
+        dropdown.setValue((currentValue || DEFAULT_SETTINGS.periodicNoteType) as RecorderTargetType);
+    }
+
+    private populateRecordTypeDropdown(dropdown: DropdownComponent, settings: WordflowRecorderConfigs, index: number): void {
+        for (const recordType of this.recordTypeOptions) {
+            const ownerName = this.getRecordTypeConflictOwner(settings, index, recordType);
+            const label = this.getRecordTypeLabel(recordType);
+            dropdown.addOption(recordType, ownerName ? `${label} - used by ${ownerName}` : label);
+            const option = dropdown.selectEl.querySelector(`option[value="${recordType}"]`) as HTMLOptionElement | null;
+            if (option && ownerName) option.disabled = true;
+        }
+        dropdown.setValue(settings.recordType);
+    }
+
+    private getTargetLabel(type: string): string {
+        switch (type) {
+            case 'daily note':
+                return this.i18n.t('settings.recorders.periodicNote.type.options.daily');
+            case 'weekly note':
+                return this.i18n.t('settings.recorders.periodicNote.type.options.weekly');
+            case 'monthly note':
+                return this.i18n.t('settings.recorders.periodicNote.type.options.monthly');
+            case 'quarterly note':
+                return this.i18n.t('settings.recorders.periodicNote.type.options.quarterly');
+            case 'semesterly note':
+                return this.i18n.t('settings.recorders.periodicNote.type.options.semesterly');
+            case 'yearly note':
+                return this.i18n.t('settings.recorders.periodicNote.type.options.yearly');
+            case 'modified note':
+                return 'Modified note';
+            default:
+                return type;
+        }
+    }
+
+    private getRecordTypeLabel(recordType: string): string {
+        switch (recordType) {
+            case 'table':
+                return this.i18n.t('settings.recorders.recordingContents.recordType.options.table');
+            case 'bulletList':
+                return this.i18n.t('settings.recorders.recordingContents.recordType.options.bulletList');
+            case 'metadata':
+                return this.i18n.t('settings.recorders.recordingContents.recordType.options.metadata');
+            default:
+                return recordType;
+        }
+    }
+
+    private getRecordNoteKey(settings: WordflowRecorderConfigs): string {
+        if (!isPeriodicRecorderTarget(settings.periodicNoteType)) return `target:${settings.periodicNoteType}`;
+        const folderMode = settings.enableDynamicFolder ? 'dynamic' : 'static';
+        const folder = settings.periodicNoteFolder || '';
+        const format = settings.periodicNoteFormat || DEFAULT_SETTINGS.periodicNoteFormat;
+        return `${folderMode}|${folder}|${format}`;
+    }
+
+    private getRecordTypeConflictOwner(settings: WordflowRecorderConfigs, index: number, recordType: 'table' | 'bulletList' | 'metadata'): string | null {
+        if (!isPeriodicRecorderTarget(settings.periodicNoteType)) return recordType === 'metadata' ? null : settings.name;
+        const targetKey = this.getRecordNoteKey(settings);
+        for (let otherIndex = 0; otherIndex < this.getRecorderCount(); otherIndex++) {
+            if (otherIndex === index) continue;
+            const otherSettings = this.getRecorderSettings(otherIndex);
+            if (!isPeriodicRecorderTarget(otherSettings.periodicNoteType)) continue;
+            if (this.getRecordNoteKey(otherSettings) !== targetKey) continue;
+            if (otherSettings.recordType === recordType) {
+                return otherSettings.name;
+            }
+        }
+        return null;
+    }
+
+    private canUseRecordType(settings: WordflowRecorderConfigs, index: number, recordType: 'table' | 'bulletList' | 'metadata'): boolean {
+        return this.getRecordTypeConflictOwner(settings, index, recordType) === null;
+    }
+
+    private getAvailableRecordTypes(settings: WordflowRecorderConfigs, index: number): Array<'table' | 'bulletList' | 'metadata'> {
+        if (!isPeriodicRecorderTarget(settings.periodicNoteType)) return ['metadata'];
+        return this.recordTypeOptions.filter(recordType => this.canUseRecordType(settings, index, recordType));
+    }
+
+    private getUnavailableRecordTypeLabels(settings: WordflowRecorderConfigs, index: number): string[] {
+        return this.recordTypeOptions
+            .filter(recordType => !this.canUseRecordType(settings, index, recordType))
+            .map(recordType => `${this.getRecordTypeLabel(recordType)} (${this.getRecordTypeConflictOwner(settings, index, recordType)})`);
+    }
+
+    private renderModifiedNotePlaceholder(container: HTMLElement): void {
+        new Setting(container)
+            .setName('Modified note properties')
+            .setDesc('This recorder target is reserved for the next implementation stage. Existing recording flows currently use periodic note recorders only.');
+    }
+
+    private renderModifiedNoteSettings(container: HTMLElement, settings: WordflowRecorderConfigs, recorderInstance: DataRecorder, index: number): void {
+        this.renderModifiedNotePlaceholder(container);
+        this.createRecorderSectionHeading(container, this.i18n.t('settings.recorders.recordingContents.heading'));
+
+        const previewContainer = container.createDiv('wordflow-syntax-preview-container');
+        previewContainer.createDiv({
+            text: this.i18n.t('settings.recorders.recordingContents.syntax.preview'),
+            cls: 'wordflow-syntax-preview-label'
+        });
+        previewContainer.createDiv('wordflow-syntax-preview-content');
+
+        if (this.isRawSyntaxEditor(index)) {
+            const syntaxSetting = new Setting(container)
+                .setClass('wordflow-raw-syntax-setting')
+                .setName(this.i18n.t('settings.recorders.recordingContents.syntax.name'))
+                .setDesc(this.createMultiLineDesc('settings.recorders.recordingContents.syntax.desc'))
+                .addButton(btn => {
+                    btn.setIcon('pencil')
+                    .setTooltip('Use property editor')
+                    .onClick(() => {
+                        this.rawSyntaxEditorIndexes.delete(index);
+                        this.display();
+                    });
+                    btn.buttonEl.addClass('wordflow-syntax-mode-toggle');
+                })
+                .addTextArea(text => {
+                    text.setValue(settings.metadataSyntax);
+                    text.onChange((value) => {
+                        settings.metadataSyntax = value;
+                        void this.plugin.saveSettings();
+                        recorderInstance.loadSettings();
+                        void this.updateSyntaxPreview(settings, previewContainer, value);
+                    });
+                });
+            makeMultilineTextSetting(syntaxSetting);
+            container.insertBefore(syntaxSetting.settingEl, previewContainer);
+            void this.updateSyntaxPreview(settings, previewContainer);
+            return;
+        }
+
+        const editorEl = this.renderStructuredSyntaxEditor(container, settings, recorderInstance, index, previewContainer);
+        container.insertBefore(editorEl, previewContainer);
+        void this.updateSyntaxPreview(settings, previewContainer);
+    }
+
+    private createRecorderSectionHeading(container: HTMLElement, text: string): HTMLElement {
+        return container.createDiv({
+            cls: 'wordflow-recorder-section-heading',
+            text
+        });
+    }
+
+    private isRawSyntaxEditor(index: number): boolean {
+        return this.rawSyntaxEditorIndexes.has(index);
+    }
+
+    private getMetadataVariables(settings: WordflowRecorderConfigs): string[] {
+        return isPeriodicRecorderTarget(settings.periodicNoteType)
+            ? this.metadataTotalVariables
+            : this.metadataModifiedNoteVariables;
+    }
+
+    private getDefaultMetadataPairs(settings: WordflowRecorderConfigs): Array<{ key: string; variable: string }> {
+        const variables = this.getMetadataVariables(settings);
+        return variables.slice(0, 3).map(variable => ({
+            key: variable,
+            variable
+        }));
+    }
+
+    private parseMetadataSyntax(settings: WordflowRecorderConfigs): Array<{ key: string; variable: string }> {
+        const pairs = settings.metadataSyntax
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .map(line => {
+                const match = line.match(/^([^:]+):\s*(?:\$\{([^}]+)\})?\s*$/);
+                if (!match) return null;
+                return {
+                    key: match[1].trim(),
+                    variable: (match[2] ?? '').trim()
+                };
+            })
+            .filter((pair): pair is { key: string; variable: string } => pair !== null);
+
+        return pairs.length > 0 ? pairs : this.getDefaultMetadataPairs(settings);
+    }
+
+    private metadataPairsToSyntax(pairs: Array<{ key: string; variable: string }>): string {
+        return pairs
+            .filter(pair => pair.key.trim())
+            .map(pair => pair.variable.trim() ? `${pair.key.trim()}: \${${pair.variable.trim()}}` : `${pair.key.trim()}:`)
+            .join('\n');
+    }
+
+    private getVariableSyntax(variable: string): string {
+        if (variable === '') return '';
+        if (variable === 'noteLink') return '[[${modifiedNote}|${noteTitle}]]';
+        return `\${${variable}}`;
+    }
+
+    private getTableVariableSyntax(variable: string): string {
+        if (variable === '') return '';
+        if (variable === 'noteLink') return '[[${modifiedNote}\\|${noteTitle}]]';
+        return `\${${variable}}`;
+    }
+
+    private parseVariableFromSyntax(value: string): string {
+        if (value.includes('[[${modifiedNote}\\|${noteTitle}]]') || value.includes('[[${modifiedNote}|${noteTitle}]]')) return 'noteLink';
+        const match = value.match(/\$\{([^}]+)\}/);
+        return match ? match[1] : value.trim();
+    }
+
+    private getVariableLabel(variable: string): string {
+        if (variable === '') return '';
+        return variable === 'noteLink' ? '[[${modifiedNote}|${noteTitle}]]' : `\${${variable}}`;
+    }
+
+    private getRecordVariableOptions(currentVariable?: string): string[] {
+        const variables = this.noteRecordVariables.filter(variable => variable !== 'noteLink' && variable !== 'modifiedNote' && variable !== 'noteTitle');
+        if (currentVariable === 'noteLink' || currentVariable === 'modifiedNote' || currentVariable === 'noteTitle') return variables;
+        return currentVariable && !variables.includes(currentVariable) ? [...variables, currentVariable] : variables;
+    }
+
+    private getDefaultTableColumns(): Array<{ label: string; variable: string }> {
+        return [
+            { label: 'Note', variable: 'noteLink' },
+            { label: 'Edited Words', variable: 'editedWords' },
+            { label: 'Focused', variable: 'readEditTime' }
+        ];
+    }
+
+    private splitMarkdownTableRow(row: string): string[] {
+        const trimmed = row.trim().replace(/^\|/, '').replace(/\|$/, '');
+        const cells: string[] = [];
+        let currentCell = '';
+        for (let index = 0; index < trimmed.length; index++) {
+            const char = trimmed[index];
+            if (char === '|' && trimmed[index - 1] !== '\\') {
+                cells.push(currentCell.trim());
+                currentCell = '';
+            } else {
+                currentCell += char;
+            }
+        }
+        cells.push(currentCell.trim());
+        return cells;
+    }
+
+    private parseTableSyntax(settings: WordflowRecorderConfigs): Array<{ label: string; variable: string }> {
+        const lines = settings.tableSyntax.split('\n').map(line => line.trim()).filter(Boolean);
+        if (lines.length < 3) return this.getDefaultTableColumns();
+        const headers = this.splitMarkdownTableRow(lines[0]).filter(Boolean);
+        const values = this.splitMarkdownTableRow(lines[2]);
+        if (!headers.length || headers.length !== values.length) return this.getDefaultTableColumns();
+        return headers.map((label, index) => ({
+            label,
+            variable: this.parseVariableFromSyntax(values[index] ?? '')
+        }));
+    }
+
+    private normalizeTableColumns(columns: Array<{ label: string; variable: string }>): Array<{ label: string; variable: string }> {
+        const normalized = columns.length > 0 ? [...columns] : this.getDefaultTableColumns();
+        normalized[0] = {
+            label: normalized[0]?.label?.trim() || 'Note',
+            variable: this.tableNotePathSyntaxOptions.includes(normalized[0]?.variable) ? normalized[0].variable : this.getTableVariableSyntax(normalized[0]?.variable || 'noteLink')
+        };
+        return normalized.map((column, index) => index === 0 ? column : {
+            label: column.label,
+            variable: column.variable === 'noteLink' || column.variable === 'modifiedNote' || column.variable === 'noteTitle'
+                ? 'editedWords'
+                : column.variable
+        });
+    }
+
+    private tableColumnsToSyntax(columns: Array<{ label: string; variable: string }>): string {
+        const safeColumns = this.normalizeTableColumns(columns).filter(column => column.label.trim());
+        const header = `| ${safeColumns.map(column => column.label.trim()).join(' | ')} |`;
+        const separator = `| ${safeColumns.map(() => '---').join(' | ')} |`;
+        const values = `| ${safeColumns.map((column, index) => index === 0 ? column.variable : this.getVariableSyntax(column.variable)).join(' | ')} |`;
+        return [header, separator, values].join('\n');
+    }
+
+    private getNextTableColumnName(columns: Array<{ label: string; variable: string }>): string {
+        return this.getNextUniqueName('New Column', columns.map(column => column.label));
+    }
+
+    private getNextUniqueName(baseName: string, existingNames: string[]): string {
+        const normalizedNames = new Set(existingNames.map(name => name.trim()).filter(Boolean));
+        let suffix = 1;
+        while (normalizedNames.has(`${baseName} ${suffix}`)) suffix++;
+        return `${baseName} ${suffix}`;
+    }
+
+    private getDefaultBulletItems(): Array<{ label: string; variable: string; indent: number }> {
+        return [
+            { label: 'Edits', variable: 'editedTimes', indent: 1 },
+            { label: 'Edited Words', variable: 'editedWords', indent: 1 },
+            { label: 'Focused Time', variable: 'readEditTime', indent: 1 }
+        ];
+    }
+
+    private parseBulletNoteItem(settings: WordflowRecorderConfigs): { label: string; value: string } {
+        const firstLine = settings.bulletListSyntax
+            .split('\n')
+            .find(line => /^-\s+/.test(line));
+        const content = firstLine?.replace(/^\s*-\s+/, '').trim() ?? '';
+        const directValue = this.notePathSyntaxOptions.find(option => content === option);
+        if (directValue) return { label: '', value: directValue };
+        const labeledValue = this.notePathSyntaxOptions.find(option => content.endsWith(option));
+        if (!labeledValue) return { label: '', value: '[[${modifiedNote}|${noteTitle}]]' };
+        const label = content.substring(0, content.length - labeledValue.length).trim().replace(/:$/, '').trim();
+        return { label, value: labeledValue };
+    }
+
+    private parseBulletSyntax(settings: WordflowRecorderConfigs): Array<{ label: string; variable: string; indent: number }> {
+        const items = settings.bulletListSyntax
+            .split('\n')
+            .map(line => {
+                const match = line.match(/^(\s*)-\s+(.+)$/);
+                return match ? { rawIndent: Math.floor(match[1].length / 4), indent: Math.max(1, Math.floor(match[1].length / 4)), content: match[2].trim() } : null;
+            })
+            .filter((line): line is { rawIndent: number; indent: number; content: string } => line !== null && line.rawIndent > 0 && line.content.includes(':'))
+            .map(line => {
+                const colonIndex = line.content.indexOf(':');
+                return {
+                    label: line.content.substring(0, colonIndex).trim(),
+                    variable: this.parseVariableFromSyntax(line.content.substring(colonIndex + 1).trim()),
+                    indent: line.indent
+                };
+            });
+        return items.length > 0 ? items : this.getDefaultBulletItems();
+    }
+
+    private bulletItemsToSyntax(noteItem: { label: string; value: string }, items: Array<{ label: string; variable: string; indent: number }>): string {
+        const safeItems = items.filter(item => item.label.trim());
+        const notePrefix = noteItem.label.trim() ? `${noteItem.label.trim().replace(/:$/, '')}: ` : '';
+        const childLines = safeItems.map(item => {
+            const valueSyntax = item.variable.trim() ? ` ${this.getVariableSyntax(item.variable)}` : '';
+            return `${'    '.repeat(Math.max(1, item.indent))}- ${item.label.trim()}:${valueSyntax}`;
+        });
+        return [`- ${notePrefix}${noteItem.value}`, ...childLines].join('\n');
+    }
+
+    private renderMetadataPropertyEditor(
+        container: HTMLElement,
+        settings: WordflowRecorderConfigs,
+        recorderInstance: DataRecorder,
+        index: number,
+        previewContainer: HTMLElement
+    ): HTMLElement {
+        let pairs = this.parseMetadataSyntax(settings);
+        const editorContainer = container.createDiv('wordflow-metadata-property-editor');
+        const topBar = editorContainer.createDiv('wordflow-structured-syntax-topbar');
+        const header = topBar.createDiv('wordflow-metadata-property-header');
+        header.createSpan({ text: 'Property name' });
+        header.createSpan({ text: 'Value' });
+        header.createSpan();
+        const rawButton = new ButtonComponent(topBar)
+            .setButtonText('</>')
+            .setTooltip('Use raw syntax')
+            .onClick(() => {
+                this.rawSyntaxEditorIndexes.add(index);
+                this.display();
+            });
+        rawButton.buttonEl.addClass('wordflow-syntax-mode-toggle');
+
+        const savePairs = async () => {
+            settings.metadataSyntax = this.metadataPairsToSyntax(pairs);
+            await this.plugin.saveSettings();
+            recorderInstance.loadSettings();
+            void this.updateSyntaxPreview(settings, previewContainer);
+        };
+
+        const variables = this.getMetadataVariables(settings);
+        pairs.forEach((pair, pairIndex) => {
+            const row = editorContainer.createDiv('wordflow-metadata-property-row');
+            new TextComponent(row)
+                .setValue(pair.key)
+                .setPlaceholder('property name')
+                .onChange(async (value) => {
+                    pairs[pairIndex].key = value;
+                    await savePairs();
+                });
+
+            const variableDropdown = new DropdownComponent(row);
+            const variableOptions = ['', ...(variables.includes(pair.variable) || pair.variable === '' ? variables : [...variables, pair.variable])];
+            for (const variable of variableOptions) {
+                variableDropdown.addOption(variable, variable === '' ? '' : `\${${variable}}`);
+            }
+            variableDropdown
+                .setValue(pair.variable)
+                .onChange(async (value) => {
+                    pairs[pairIndex].variable = value;
+                    await savePairs();
+                });
+
+            new ButtonComponent(row)
+                .setIcon('trash')
+                .setTooltip(this.i18n.t('settings.recorders.actions.delete'))
+                .onClick(async () => {
+                    pairs = pairs.filter((_, currentIndex) => currentIndex !== pairIndex);
+                    if (pairs.length === 0) pairs = this.getDefaultMetadataPairs(settings);
+                    await savePairs();
+                    this.display();
+                });
+        });
+
+        const actions = editorContainer.createDiv('wordflow-metadata-property-actions');
+        new ButtonComponent(actions)
+            .setButtonText('+ Add property')
+            .onClick(async () => {
+                pairs.push({
+                    key: this.getNextUniqueName('New property', pairs.map(pair => pair.key)),
+                    variable: ''
+                });
+                await savePairs();
+                this.display();
+            });
+
+        return editorContainer;
+    }
+
+    private renderBulletListSyntaxEditor(
+        container: HTMLElement,
+        settings: WordflowRecorderConfigs,
+        recorderInstance: DataRecorder,
+        index: number,
+        previewContainer: HTMLElement
+    ): HTMLElement {
+        const noteItem = this.parseBulletNoteItem(settings);
+        let pairs = this.parseBulletSyntax(settings);
+        const editorContainer = container.createDiv('wordflow-structured-syntax-editor');
+        const topBar = editorContainer.createDiv('wordflow-structured-syntax-topbar');
+        const header = topBar.createDiv('wordflow-structured-syntax-header');
+        header.createSpan({ text: 'Item label' });
+        header.createSpan({ text: 'Value' });
+        header.createSpan();
+        const rawButton = new ButtonComponent(topBar)
+            .setButtonText('</>')
+            .setTooltip('Use raw syntax')
+            .onClick(() => {
+                this.rawSyntaxEditorIndexes.add(index);
+                this.display();
+            });
+        rawButton.buttonEl.addClass('wordflow-syntax-mode-toggle');
+
+        const savePairs = async () => {
+            settings.bulletListSyntax = this.bulletItemsToSyntax(noteItem, pairs);
+            await this.plugin.saveSettings();
+            recorderInstance.loadSettings();
+            void this.updateSyntaxPreview(settings, previewContainer);
+        };
+
+        const noteRow = editorContainer.createDiv('wordflow-structured-syntax-row wordflow-bullet-note-row');
+        new TextComponent(noteRow)
+            .setValue(noteItem.label)
+            .setPlaceholder('')
+            .onChange(async (value) => {
+                noteItem.label = value;
+                await savePairs();
+            });
+        const notePathDropdown = new DropdownComponent(noteRow);
+        for (const option of this.notePathSyntaxOptions) {
+            notePathDropdown.addOption(option, option);
+        }
+        notePathDropdown
+            .setValue(noteItem.value)
+            .onChange(async (value) => {
+                noteItem.value = value;
+                await savePairs();
+            });
+        noteRow.createSpan();
+
+        pairs.forEach((pair, pairIndex) => {
+            const row = editorContainer.createDiv('wordflow-structured-syntax-row');
+            row.style.paddingLeft = `${Math.max(1, pair.indent) * 18}px`;
+            new TextComponent(row)
+                .setValue(pair.label)
+                .setPlaceholder('item label')
+                .onChange(async (value) => {
+                    pairs[pairIndex].label = value;
+                    await savePairs();
+                });
+
+            const variableDropdown = new DropdownComponent(row);
+            const variableOptions = ['', ...this.getRecordVariableOptions(pair.variable)];
+            const selectedVariable = variableOptions.includes(pair.variable) ? pair.variable : variableOptions[0];
+            if (pair.variable !== selectedVariable) pair.variable = selectedVariable;
+            for (const variable of variableOptions) {
+                variableDropdown.addOption(variable, variable === '' ? '' : this.getVariableLabel(variable));
+            }
+            variableDropdown
+                .setValue(selectedVariable)
+                .onChange(async (value) => {
+                    pairs[pairIndex].variable = value;
+                    await savePairs();
+                });
+
+            const rowActions = row.createDiv('wordflow-row-icon-actions');
+            new ButtonComponent(rowActions)
+                .setIcon('indent-decrease')
+                .setTooltip('Decrease indent')
+                .onClick(async () => {
+                    pairs[pairIndex].indent = Math.max(1, pairs[pairIndex].indent - 1);
+                    await savePairs();
+                    this.display();
+                });
+            new ButtonComponent(rowActions)
+                .setIcon('indent-increase')
+                .setTooltip('Increase indent')
+                .onClick(async () => {
+                    pairs[pairIndex].indent = pairs[pairIndex].indent + 1;
+                    await savePairs();
+                    this.display();
+                });
+            new ButtonComponent(rowActions)
+                .setIcon('trash')
+                .setTooltip(this.i18n.t('settings.recorders.actions.delete'))
+                .onClick(async () => {
+                    pairs = pairs.filter((_, currentIndex) => currentIndex !== pairIndex);
+                    await savePairs();
+                    this.display();
+                });
+        });
+
+        const actions = editorContainer.createDiv('wordflow-structured-syntax-actions');
+        new ButtonComponent(actions)
+            .setButtonText('+ Add item')
+            .onClick(async () => {
+                pairs.push({
+                    label: this.getNextUniqueName('New Item', pairs.map(pair => pair.label)),
+                    variable: '',
+                    indent: 1
+                });
+                await savePairs();
+                this.display();
+            });
+
+        return editorContainer;
+    }
+
+    private renderTableSyntaxEditor(
+        container: HTMLElement,
+        settings: WordflowRecorderConfigs,
+        recorderInstance: DataRecorder,
+        index: number,
+        previewContainer: HTMLElement
+    ): HTMLElement {
+        let columns = this.normalizeTableColumns(this.parseTableSyntax(settings));
+        const editorContainer = container.createDiv('wordflow-table-syntax-editor');
+        const topBar = editorContainer.createDiv('wordflow-table-syntax-topbar');
+        topBar.createDiv({ cls: 'wordflow-table-syntax-title', text: 'Table' });
+        const rawButton = new ButtonComponent(topBar)
+            .setButtonText('</>')
+            .setTooltip('Use raw syntax')
+            .onClick(() => {
+                this.rawSyntaxEditorIndexes.add(index);
+                this.display();
+            });
+        rawButton.buttonEl.addClass('wordflow-syntax-mode-toggle');
+
+        const tableWrapper = editorContainer.createDiv('wordflow-table-syntax-wrapper');
+
+        const saveColumns = async () => {
+            columns = this.normalizeTableColumns(columns);
+            settings.tableSyntax = this.tableColumnsToSyntax(columns);
+            await this.plugin.saveSettings();
+            recorderInstance.loadSettings();
+            void this.updateSyntaxPreview(settings, previewContainer);
+        };
+
+        const renderTable = () => {
+            tableWrapper.empty();
+            const tableLayout = tableWrapper.createDiv('wordflow-table-syntax-layout');
+            tableLayout.style.setProperty('--wordflow-table-column-count', String(columns.length));
+            const table = tableLayout.createEl('table');
+            const thead = table.createEl('thead');
+            const headerRow = thead.createEl('tr');
+            columns.forEach((column, columnIndex) => {
+                const th = headerRow.createEl('th');
+                const headerCell = th.createDiv('wordflow-table-syntax-header-cell');
+                new TextComponent(headerCell)
+                    .setValue(column.label)
+                    .setPlaceholder('Column name')
+                    .onChange(async (value) => {
+                        columns[columnIndex].label = value;
+                        await saveColumns();
+                    });
+            });
+
+            const tbody = table.createEl('tbody');
+            const valueRow = tbody.createEl('tr');
+            columns.forEach((column, columnIndex) => {
+                const td = valueRow.createEl('td');
+                const variableDropdown = new DropdownComponent(td);
+                const variableOptions = columnIndex === 0
+                    ? this.tableNotePathSyntaxOptions
+                    : ['', ...this.getRecordVariableOptions(column.variable)];
+                const selectedVariable = variableOptions.includes(column.variable) ? column.variable : variableOptions[0];
+                if (column.variable !== selectedVariable) column.variable = selectedVariable;
+                for (const variable of variableOptions) {
+                    variableDropdown.addOption(variable, columnIndex === 0 ? variable : (variable === '' ? '' : this.getVariableLabel(variable)));
+                }
+                variableDropdown
+                    .setValue(selectedVariable)
+                    .onChange(async (value) => {
+                        columns[columnIndex].variable = value;
+                        await saveColumns();
+                    });
+            });
+
+            const addColumnContainer = tableLayout.createDiv('wordflow-table-add-column-cell');
+            new ButtonComponent(addColumnContainer)
+                .setIcon('plus')
+                .setTooltip('+ Add column')
+                .onClick(async () => {
+                    columns.push({
+                        label: this.getNextTableColumnName(columns),
+                        variable: ''
+                    });
+                    await saveColumns();
+                    renderTable();
+                });
+
+            const deleteRow = tableWrapper.createDiv('wordflow-table-delete-row');
+            deleteRow.style.setProperty('--wordflow-table-column-count', String(columns.length));
+            columns.forEach((_column, columnIndex) => {
+                const deleteCell = deleteRow.createDiv('wordflow-table-delete-cell');
+                if (columnIndex === 0) return;
+                new ButtonComponent(deleteCell)
+                    .setIcon('trash')
+                    .setTooltip(this.i18n.t('settings.recorders.actions.delete'))
+                    .onClick(async () => {
+                        columns = columns.filter((_, currentIndex) => currentIndex !== columnIndex);
+                        await saveColumns();
+                        renderTable();
+                    });
+            });
+        };
+
+        renderTable();
+        return editorContainer;
+    }
+
+    private renderStructuredSyntaxEditor(
+        container: HTMLElement,
+        settings: WordflowRecorderConfigs,
+        recorderInstance: DataRecorder,
+        index: number,
+        previewContainer: HTMLElement
+    ): HTMLElement {
+        if (settings.recordType === 'metadata') {
+            return this.renderMetadataPropertyEditor(container, settings, recorderInstance, index, previewContainer);
+        }
+        if (settings.recordType === 'table') {
+            return this.renderTableSyntaxEditor(container, settings, recorderInstance, index, previewContainer);
+        }
+        return this.renderBulletListSyntaxEditor(container, settings, recorderInstance, index, previewContainer);
+    }
+
     private async createNewRecorder() {
         // Create new recorder with default settings and unique ID
         const newId = `recorder-${Date.now()}`;
         const newRecorder: RecorderConfig = {
             id: newId,
             name: `Recorder ${this.plugin.settings.Recorders.length + 1}`,
+            enabled: true,
             enableDynamicFolder: DEFAULT_SETTINGS.enableDynamicFolder,
             periodicNoteFolder: DEFAULT_SETTINGS.periodicNoteFolder,
             periodicNoteFormat: DEFAULT_SETTINGS.periodicNoteFormat,
@@ -513,6 +1351,15 @@ export class RecordersTab extends WordflowSubSettingsTab {
             insertPlaceEnd: DEFAULT_SETTINGS.insertPlaceEnd
         };
 
+        const newIndex = this.plugin.settings.Recorders.length + 1;
+        const availableRecordTypes = this.getAvailableRecordTypes(newRecorder, newIndex);
+        if (availableRecordTypes.length > 0) {
+            newRecorder.recordType = availableRecordTypes[0];
+            if (newRecorder.recordType === 'metadata') {
+                newRecorder.insertPlace = 'yaml';
+            }
+        }
+
         this.plugin.settings.Recorders.push(newRecorder);
         await this.plugin.saveSettings();
         
@@ -525,8 +1372,9 @@ export class RecordersTab extends WordflowSubSettingsTab {
             await this.plugin.Widget.updateAll();
         }
         
-        // Switch to the new recorder tab
-        this.setActiveRecorder(this.plugin.settings.Recorders.length);
+        // Expand the new recorder row
+        this.activeRecorderIndex = this.plugin.settings.Recorders.length;
+        this.display();
     }	
 
     private async renameRecorder(index: number) {
@@ -599,7 +1447,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         // Get the correct settings object based on the active index
         let settings: WordflowRecorderConfigs;
         let recorderInstance: DataRecorder;
-        const recorders = this.plugin.recorderManager.getRecorders();
+        const recorders = this.plugin.recorderManager.getPeriodicRecorders();
         
         if (index === 0) {
             // Default recorder uses main settings
@@ -621,7 +1469,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         //container.classList.add('wordflow-setting-tab'); // for styles.css
 
         let periodicFolderPreviewText: HTMLSpanElement;
-        new Setting(container).setName(this.i18n.t('settings.recorders.periodicNote.heading')).setHeading();
+        this.createRecorderSectionHeading(container, this.i18n.t('settings.recorders.periodicNote.heading'));
         new Setting(container)
             .setName(this.i18n.t('settings.recorders.periodicNote.folder.name'))
             .setDesc(createFragment(f => {
@@ -645,9 +1493,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     .setValue(settings.enableDynamicFolder)
                     .onChange(async (value) => {
                         const actualValue = settings.enableDynamicFolder;
-                        // if no actual change, return
                         if (value === actualValue) return;
-                        // set back to the actual value in data.json rather than the unconfirmed changed value
                         toggle.setValue(actualValue);
 
                         new ConfirmationModal(
@@ -658,17 +1504,15 @@ export class RecordersTab extends WordflowSubSettingsTab {
                                 periodicFolderPreviewText.setText(
                                     (settings.enableDynamicFolder)? moment().format(settings.periodicNoteFolder)
                                                                   : settings.periodicNoteFolder)
-                                await this.plugin.saveSettings();			
+                                await this.plugin.saveSettings();
                                 recorderInstance.loadSettings();
-                                // now update placeholder based on the setting. 
                                 const placeholder = (value)? this.i18n.t('settings.recorders.periodicNote.folder.placeholderDynamic'): this.i18n.t('settings.recorders.periodicNote.folder.placeholderStatic');
                                 this.PeriodicFolderComponent?.setPlaceholder(placeholder);
-                                toggle.setValue(value);	// change display value to the new value
+                                toggle.setValue(value);
                             }
                         ).open();
                     })
-            })				
-            
+            })
             .addText(text => {
                 this.PeriodicFolderComponent = text;
                 text
@@ -682,6 +1526,13 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     await this.plugin.saveSettings();
                     recorderInstance.loadSettings();
                 })
+                new FolderSuggest(this.app, text.inputEl, async (folderPath) => {
+                    settings.periodicNoteFolder = normalizePath(folderPath);
+                    text.setValue(settings.periodicNoteFolder);
+                    periodicFolderPreviewText.setText(settings.periodicNoteFolder);
+                    await this.plugin.saveSettings();
+                    recorderInstance.loadSettings();
+                });
             });
 
         let periodicNoteFormatPreviewText: HTMLSpanElement;
@@ -710,24 +1561,6 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     const validationError = getDateValidationErrorResult(settings.periodicNoteFormat, this.plugin.i18n);
                     periodicNoteFormatPreviewText.setText(validationError || moment().format(settings.periodicNoteFormat) + '.md');
                     
-                    await this.plugin.saveSettings();
-                    recorderInstance.loadSettings();
-                })
-            );
-
-        new Setting(container)
-            .setName(this.i18n.t('settings.recorders.periodicNote.type.name'))
-            .setDesc(this.i18n.t('settings.recorders.periodicNote.type.desc'))
-            .addDropdown(dropdown => dropdown
-                .addOption('daily note', this.i18n.t('settings.recorders.periodicNote.type.options.daily'))
-                .addOption('weekly note', this.i18n.t('settings.recorders.periodicNote.type.options.weekly'))
-                .addOption('monthly note', this.i18n.t('settings.recorders.periodicNote.type.options.monthly'))
-                .addOption('quarterly note', this.i18n.t('settings.recorders.periodicNote.type.options.quarterly'))
-                .addOption('semesterly note', this.i18n.t('settings.recorders.periodicNote.type.options.semesterly'))
-                .addOption('yearly note', this.i18n.t('settings.recorders.periodicNote.type.options.yearly'))
-                .setValue(settings.periodicNoteType?? DEFAULT_SETTINGS.periodicNoteType)
-                .onChange(async (value) => {
-                    settings.periodicNoteType = value;
                     await this.plugin.saveSettings();
                     recorderInstance.loadSettings();
                 })
@@ -878,33 +1711,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 })
             );
 
-        new Setting(container).setName(this.i18n.t('settings.recorders.recordingContents.heading')).setHeading();
+        this.createRecorderSectionHeading(container, this.i18n.t('settings.recorders.recordingContents.heading'));
         
-        new Setting(container)
-            .setName(this.i18n.t('settings.recorders.recordingContents.recordType.name'))
-            .setDesc(this.i18n.t('settings.recorders.recordingContents.recordType.desc'))
-            .addDropdown(d => d
-                .addOption('table', this.i18n.t('settings.recorders.recordingContents.recordType.options.table'))
-                .addOption('bulletList', this.i18n.t('settings.recorders.recordingContents.recordType.options.bulletList'))
-                .addOption('metadata', this.i18n.t('settings.recorders.recordingContents.recordType.options.metadata'))
-                .setValue(settings.recordType) // need to show the modified value when next loading
-                .onChange(async (value) => {
-                    settings.recordType = value;
-                    await this.plugin.saveSettings();
-                    await this.updateSyntax(settings); // warning: must to be put after saving
-                    await this.updateInsertPlace(settings);
-                    // Show or hide subsettings based on dropdown value
-                    this.toggleSortByVisibility(value !== 'metadata');
-                    this.toggleMTimeVisibility(value !== 'metadata');
-                    recorderInstance.loadSettings();
-                    // Update preview when record type changes
-                    const previewContainer = this.settingsContainer.querySelector('.wordflow-syntax-preview-container') as HTMLElement;
-                    if (previewContainer) {
-                        void this.updateSyntaxPreview(settings, previewContainer);
-                    }
-                })
-            );
-
         // Store original syntax for comparison
         let originalSyntax = '';
         let currentSyntax = '';  // Track current (unsaved) syntax separately
@@ -929,11 +1737,26 @@ export class RecordersTab extends WordflowSubSettingsTab {
             text: this.i18n.t('settings.recorders.recordingContents.syntax.preview'), 
             cls: 'wordflow-syntax-preview-label' 
         });
-        const previewContent = previewContainer.createDiv('wordflow-syntax-preview-content');
+        previewContainer.createDiv('wordflow-syntax-preview-content');
         
-        const syntaxSetting = new Setting(container)
+        if (!this.isRawSyntaxEditor(index)) {
+            const editorEl = this.renderStructuredSyntaxEditor(container, settings, recorderInstance, index, previewContainer);
+            container.insertBefore(editorEl, previewContainer);
+            void this.updateSyntaxPreview(settings, previewContainer);
+        } else {
+            const syntaxSetting = new Setting(container)
+                .setClass('wordflow-raw-syntax-setting')
                 .setName(this.i18n.t('settings.recorders.recordingContents.syntax.name'))
                 .setDesc(this.createMultiLineDesc('settings.recorders.recordingContents.syntax.desc'))
+                .addButton(btn => {
+                    btn.setIcon('pencil')
+                    .setTooltip('Use property editor')
+                    .onClick(() => {
+                        this.rawSyntaxEditorIndexes.delete(index);
+                        this.display();
+                    });
+                    btn.buttonEl.addClass('wordflow-syntax-mode-toggle');
+                })
                 .addTextArea(text => {
                     this.SyntaxComponent = text;
                     if (settings.recordType == 'table'){
@@ -1003,13 +1826,14 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     }		
                 });
         
-        makeMultilineTextSetting(syntaxSetting);
+            makeMultilineTextSetting(syntaxSetting);
         
-        // Move preview container before syntax setting for proper display order
-        container.insertBefore(syntaxSetting.settingEl, previewContainer);
+            // Keep the editor above the preview in both raw and structured modes.
+            container.insertBefore(syntaxSetting.settingEl, previewContainer);
         
-        // Initial preview render
-        void this.updateSyntaxPreview(settings, previewContainer);
+            // Initial preview render
+            void this.updateSyntaxPreview(settings, previewContainer);
+        }
 
         new Setting(container)
             .setName(this.i18n.t('settings.recorders.recordingContents.insertPlace.name'))

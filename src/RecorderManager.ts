@@ -29,6 +29,10 @@ export class RecorderManager {
         return this.recorders;
     }
 
+    public getPeriodicRecorders(): DataRecorder[] {
+        return this.recorders.filter(recorder => recorder.enabled && recorder.isPeriodicNoteRecorder());
+    }
+
     public async record(tracker?: DocTracker): Promise<void> {
         // Set isRecording synchronously before any await, so external events
         // (e.g. metadataCache.changed) are blocked from the moment record() is called.
@@ -74,7 +78,7 @@ export class RecorderManager {
     private groupRecordersByNoteConfig(): Record<string, DataRecorder[]> {
         const groups: Record<string, DataRecorder[]> = {};
 
-        for (const recorder of this.recorders) {
+        for (const recorder of this.getPeriodicRecorders()) {
             // Create a group key based on periodic note configuration
             const groupKey = `${recorder.periodicNoteType}|${recorder.periodicNoteFolder}|${recorder.periodicNoteFormat}`;
 
@@ -109,7 +113,7 @@ export class RecorderManager {
             if (!tracker.meetThreshold()) return;
 
             try {
-                for (const recorder of this.recorders) {
+                for (const recorder of this.getPeriodicRecorders()) {
                     await recorder.record(tracker);
                 }
 
@@ -138,7 +142,7 @@ export class RecorderManager {
 
             try {
                 // Perform batch recording sequentially
-                for (const recorder of this.recorders) {
+                for (const recorder of this.getPeriodicRecorders()) {
                     await recorder.record();
                 }
 

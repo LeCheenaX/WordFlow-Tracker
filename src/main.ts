@@ -447,7 +447,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 		const oldBasename = oldPath.replace(/\.md$/i, '').split('/').pop() || '';
 
 		const recordNotePaths = new Set<string>();
-		for (const recorder of this.recorderManager.getRecorders()) {
+		for (const recorder of this.recorderManager.getPeriodicRecorders()) {
 			const note = recorder.getRecordNote();
 			if (note) recordNotePaths.add(note.path);
 		}

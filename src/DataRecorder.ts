@@ -5,6 +5,7 @@ import { TableParser } from './TableParser';
 import { BulletListParser } from './ListParser';
 import { MetaDataParser } from "./MetaDataParser";
 import { AIDiffManager } from "./AIDiffManager";
+import { createRecorderTarget, RecorderTarget } from "./RecorderTarget";
 import { moment, Notice, TFile, TFolder } from 'obsidian';
 
 export class DataRecorder {
@@ -24,6 +25,8 @@ export class DataRecorder {
     public insertPlace: string;
     public insertPlaceStart: string;
     public insertPlaceEnd: string;
+    public enabled: boolean;
+    public recorderTarget: RecorderTarget;
 
     // private classes
     private Parser: TableParser | BulletListParser | MetaDataParser;
@@ -39,6 +42,7 @@ export class DataRecorder {
 
     public loadSettings() {
         if (!this.config) {
+            this.enabled = this.plugin.settings.enabled ?? true;
             this.enableDynamicFolder = this.plugin.settings.enableDynamicFolder;
             this.periodicNoteFolder = this.plugin.settings.periodicNoteFolder;
             this.periodicNoteFormat = this.plugin.settings.periodicNoteFormat;
@@ -54,6 +58,7 @@ export class DataRecorder {
             this.insertPlaceStart = this.plugin.settings.insertPlaceStart;
             this.insertPlaceEnd = this.plugin.settings.insertPlaceEnd;
         } else {
+            this.enabled = this.config.enabled ?? true;
             this.enableDynamicFolder = this.config.enableDynamicFolder;
             this.periodicNoteFolder = this.config.periodicNoteFolder;
             this.periodicNoteFormat = this.config.periodicNoteFormat;
@@ -69,6 +74,7 @@ export class DataRecorder {
             this.insertPlaceStart = this.config.insertPlaceStart;
             this.insertPlaceEnd = this.config.insertPlaceEnd;
         }
+        this.recorderTarget = createRecorderTarget(this.periodicNoteType);
         //new Notice(`Setting changed! Record type:${this.recordType}`, 3000)
         this.loadParsers();
     }
@@ -82,7 +88,11 @@ export class DataRecorder {
     }
 
     public isEligibleForAIDiff(): boolean {
-        return this.recordType !== 'metadata' && this.hasDiffVariable();
+        return this.isPeriodicNoteRecorder() && this.recordType !== 'metadata' && this.hasDiffVariable();
+    }
+
+    public isPeriodicNoteRecorder(): boolean {
+        return this.recorderTarget.isPeriodic();
     }
 
     public getGroupKey(): string {
@@ -124,6 +134,8 @@ export class DataRecorder {
     }
 
     public async record(tracker?: DocTracker): Promise<void> {
+        if (!this.enabled || !this.isPeriodicNoteRecorder()) return;
+
         //console.log('try to Load Tracker of closed note:',tracker)
         // Load tracker data
         await this.loadTrackerData(tracker);

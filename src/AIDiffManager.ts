@@ -243,7 +243,7 @@ export class AIDiffManager {
      */
     public async cleanupStaleMarkers(): Promise<void> {
         const staleBlockRegex = /<!--wf-diff:\w+-->[\s\S]*?<!--\/wf-diff:\w+-->/g;
-        const recorders = this.plugin.recorderManager.getRecorders();
+        const recorders = this.plugin.recorderManager.getPeriodicRecorders();
 
         for (const recorder of recorders) {
             // Check recent notes (today + past 7 days) to avoid scanning everything

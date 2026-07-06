@@ -39,7 +39,7 @@ export function getRecorderFieldOptions(plugin: WordflowTrackerPlugin, recorder:
 export function getAllRecorderFieldOptions(plugin: WordflowTrackerPlugin): string[] {
     const fields = new Set<string>();
 
-    for (const recorder of plugin.recorderManager.getRecorders()) {
+    for (const recorder of plugin.recorderManager.getPeriodicRecorders()) {
         if (recorder.getParser() instanceof MetaDataParser) continue;
         getRecorderFieldOptions(plugin, recorder).forEach(field => fields.add(field));
     }

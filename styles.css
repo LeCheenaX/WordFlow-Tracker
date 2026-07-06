@@ -78,6 +78,308 @@
 .recorder-actions-container {
     margin-bottom: 16px;
 }
+
+.wordflow-recorder-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wordflow-recorder-item {
+    border-radius: var(--radius-s);
+    background-color: var(--background-secondary);
+    padding: 6px 10px;
+}
+
+.wordflow-recorder-summary-row {
+    display: grid;
+    grid-template-columns: 22px minmax(150px, 1.4fr) minmax(130px, 1fr) minmax(130px, 1fr) auto 32px;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    cursor: pointer;
+}
+
+.wordflow-recorder-summary-expand {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--nav-collapse-icon-color);
+    width: 22px;
+    height: 22px;
+}
+
+.wordflow-recorder-summary-expand svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
+}
+
+.wordflow-recorder-summary-row:hover .wordflow-recorder-summary-expand {
+    color: var(--nav-collapse-icon-color-hover);
+}
+
+.wordflow-recorder-summary-row input,
+.wordflow-recorder-summary-row select {
+    width: 100%;
+}
+
+.wordflow-recorder-summary-row button {
+    padding: 4px 8px;
+}
+
+.wordflow-recorder-summary-enabled,
+.wordflow-recorder-summary-delete {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.wordflow-recorder-conflict-hint {
+    color: var(--text-warning);
+    font-size: var(--font-ui-smaller);
+    padding: 0 0 8px 30px;
+}
+
+.wordflow-recorder-item .recorder-settings-container {
+    padding: 4px 0 8px 30px;
+}
+
+.wordflow-recorder-item .recorder-settings-container > .setting-item,
+.wordflow-recorder-item .recorder-settings-container .wordflow-recorder-templatePlugin-container > .setting-item,
+.wordflow-recorder-item .recorder-settings-container .wordflow-recorder-custom-position-container > .setting-item,
+.wordflow-recorder-item .recorder-settings-container .wordflow-recorder-sortby-container > .setting-item,
+.wordflow-recorder-item .recorder-settings-container .wordflow-recorder-mtime-format-container > .setting-item,
+.wordflow-recorder-item .wordflow-metadata-property-editor,
+.wordflow-recorder-item .wordflow-structured-syntax-editor,
+.wordflow-recorder-item .wordflow-table-syntax-editor,
+.wordflow-recorder-item .wordflow-syntax-preview-container {
+    background-color: var(--background-primary);
+    border-radius: var(--radius-s);
+    border-top: none;
+    margin: 6px 0;
+    padding: 12px;
+}
+
+.wordflow-recorder-item .recorder-settings-container .setting-item {
+    border-top: none;
+}
+
+.wordflow-recorder-item .wordflow-syntax-preview-container {
+    box-sizing: border-box;
+}
+
+.wordflow-recorder-section-heading {
+    color: var(--text-muted);
+    font-size: var(--font-ui-small);
+    font-weight: 600;
+    letter-spacing: 0;
+    margin: 14px 0 6px;
+    padding: 0;
+}
+
+.wordflow-metadata-property-editor,
+.wordflow-structured-syntax-editor,
+.wordflow-table-syntax-editor {
+    box-sizing: border-box;
+}
+
+.wordflow-structured-syntax-topbar {
+    position: relative;
+}
+
+.wordflow-syntax-mode-toggle {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    color: var(--text-muted);
+    min-width: 32px;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+.wordflow-syntax-mode-toggle:hover {
+    background-color: var(--background-modifier-hover) !important;
+    color: var(--text-normal);
+}
+
+.setting-item.wordflow-raw-syntax-setting {
+    position: relative;
+    padding-right: 52px;
+}
+
+.setting-item.wordflow-raw-syntax-setting .setting-item-control {
+    align-items: flex-start;
+}
+
+.setting-item.wordflow-raw-syntax-setting .setting-item-control > button.wordflow-syntax-mode-toggle {
+    position: absolute;
+    right: 12px;
+    top: 8px;
+}
+
+.setting-item.wordflow-raw-syntax-setting textarea {
+    margin-top: 28px;
+}
+
+.wordflow-metadata-property-header,
+.wordflow-structured-syntax-header,
+.wordflow-structured-syntax-row,
+.wordflow-metadata-property-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) minmax(140px, 1fr) 104px;
+    gap: 8px;
+    align-items: center;
+    flex: 1 1 auto;
+}
+
+.wordflow-metadata-property-header,
+.wordflow-structured-syntax-header {
+    box-sizing: border-box;
+    padding-right: 40px;
+}
+
+.wordflow-structured-syntax-topbar > .clickable-icon,
+.wordflow-structured-syntax-topbar > button {
+    position: absolute;
+    right: 0;
+    top: -4px;
+}
+
+.wordflow-metadata-property-header,
+.wordflow-structured-syntax-header {
+    color: var(--text-muted);
+    font-size: var(--font-ui-smaller);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.wordflow-metadata-property-row,
+.wordflow-structured-syntax-row {
+    margin-bottom: 6px;
+}
+
+.wordflow-metadata-property-row input,
+.wordflow-metadata-property-row select,
+.wordflow-structured-syntax-row input,
+.wordflow-structured-syntax-row select {
+    width: 100%;
+}
+
+.wordflow-row-icon-actions {
+    align-items: center;
+    display: flex;
+    gap: 2px;
+    justify-content: flex-end;
+}
+
+.wordflow-row-icon-actions button {
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+.wordflow-metadata-property-actions,
+.wordflow-structured-syntax-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.wordflow-table-syntax-topbar {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.wordflow-table-syntax-title {
+    color: var(--text-muted);
+    font-size: var(--font-ui-smaller);
+    font-weight: 600;
+}
+
+.wordflow-table-syntax-wrapper {
+    --wordflow-table-column-width: 120px;
+    overflow-x: auto;
+}
+
+.wordflow-table-syntax-layout {
+    align-items: stretch;
+    display: flex;
+    width: max(100%, calc(var(--wordflow-table-column-count) * var(--wordflow-table-column-width) + 34px));
+}
+
+.wordflow-table-syntax-wrapper table {
+    border-collapse: collapse;
+    flex: 0 0 auto;
+    table-layout: fixed;
+    width: calc(var(--wordflow-table-column-count) * var(--wordflow-table-column-width));
+}
+
+.wordflow-table-syntax-wrapper th,
+.wordflow-table-syntax-wrapper td {
+    border: 1px solid var(--background-modifier-border);
+    padding: 6px 8px;
+    vertical-align: top;
+    width: var(--wordflow-table-column-width);
+}
+
+.wordflow-table-syntax-header-cell {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+}
+
+.wordflow-table-syntax-header-cell .setting-item-control {
+    flex: 0 0 auto;
+}
+
+.wordflow-table-syntax-header-cell input,
+.wordflow-table-syntax-wrapper select {
+    width: 100%;
+}
+
+.wordflow-table-add-column-cell {
+    align-items: stretch;
+    border: 1px solid var(--background-modifier-border);
+    border-left: 0;
+    display: flex;
+    flex: 0 0 34px;
+}
+
+.wordflow-table-add-column-cell button {
+    border-radius: 0;
+    box-shadow: none;
+    height: 100%;
+    min-width: 32px;
+    padding-left: 0;
+    padding-right: 0;
+    width: 100%;
+}
+
+.wordflow-table-delete-row {
+    display: grid;
+    grid-template-columns: repeat(var(--wordflow-table-column-count), var(--wordflow-table-column-width));
+    padding-right: 34px;
+    width: max(calc(100% - 34px), calc(var(--wordflow-table-column-count) * var(--wordflow-table-column-width)));
+}
+
+.wordflow-table-delete-cell {
+    box-sizing: border-box;
+    padding: 6px 8px 0;
+    text-align: center;
+}
+
+@media (max-width: 700px) {
+    .wordflow-recorder-summary-row {
+        grid-template-columns: 22px 1fr;
+    }
+
+    .wordflow-recorder-summary-enabled,
+    .wordflow-recorder-summary-delete {
+        justify-content: flex-start;
+    }
+}
 /*
 .settings-separator {
     margin: 11.25px 0;
@@ -95,7 +397,7 @@
 }
 
 .wordflow-recorder-templatePlugin-container .setting-item {
-    border-top: 1px solid var(--background-modifier-border);
+    border-top: none;
     padding-top: 12px;
 }
 
@@ -105,18 +407,18 @@
 }
 
 .wordflow-recorder-custom-position-container .setting-item:first-child {
-    border-top: 1px solid var(--background-modifier-border);
+    border-top: none;
     padding-top: 12px;
 }
 
 
 .wordflow-recorder-sortby-container .setting-item:first-child {
-    border-top: 1px solid var(--background-modifier-border);
+    border-top: none;
     padding-top: 12px;
 }
 
 .wordflow-recorder-mtime-format-container .setting-item:first-child {
-    border-top: 1px solid var(--background-modifier-border);
+    border-top: none;
     padding-top: 12px;
 }
 
