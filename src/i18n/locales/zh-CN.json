@@ -104,6 +104,44 @@
         "rename": "重命名",
         "add": "添加记录器"
       },
+      "summary": {
+        "expand": "展开记录器设置",
+        "collapse": "折叠记录器设置",
+        "nameTooltip": "记录器名称",
+        "targetTooltip": "选择此记录器写入记录的位置。",
+        "recordTypeTooltip": "选择此记录器的记录内容类型。",
+        "enabledTooltip": "启用或禁用此记录器。",
+        "recordTypeUsedBy": "{recordType} - 已被 {recorder} 使用",
+        "conflict": "{recordType} 与 {recorder} 在同一个记录笔记中冲突。"
+      },
+      "target": {
+        "options": {
+          "modifiedNote": "被修改笔记"
+        }
+      },
+      "modifiedNote": {
+        "name": "被修改笔记属性",
+        "desc": "此记录目标为下一阶段实现预留。现有记录流程目前仅使用周期笔记记录器。"
+      },
+      "structured": {
+        "propertyName": "属性名",
+        "itemLabel": "条目名称",
+        "value": "值",
+        "table": "表格",
+        "useRawSyntax": "使用原始语法",
+        "usePropertyEditor": "使用属性编辑器",
+        "decreaseIndent": "减少缩进",
+        "increaseIndent": "增加缩进",
+        "addProperty": "+ 添加属性",
+        "addItem": "+ 添加条目",
+        "addColumn": "+ 添加列",
+        "newProperty": "新属性",
+        "newItem": "新条目",
+        "newColumn": "新列",
+        "propertyNamePlaceholder": "属性名",
+        "itemLabelPlaceholder": "条目名称",
+        "columnNamePlaceholder": "列名"
+      },
       "confirmations": {
         "addRecorder": "请确保每个笔记没有重复的记录内容类型，否则会出现未定义的行为！\n\n**允许的示例** ✅：\n- 记录器1：\n  - 周期笔记格式 = YYYY-MM-DD\n  - 记录类型 = 表格\n- 记录器2：\n  - 周期笔记格式 = YYYY-MM-DD\n  - 记录类型 = 子弹列表\n\n**允许的示例** ✅：\n- 记录器1：\n  - 周期笔记格式 = YYYY-MM-DD\n  - 记录类型 = 表格\n- 记录器2：\n  - 周期笔记格式 = YYYY-MM\n  - 记录类型 = 表格\n\n**不允许的示例** ❌：\n- 记录器1：\n  - 周期笔记格式 = YYYY-MM-DD\n  - 记录类型 = 表格\n  - 插入位置 = 底部\n- 记录器2：\n  - 周期笔记格式 = YYYY-MM-DD\n  - 记录类型 = 表格\n  - 插入位置 = 自定义",
         "deleteRecorder": "确定要删除 \"{name}\" 吗？",

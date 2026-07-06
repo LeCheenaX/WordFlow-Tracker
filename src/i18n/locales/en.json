@@ -104,6 +104,44 @@
         "rename": "Rename",
         "add": "Add recorder"
       },
+      "summary": {
+        "expand": "Expand recorder settings",
+        "collapse": "Collapse recorder settings",
+        "nameTooltip": "Recorder name",
+        "targetTooltip": "Select where this recorder writes records.",
+        "recordTypeTooltip": "Select the record content type for this recorder.",
+        "enabledTooltip": "Enable or disable this recorder.",
+        "recordTypeUsedBy": "{recordType} - used by {recorder}",
+        "conflict": "{recordType} conflicts with {recorder} for the same record note."
+      },
+      "target": {
+        "options": {
+          "modifiedNote": "modified note"
+        }
+      },
+      "modifiedNote": {
+        "name": "Modified note properties",
+        "desc": "This recorder target is reserved for the next implementation stage. Existing recording flows currently use periodic note recorders only."
+      },
+      "structured": {
+        "propertyName": "Property name",
+        "itemLabel": "Item label",
+        "value": "Value",
+        "table": "Table",
+        "useRawSyntax": "Use raw syntax",
+        "usePropertyEditor": "Use property editor",
+        "decreaseIndent": "Decrease indent",
+        "increaseIndent": "Increase indent",
+        "addProperty": "+ Add property",
+        "addItem": "+ Add item",
+        "addColumn": "+ Add column",
+        "newProperty": "New property",
+        "newItem": "New Item",
+        "newColumn": "New Column",
+        "propertyNamePlaceholder": "property name",
+        "itemLabelPlaceholder": "item label",
+        "columnNamePlaceholder": "Column name"
+      },
       "confirmations": {
         "addRecorder": "Please ensure that there are no duplicate record content type per note, or undefined behavior will occur!\n\n**Example allowed** ✅:\n- Recorder1:\n  - Periodic note format = YYYY-MM-DD\n  - Record type = table\n- Recorder2:\n  - Periodic note format = YYYY-MM-DD\n  - Record type = bullet list\n\n**Example allowed** ✅:\n- Recorder1:\n  - Periodic note format = YYYY-MM-DD\n  - Record type = table\n- Recorder2:\n  - Periodic note format = YYYY-MM\n  - Record type = table\n\n**Example disallowed** ❌:\n- Recorder1:\n  - Periodic note format = YYYY-MM-DD\n  - Record type = table\n  - Insert to position = bottom\n- Recorder2:\n  - Periodic note format = YYYY-MM-DD\n  - Record type = table\n  - Insert to position = custom",
         "deleteRecorder": "Are you sure you want to remove \"{name}\"?",

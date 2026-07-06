@@ -570,13 +570,15 @@ export class RecordersTab extends WordflowSubSettingsTab {
         });
 
         const expandContainer = summaryRow.createDiv('wordflow-recorder-summary-expand');
-        expandContainer.setAttribute('aria-label', isExpanded ? 'Collapse' : 'Expand');
+        expandContainer.setAttribute('aria-label', isExpanded ? this.i18n.t('settings.recorders.summary.collapse') : this.i18n.t('settings.recorders.summary.expand'));
         setIcon(expandContainer, isExpanded ? 'chevron-down' : 'chevron-right');
 
         const nameContainer = summaryRow.createDiv('wordflow-recorder-summary-name');
-        new TextComponent(nameContainer)
-            .setValue(settings.name)
-            .onChange(async (value) => {
+        nameContainer.setAttr('title', this.i18n.t('settings.recorders.summary.nameTooltip'));
+        const nameInput = new TextComponent(nameContainer)
+            .setValue(settings.name);
+        nameInput.inputEl.setAttr('title', this.i18n.t('settings.recorders.summary.nameTooltip'));
+        nameInput.onChange(async (value) => {
                 settings.name = value.trim() || this.getFallbackRecorderName(index);
                 await this.plugin.saveSettings();
                 recorderInstance.loadSettings();
@@ -584,8 +586,10 @@ export class RecordersTab extends WordflowSubSettingsTab {
             });
 
         const targetContainer = summaryRow.createDiv('wordflow-recorder-summary-target');
+        targetContainer.setAttr('title', this.i18n.t('settings.recorders.summary.targetTooltip'));
         const targetDropdown = new DropdownComponent(targetContainer);
         this.populateTargetDropdown(targetDropdown, settings.periodicNoteType);
+        targetDropdown.selectEl.setAttr('title', this.i18n.t('settings.recorders.summary.targetTooltip'));
         targetDropdown.onChange(async (value) => {
             settings.periodicNoteType = value;
             if (!isPeriodicRecorderTarget(value)) {
@@ -601,9 +605,11 @@ export class RecordersTab extends WordflowSubSettingsTab {
         });
 
         const recordTypeContainer = summaryRow.createDiv('wordflow-recorder-summary-format');
+        recordTypeContainer.setAttr('title', this.i18n.t('settings.recorders.summary.recordTypeTooltip'));
         const recordTypeDropdown = new DropdownComponent(recordTypeContainer);
         this.populateRecordTypeDropdown(recordTypeDropdown, settings, index);
         recordTypeDropdown.selectEl.disabled = !isPeriodicRecorderTarget(settings.periodicNoteType);
+        recordTypeDropdown.selectEl.setAttr('title', this.i18n.t('settings.recorders.summary.recordTypeTooltip'));
         recordTypeDropdown.onChange(async (value) => {
             const recordType = value as 'table' | 'bulletList' | 'metadata';
             if (!this.canUseRecordType(settings, index, recordType)) {
@@ -619,9 +625,11 @@ export class RecordersTab extends WordflowSubSettingsTab {
         });
 
         const enabledContainer = summaryRow.createDiv('wordflow-recorder-summary-enabled');
-        new ToggleComponent(enabledContainer)
-            .setValue(settings.enabled ?? true)
-            .onChange(async (value) => {
+        enabledContainer.setAttr('title', this.i18n.t('settings.recorders.summary.enabledTooltip'));
+        const enabledToggle = new ToggleComponent(enabledContainer)
+            .setValue(settings.enabled ?? true);
+        enabledToggle.toggleEl.setAttr('title', this.i18n.t('settings.recorders.summary.enabledTooltip'));
+        enabledToggle.onChange(async (value) => {
                 settings.enabled = value;
                 await this.plugin.saveSettings();
                 recorderInstance.loadSettings();
@@ -649,7 +657,10 @@ export class RecordersTab extends WordflowSubSettingsTab {
         if (currentConflictOwner && isPeriodicRecorderTarget(settings.periodicNoteType)) {
             rowContainer.createDiv({
                 cls: 'wordflow-recorder-conflict-hint',
-                text: `${this.getRecordTypeLabel(settings.recordType)} conflicts with ${currentConflictOwner} for the same record note.`
+                text: this.i18n.t('settings.recorders.summary.conflict', {
+                    recordType: this.getRecordTypeLabel(settings.recordType),
+                    recorder: currentConflictOwner
+                })
             });
         }
 
@@ -678,7 +689,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         for (const recordType of this.recordTypeOptions) {
             const ownerName = this.getRecordTypeConflictOwner(settings, index, recordType);
             const label = this.getRecordTypeLabel(recordType);
-            dropdown.addOption(recordType, ownerName ? `${label} - used by ${ownerName}` : label);
+            dropdown.addOption(recordType, ownerName ? this.i18n.t('settings.recorders.summary.recordTypeUsedBy', { recordType: label, recorder: ownerName }) : label);
             const option = dropdown.selectEl.querySelector(`option[value="${recordType}"]`) as HTMLOptionElement | null;
             if (option && ownerName) option.disabled = true;
         }
@@ -700,7 +711,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             case 'yearly note':
                 return this.i18n.t('settings.recorders.periodicNote.type.options.yearly');
             case 'modified note':
-                return 'Modified note';
+                return this.i18n.t('settings.recorders.target.options.modifiedNote');
             default:
                 return type;
         }
@@ -759,8 +770,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
     private renderModifiedNotePlaceholder(container: HTMLElement): void {
         new Setting(container)
-            .setName('Modified note properties')
-            .setDesc('This recorder target is reserved for the next implementation stage. Existing recording flows currently use periodic note recorders only.');
+            .setName(this.i18n.t('settings.recorders.modifiedNote.name'))
+            .setDesc(this.i18n.t('settings.recorders.modifiedNote.desc'));
     }
 
     private renderModifiedNoteSettings(container: HTMLElement, settings: WordflowRecorderConfigs, recorderInstance: DataRecorder, index: number): void {
@@ -781,7 +792,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 .setDesc(this.createMultiLineDesc('settings.recorders.recordingContents.syntax.desc'))
                 .addButton(btn => {
                     btn.setIcon('pencil')
-                    .setTooltip('Use property editor')
+                    .setTooltip(this.i18n.t('settings.recorders.structured.usePropertyEditor'))
                     .onClick(() => {
                         this.rawSyntaxEditorIndexes.delete(index);
                         this.display();
@@ -947,7 +958,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
     }
 
     private getNextTableColumnName(columns: Array<{ label: string; variable: string }>): string {
-        return this.getNextUniqueName('New Column', columns.map(column => column.label));
+        return this.getNextUniqueName(this.i18n.t('settings.recorders.structured.newColumn'), columns.map(column => column.label));
     }
 
     private getNextUniqueName(baseName: string, existingNames: string[]): string {
@@ -1018,12 +1029,12 @@ export class RecordersTab extends WordflowSubSettingsTab {
         const editorContainer = container.createDiv('wordflow-metadata-property-editor');
         const topBar = editorContainer.createDiv('wordflow-structured-syntax-topbar');
         const header = topBar.createDiv('wordflow-metadata-property-header');
-        header.createSpan({ text: 'Property name' });
-        header.createSpan({ text: 'Value' });
+        header.createSpan({ text: this.i18n.t('settings.recorders.structured.propertyName') });
+        header.createSpan({ text: this.i18n.t('settings.recorders.structured.value') });
         header.createSpan();
         const rawButton = new ButtonComponent(topBar)
             .setButtonText('</>')
-            .setTooltip('Use raw syntax')
+            .setTooltip(this.i18n.t('settings.recorders.structured.useRawSyntax'))
             .onClick(() => {
                 this.rawSyntaxEditorIndexes.add(index);
                 this.display();
@@ -1042,7 +1053,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             const row = editorContainer.createDiv('wordflow-metadata-property-row');
             new TextComponent(row)
                 .setValue(pair.key)
-                .setPlaceholder('property name')
+                .setPlaceholder(this.i18n.t('settings.recorders.structured.propertyNamePlaceholder'))
                 .onChange(async (value) => {
                     pairs[pairIndex].key = value;
                     await savePairs();
@@ -1073,10 +1084,10 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
         const actions = editorContainer.createDiv('wordflow-metadata-property-actions');
         new ButtonComponent(actions)
-            .setButtonText('+ Add property')
+            .setButtonText(this.i18n.t('settings.recorders.structured.addProperty'))
             .onClick(async () => {
                 pairs.push({
-                    key: this.getNextUniqueName('New property', pairs.map(pair => pair.key)),
+                    key: this.getNextUniqueName(this.i18n.t('settings.recorders.structured.newProperty'), pairs.map(pair => pair.key)),
                     variable: ''
                 });
                 await savePairs();
@@ -1098,12 +1109,12 @@ export class RecordersTab extends WordflowSubSettingsTab {
         const editorContainer = container.createDiv('wordflow-structured-syntax-editor');
         const topBar = editorContainer.createDiv('wordflow-structured-syntax-topbar');
         const header = topBar.createDiv('wordflow-structured-syntax-header');
-        header.createSpan({ text: 'Item label' });
-        header.createSpan({ text: 'Value' });
+        header.createSpan({ text: this.i18n.t('settings.recorders.structured.itemLabel') });
+        header.createSpan({ text: this.i18n.t('settings.recorders.structured.value') });
         header.createSpan();
         const rawButton = new ButtonComponent(topBar)
             .setButtonText('</>')
-            .setTooltip('Use raw syntax')
+            .setTooltip(this.i18n.t('settings.recorders.structured.useRawSyntax'))
             .onClick(() => {
                 this.rawSyntaxEditorIndexes.add(index);
                 this.display();
@@ -1142,7 +1153,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             row.style.paddingLeft = `${Math.max(1, pair.indent) * 18}px`;
             new TextComponent(row)
                 .setValue(pair.label)
-                .setPlaceholder('item label')
+                .setPlaceholder(this.i18n.t('settings.recorders.structured.itemLabelPlaceholder'))
                 .onChange(async (value) => {
                     pairs[pairIndex].label = value;
                     await savePairs();
@@ -1165,7 +1176,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             const rowActions = row.createDiv('wordflow-row-icon-actions');
             new ButtonComponent(rowActions)
                 .setIcon('indent-decrease')
-                .setTooltip('Decrease indent')
+                .setTooltip(this.i18n.t('settings.recorders.structured.decreaseIndent'))
                 .onClick(async () => {
                     pairs[pairIndex].indent = Math.max(1, pairs[pairIndex].indent - 1);
                     await savePairs();
@@ -1173,7 +1184,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 });
             new ButtonComponent(rowActions)
                 .setIcon('indent-increase')
-                .setTooltip('Increase indent')
+                .setTooltip(this.i18n.t('settings.recorders.structured.increaseIndent'))
                 .onClick(async () => {
                     pairs[pairIndex].indent = pairs[pairIndex].indent + 1;
                     await savePairs();
@@ -1191,10 +1202,10 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
         const actions = editorContainer.createDiv('wordflow-structured-syntax-actions');
         new ButtonComponent(actions)
-            .setButtonText('+ Add item')
+            .setButtonText(this.i18n.t('settings.recorders.structured.addItem'))
             .onClick(async () => {
                 pairs.push({
-                    label: this.getNextUniqueName('New Item', pairs.map(pair => pair.label)),
+                    label: this.getNextUniqueName(this.i18n.t('settings.recorders.structured.newItem'), pairs.map(pair => pair.label)),
                     variable: '',
                     indent: 1
                 });
@@ -1215,10 +1226,10 @@ export class RecordersTab extends WordflowSubSettingsTab {
         let columns = this.normalizeTableColumns(this.parseTableSyntax(settings));
         const editorContainer = container.createDiv('wordflow-table-syntax-editor');
         const topBar = editorContainer.createDiv('wordflow-table-syntax-topbar');
-        topBar.createDiv({ cls: 'wordflow-table-syntax-title', text: 'Table' });
+        topBar.createDiv({ cls: 'wordflow-table-syntax-title', text: this.i18n.t('settings.recorders.structured.table') });
         const rawButton = new ButtonComponent(topBar)
             .setButtonText('</>')
-            .setTooltip('Use raw syntax')
+            .setTooltip(this.i18n.t('settings.recorders.structured.useRawSyntax'))
             .onClick(() => {
                 this.rawSyntaxEditorIndexes.add(index);
                 this.display();
@@ -1247,7 +1258,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 const headerCell = th.createDiv('wordflow-table-syntax-header-cell');
                 new TextComponent(headerCell)
                     .setValue(column.label)
-                    .setPlaceholder('Column name')
+                    .setPlaceholder(this.i18n.t('settings.recorders.structured.columnNamePlaceholder'))
                     .onChange(async (value) => {
                         columns[columnIndex].label = value;
                         await saveColumns();
@@ -1278,7 +1289,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             const addColumnContainer = tableLayout.createDiv('wordflow-table-add-column-cell');
             new ButtonComponent(addColumnContainer)
                 .setIcon('plus')
-                .setTooltip('+ Add column')
+                .setTooltip(this.i18n.t('settings.recorders.structured.addColumn'))
                 .onClick(async () => {
                     columns.push({
                         label: this.getNextTableColumnName(columns),
@@ -1750,7 +1761,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 .setDesc(this.createMultiLineDesc('settings.recorders.recordingContents.syntax.desc'))
                 .addButton(btn => {
                     btn.setIcon('pencil')
-                    .setTooltip('Use property editor')
+                    .setTooltip(this.i18n.t('settings.recorders.structured.usePropertyEditor'))
                     .onClick(() => {
                         this.rawSyntaxEditorIndexes.delete(index);
                         this.display();
