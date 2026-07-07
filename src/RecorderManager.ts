@@ -29,6 +29,10 @@ export class RecorderManager {
         return this.recorders;
     }
 
+    public getEnabledRecorders(): DataRecorder[] {
+        return this.recorders.filter(recorder => recorder.enabled);
+    }
+
     public getPeriodicRecorders(): DataRecorder[] {
         return this.recorders.filter(recorder => recorder.enabled && recorder.isPeriodicNoteRecorder());
     }
@@ -111,9 +115,10 @@ export class RecorderManager {
         if (tracker) {
             // Record specific tracker
             if (!tracker.meetThreshold()) return;
-
+            
+            await tracker.flushPendingChanges();
             try {
-                for (const recorder of this.getPeriodicRecorders()) {
+                for (const recorder of this.getEnabledRecorders()) {
                     await recorder.record(tracker);
                 }
 
@@ -131,6 +136,10 @@ export class RecorderManager {
             // Record all eligible trackers
             const trackersToReset: DocTracker[] = [];
 
+            for (const tracker of this.plugin.trackerMap.values()) {
+                await tracker.flushPendingChanges();
+            }
+
             // Identify eligible trackers
             this.plugin.trackerMap.forEach(t => {
                 if (t.meetThreshold()) {
@@ -142,7 +151,7 @@ export class RecorderManager {
 
             try {
                 // Perform batch recording sequentially
-                for (const recorder of this.getPeriodicRecorders()) {
+                for (const recorder of this.getEnabledRecorders()) {
                     await recorder.record();
                 }
 

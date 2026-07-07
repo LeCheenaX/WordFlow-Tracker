@@ -1,6 +1,6 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
 import { formatTime, restoreTimeString } from "./Timer";
-import { TFile } from 'obsidian';
+import { moment, TFile } from 'obsidian';
 import WordflowTrackerPlugin from "./main";
 
 interface MetadataPattern {
@@ -88,7 +88,10 @@ export class MetaDataParser{
         }
 
         const extractedData = new ExistingData();
-        // Parse varNames
+        extractedData.filePath = this.DataRecorder.isPeriodicNoteRecorder() ? '|M|E|T|A|D|A|T|A|' : recordNote.path;
+        extractedData.fileName = recordNote.basename;
+
+        // Parse total varNames
         if (YAMLData.totalWords !== undefined) {
             extractedData.totalWords = parseInt(YAMLData.totalWords) || 0;
         }
@@ -104,8 +107,37 @@ export class MetaDataParser{
         if (YAMLData.totalTime !== undefined) {
             extractedData.totalTime = restoreTimeString(YAMLData.totalTime) || 0;
         }
-        // unique string as key to fetch existing data
-        existingDataMap.set('|M|E|T|A|D|A|T|A|', extractedData);
+
+        // Parse modified-note varNames
+        if (YAMLData.editedWords !== undefined) {
+            extractedData.editedWords = parseInt(YAMLData.editedWords) || 0;
+        }
+        if (YAMLData.editedTimes !== undefined) {
+            extractedData.editedTimes = parseInt(YAMLData.editedTimes) || 0;
+        }
+        if (YAMLData.addedWords !== undefined) {
+            extractedData.addedWords = parseInt(YAMLData.addedWords) || 0;
+        }
+        if (YAMLData.deletedWords !== undefined) {
+            extractedData.deletedWords = parseInt(YAMLData.deletedWords) || 0;
+        }
+        if (YAMLData.changedWords !== undefined) {
+            extractedData.changedWords = parseInt(YAMLData.changedWords) || 0;
+        }
+        if (YAMLData.docWords !== undefined) {
+            extractedData.docWords = parseInt(YAMLData.docWords) || 0;
+        }
+        if (YAMLData.editTime !== undefined) {
+            extractedData.editTime = restoreTimeString(YAMLData.editTime) || 0;
+        }
+        if (YAMLData.readTime !== undefined) {
+            extractedData.readTime = restoreTimeString(YAMLData.readTime) || 0;
+        }
+        if (YAMLData.readEditTime !== undefined) {
+            extractedData.readEditTime = restoreTimeString(YAMLData.readEditTime) || 0;
+        }
+
+        existingDataMap.set(extractedData.filePath, extractedData);
         return existingDataMap;
     }
 
@@ -157,12 +189,23 @@ export class MetaDataParser{
         let output = '';
                 
         for (const data of mergedData) {
+            const lastModifiedTime = typeof data.lastModifiedTime === 'number' ? moment(data.lastModifiedTime).format(this.timeFormat) : String(data.lastModifiedTime ?? '');
             let line = this.syntax
-                .replace(/\${totalEdits}/g, data.totalEdits.toString())
-                .replace(/\${totalWords}/g, data.totalWords.toString())
-                .replace(/\${totalEditTime}/g, formatTime(data.totalEditTime))
-                .replace(/\${totalReadTime}/g, formatTime(data.totalReadTime))
-                .replace(/\${totalTime}/g, formatTime(data.totalTime));
+                .replace(/\${totalEdits}/g, String(data.totalEdits ?? 0))
+                .replace(/\${totalWords}/g, String(data.totalWords ?? 0))
+                .replace(/\${totalEditTime}/g, formatTime(data.totalEditTime ?? 0))
+                .replace(/\${totalReadTime}/g, formatTime(data.totalReadTime ?? 0))
+                .replace(/\${totalTime}/g, formatTime(data.totalTime ?? 0))
+                .replace(/\${editedWords}/g, String(data.editedWords ?? 0))
+                .replace(/\${editedTimes}/g, String(data.editedTimes ?? 0))
+                .replace(/\${addedWords}/g, String(data.addedWords ?? 0))
+                .replace(/\${deletedWords}/g, String(data.deletedWords ?? 0))
+                .replace(/\${changedWords}/g, String(data.changedWords ?? 0))
+                .replace(/\${docWords}/g, String(data.docWords ?? 0))
+                .replace(/\${editTime}/g, formatTime(data.editTime ?? 0))
+                .replace(/\${readTime}/g, formatTime(data.readTime ?? 0))
+                .replace(/\${readEditTime}/g, formatTime(data.readEditTime ?? 0))
+                .replace(/\${lastModifiedTime}/g, lastModifiedTime);
             
             output += line + '\n';
         }

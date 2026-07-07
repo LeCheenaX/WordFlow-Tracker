@@ -1,3 +1,8 @@
+export function stripYamlFrontmatter(input: string): string {
+    const match = input.match(/^\uFEFF?---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/);
+    return match ? input.slice(match[0].length) : input;
+}
+
 export function wordsCounter() {
     return function (input: string, prevCh?: string, subseqCh?: string): number { 
         //console.log("string:", input) //debug

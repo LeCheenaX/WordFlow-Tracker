@@ -16,6 +16,7 @@ export interface WordflowRecorderConfigs {
     name: string;
     enabled: boolean;
     enableDynamicFolder: boolean;
+    modifiedNoteScopeFolder: string;
     periodicNoteFolder: string;
     periodicNoteFormat: string;
     periodicNoteType: string;
@@ -27,6 +28,7 @@ export interface WordflowRecorderConfigs {
     tableSyntax: string;
     bulletListSyntax: string;
     metadataSyntax: string;
+    modifiedNoteMetadataSyntax: string;
     timeFormat: string;
     sortBy: string;
     isDescend: boolean;
@@ -120,6 +122,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 	name: 'Default Recorder',
     enabled: true,
 	enableDynamicFolder: false,
+    modifiedNoteScopeFolder: '',
 	periodicNoteFolder: '',
 	periodicNoteFormat: 'YYYY-MM-DD',
 	periodicNoteType: 'daily note',
@@ -132,6 +135,7 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 	tableSyntax: `| Note                                              | Edited Words    | Percentage | Focused             | Last Modified Time   |\n| ------------------------------------ | ----------------- | ------------- | ----------------- | ---------------------- |\n| [[\${modifiedNote}\\|\${noteTitle}]] | \${editedWords} | \${statBar}    | \${readEditTime} | \${lastModifiedTime} |`,
 	bulletListSyntax: `- [[\${modifiedNote}|\${noteTitle}]]\n    - Edits: \${editedTimes}\n    - Edited Words: \${editedWords}\n    - Focused Time: \${readEditTime}`,
 	metadataSyntax: `total edits: \${totalEdits}\ntotal words: \${totalWords}\ntotal time: \${totalTime}`,
+    modifiedNoteMetadataSyntax: `history edits: \${editedTimes}\nhistory focused: \${readEditTime}\nwords: \${docWords}\nmodified: \${lastModifiedTime}`,
 	timeFormat: 'HH:mm',
 	sortBy: 'lastModifiedTime',
 	isDescend: true,
@@ -429,7 +433,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
     private recordTypeOptions: Array<'table' | 'bulletList' | 'metadata'> = ['table', 'bulletList', 'metadata'];
     private rawSyntaxEditorIndexes: Set<number> = new Set();
     private metadataTotalVariables = ['totalEdits', 'totalWords', 'totalEditTime', 'totalReadTime', 'totalTime'];
-    private metadataModifiedNoteVariables = ['readEditTime', 'editedWords', 'editedTimes', 'addedWords', 'deletedWords', 'changedWords', 'docWords', 'editTime', 'readTime', 'lastModifiedTime'];
+    private metadataModifiedNoteVariables = ['editedWords', 'editedTimes', 'addedWords', 'deletedWords', 'changedWords', 'docWords', 'readEditTime', 'readTime', 'editTime', 'lastModifiedTime'];
     private noteRecordVariables = ['noteLink', 'modifiedNote', 'noteTitle', 'editedWords', 'editedTimes', 'addedWords', 'deletedWords', 'changedWords', 'docWords', 'readEditTime', 'readTime', 'editTime', 'editedPercentage', 'statBar', 'lastModifiedTime', 'comment', 'diff'];
     private notePathSyntaxOptions = ['${modifiedNote}', '[[${modifiedNote}]]', '[[${modifiedNote}|${noteTitle}]]'];
     private tableNotePathSyntaxOptions = ['${modifiedNote}', '[[${modifiedNote}]]', '[[${modifiedNote}\\|${noteTitle}]]'];
@@ -769,13 +773,50 @@ export class RecordersTab extends WordflowSubSettingsTab {
     }
 
     private renderModifiedNotePlaceholder(container: HTMLElement): void {
+        this.createRecorderSectionHeading(container, this.i18n.t('settings.recorders.modifiedNote.name'));
+    }
+
+    private renderModifiedNoteScopeSetting(container: HTMLElement, settings: WordflowRecorderConfigs, recorderInstance: DataRecorder): void {
+        let scopePreviewText: HTMLSpanElement;
         new Setting(container)
-            .setName(this.i18n.t('settings.recorders.modifiedNote.name'))
-            .setDesc(this.i18n.t('settings.recorders.modifiedNote.desc'));
+            .setName(this.i18n.t('settings.recorders.modifiedNote.scope.name'))
+            .setDesc(createFragment(f => {
+                const fragment = this.createMultiLineDesc('settings.recorders.modifiedNote.scope.desc');
+                f.appendChild(fragment);
+                f.createEl('br');
+                scopePreviewText = f.createSpan({ cls: 'wordflow-setting-previewText' });
+                scopePreviewText.setText(this.getModifiedNoteScopeValidationText(settings.modifiedNoteScopeFolder));
+            }))
+            .addText(text => {
+                text
+                    .setPlaceholder(this.i18n.t('settings.recorders.modifiedNote.scope.placeholder'))
+                    .setValue(settings.modifiedNoteScopeFolder || '')
+                    .onChange(async (value) => {
+                        settings.modifiedNoteScopeFolder = value.trim() ? normalizePath(value.trim()) : '';
+                        scopePreviewText.setText(this.getModifiedNoteScopeValidationText(settings.modifiedNoteScopeFolder));
+                        await this.plugin.saveSettings();
+                        recorderInstance.loadSettings();
+                    });
+                new FolderSuggest(this.app, text.inputEl, async (folderPath) => {
+                    settings.modifiedNoteScopeFolder = normalizePath(folderPath);
+                    text.setValue(settings.modifiedNoteScopeFolder);
+                    scopePreviewText.setText(this.getModifiedNoteScopeValidationText(settings.modifiedNoteScopeFolder));
+                    await this.plugin.saveSettings();
+                    recorderInstance.loadSettings();
+                });
+            });
+    }
+
+    private getModifiedNoteScopeValidationText(scopeFolder: string): string {
+        if (!scopeFolder) return this.i18n.t('settings.recorders.modifiedNote.scope.validation.allVault');
+        return this.app.vault.getFolderByPath(scopeFolder)
+            ? this.i18n.t('settings.recorders.modifiedNote.scope.validation.valid', { folder: scopeFolder })
+            : this.i18n.t('settings.recorders.modifiedNote.scope.validation.invalid', { folder: scopeFolder });
     }
 
     private renderModifiedNoteSettings(container: HTMLElement, settings: WordflowRecorderConfigs, recorderInstance: DataRecorder, index: number): void {
         this.renderModifiedNotePlaceholder(container);
+        this.renderModifiedNoteScopeSetting(container, settings, recorderInstance);
         this.createRecorderSectionHeading(container, this.i18n.t('settings.recorders.recordingContents.heading'));
 
         const previewContainer = container.createDiv('wordflow-syntax-preview-container');
@@ -800,9 +841,9 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     btn.buttonEl.addClass('wordflow-syntax-mode-toggle');
                 })
                 .addTextArea(text => {
-                    text.setValue(settings.metadataSyntax);
+                    text.setValue(this.getMetadataSyntax(settings));
                     text.onChange((value) => {
-                        settings.metadataSyntax = value;
+                        this.setMetadataSyntax(settings, value);
                         void this.plugin.saveSettings();
                         recorderInstance.loadSettings();
                         void this.updateSyntaxPreview(settings, previewContainer, value);
@@ -836,16 +877,36 @@ export class RecordersTab extends WordflowSubSettingsTab {
             : this.metadataModifiedNoteVariables;
     }
 
+    private getMetadataSyntax(settings: WordflowRecorderConfigs): string {
+        return isPeriodicRecorderTarget(settings.periodicNoteType)
+            ? settings.metadataSyntax
+            : (settings.modifiedNoteMetadataSyntax ?? DEFAULT_SETTINGS.modifiedNoteMetadataSyntax);
+    }
+
+    private setMetadataSyntax(settings: WordflowRecorderConfigs, syntax: string): void {
+        if (isPeriodicRecorderTarget(settings.periodicNoteType)) {
+            settings.metadataSyntax = syntax;
+            return;
+        }
+        settings.modifiedNoteMetadataSyntax = syntax;
+    }
+
     private getDefaultMetadataPairs(settings: WordflowRecorderConfigs): Array<{ key: string; variable: string }> {
-        const variables = this.getMetadataVariables(settings);
-        return variables.slice(0, 3).map(variable => ({
-            key: variable,
-            variable
-        }));
+        const defaultSyntax = isPeriodicRecorderTarget(settings.periodicNoteType)
+            ? DEFAULT_SETTINGS.metadataSyntax
+            : DEFAULT_SETTINGS.modifiedNoteMetadataSyntax;
+        return this.parseMetadataPairsFromSyntax(defaultSyntax, this.getMetadataVariables(settings));
     }
 
     private parseMetadataSyntax(settings: WordflowRecorderConfigs): Array<{ key: string; variable: string }> {
-        const pairs = settings.metadataSyntax
+        const pairs = this.parseMetadataPairsFromSyntax(this.getMetadataSyntax(settings), this.getMetadataVariables(settings));
+
+        return pairs.length > 0 ? pairs : this.getDefaultMetadataPairs(settings);
+    }
+
+    private parseMetadataPairsFromSyntax(syntax: string, variables: string[]): Array<{ key: string; variable: string }> {
+        const availableVariables = new Set(['', ...variables]);
+        return syntax
             .split('\n')
             .map(line => line.trim())
             .filter(line => line.length > 0)
@@ -857,9 +918,30 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     variable: (match[2] ?? '').trim()
                 };
             })
-            .filter((pair): pair is { key: string; variable: string } => pair !== null);
+            .filter((pair): pair is { key: string; variable: string } => pair !== null)
+            .filter(pair => availableVariables.has(pair.variable));
+    }
 
-        return pairs.length > 0 ? pairs : this.getDefaultMetadataPairs(settings);
+    private hasDuplicateNames(names: string[]): boolean {
+        const seenNames = new Set<string>();
+        for (const name of names) {
+            const normalizedName = name.trim();
+            if (!normalizedName) continue;
+            if (seenNames.has(normalizedName)) return true;
+            seenNames.add(normalizedName);
+        }
+        return false;
+    }
+
+    private createDuplicateNameWarning(container: HTMLElement, names: string[]): HTMLElement {
+        const warning = container.createDiv('wordflow-duplicate-property-warning');
+        warning.setText(this.i18n.t('settings.recorders.structured.duplicatePropertyName'));
+        this.updateDuplicateNameWarning(warning, names);
+        return warning;
+    }
+
+    private updateDuplicateNameWarning(warning: HTMLElement, names: string[]): void {
+        warning.toggleClass('is-hidden', !this.hasDuplicateNames(names));
     }
 
     private metadataPairsToSyntax(pairs: Array<{ key: string; variable: string }>): string {
@@ -1031,8 +1113,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
         const header = topBar.createDiv('wordflow-metadata-property-header');
         header.createSpan({ text: this.i18n.t('settings.recorders.structured.propertyName') });
         header.createSpan({ text: this.i18n.t('settings.recorders.structured.value') });
-        header.createSpan();
-        const rawButton = new ButtonComponent(topBar)
+        const headerActions = header.createSpan({ cls: 'wordflow-structured-syntax-header-action' });
+        const rawButton = new ButtonComponent(headerActions)
             .setButtonText('</>')
             .setTooltip(this.i18n.t('settings.recorders.structured.useRawSyntax'))
             .onClick(() => {
@@ -1042,7 +1124,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         rawButton.buttonEl.addClass('wordflow-syntax-mode-toggle');
 
         const savePairs = async () => {
-            settings.metadataSyntax = this.metadataPairsToSyntax(pairs);
+            this.setMetadataSyntax(settings, this.metadataPairsToSyntax(pairs));
             await this.plugin.saveSettings();
             recorderInstance.loadSettings();
             void this.updateSyntaxPreview(settings, previewContainer);
@@ -1057,6 +1139,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 .onChange(async (value) => {
                     pairs[pairIndex].key = value;
                     await savePairs();
+                    this.updateDuplicateNameWarning(duplicateWarning, pairs.map(pair => pair.key));
                 });
 
             const variableDropdown = new DropdownComponent(row);
@@ -1094,6 +1177,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 this.display();
             });
 
+        const duplicateWarning = this.createDuplicateNameWarning(editorContainer, pairs.map(pair => pair.key));
         return editorContainer;
     }
 
@@ -1111,8 +1195,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
         const header = topBar.createDiv('wordflow-structured-syntax-header');
         header.createSpan({ text: this.i18n.t('settings.recorders.structured.itemLabel') });
         header.createSpan({ text: this.i18n.t('settings.recorders.structured.value') });
-        header.createSpan();
-        const rawButton = new ButtonComponent(topBar)
+        const headerActions = header.createSpan({ cls: 'wordflow-structured-syntax-header-action' });
+        const rawButton = new ButtonComponent(headerActions)
             .setButtonText('</>')
             .setTooltip(this.i18n.t('settings.recorders.structured.useRawSyntax'))
             .onClick(() => {
@@ -1157,6 +1241,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 .onChange(async (value) => {
                     pairs[pairIndex].label = value;
                     await savePairs();
+                    this.updateDuplicateNameWarning(duplicateWarning, pairs.map(pair => pair.label));
                 });
 
             const variableDropdown = new DropdownComponent(row);
@@ -1213,6 +1298,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 this.display();
             });
 
+        const duplicateWarning = this.createDuplicateNameWarning(editorContainer, pairs.map(pair => pair.label));
         return editorContainer;
     }
 
@@ -1237,6 +1323,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         rawButton.buttonEl.addClass('wordflow-syntax-mode-toggle');
 
         const tableWrapper = editorContainer.createDiv('wordflow-table-syntax-wrapper');
+        let duplicateWarning: HTMLElement;
 
         const saveColumns = async () => {
             columns = this.normalizeTableColumns(columns);
@@ -1262,6 +1349,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     .onChange(async (value) => {
                         columns[columnIndex].label = value;
                         await saveColumns();
+                        this.updateDuplicateNameWarning(duplicateWarning, columns.map(column => column.label));
                     });
             });
 
@@ -1297,6 +1385,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     });
                     await saveColumns();
                     renderTable();
+                    this.updateDuplicateNameWarning(duplicateWarning, columns.map(column => column.label));
                 });
 
             const deleteRow = tableWrapper.createDiv('wordflow-table-delete-row');
@@ -1311,10 +1400,12 @@ export class RecordersTab extends WordflowSubSettingsTab {
                         columns = columns.filter((_, currentIndex) => currentIndex !== columnIndex);
                         await saveColumns();
                         renderTable();
+                        this.updateDuplicateNameWarning(duplicateWarning, columns.map(column => column.label));
                     });
             });
         };
 
+        duplicateWarning = this.createDuplicateNameWarning(editorContainer, columns.map(column => column.label));
         renderTable();
         return editorContainer;
     }
@@ -1343,6 +1434,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             name: `Recorder ${this.plugin.settings.Recorders.length + 1}`,
             enabled: true,
             enableDynamicFolder: DEFAULT_SETTINGS.enableDynamicFolder,
+            modifiedNoteScopeFolder: DEFAULT_SETTINGS.modifiedNoteScopeFolder,
             periodicNoteFolder: DEFAULT_SETTINGS.periodicNoteFolder,
             periodicNoteFormat: DEFAULT_SETTINGS.periodicNoteFormat,
             periodicNoteType: DEFAULT_SETTINGS.periodicNoteType,
@@ -1354,6 +1446,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             tableSyntax: DEFAULT_SETTINGS.tableSyntax,
             bulletListSyntax: DEFAULT_SETTINGS.bulletListSyntax,
             metadataSyntax: DEFAULT_SETTINGS.metadataSyntax,
+            modifiedNoteMetadataSyntax: DEFAULT_SETTINGS.modifiedNoteMetadataSyntax,
             timeFormat: DEFAULT_SETTINGS.timeFormat,
             sortBy: DEFAULT_SETTINGS.sortBy,
             isDescend: DEFAULT_SETTINGS.isDescend,
@@ -1458,7 +1551,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         // Get the correct settings object based on the active index
         let settings: WordflowRecorderConfigs;
         let recorderInstance: DataRecorder;
-        const recorders = this.plugin.recorderManager.getPeriodicRecorders();
+        const recorders = this.plugin.recorderManager.getRecorders();
         
         if (index === 0) {
             // Default recorder uses main settings
@@ -1737,8 +1830,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
                 currentSyntax = settings.bulletListSyntax;
                 break;
             case 'metadata': 
-                originalSyntax = settings.metadataSyntax;
-                currentSyntax = settings.metadataSyntax;
+                originalSyntax = this.getMetadataSyntax(settings);
+                currentSyntax = this.getMetadataSyntax(settings);
                 break;
         }
         
@@ -1813,9 +1906,9 @@ export class RecordersTab extends WordflowSubSettingsTab {
                         })(); });
                     }
                     if (settings.recordType == 'metadata'){
-                        text.setValue(settings.metadataSyntax);
+                        text.setValue(this.getMetadataSyntax(settings));
                         text.onChange((value) => {
-                            // CRITICAL: Do NOT modify settings.metadataSyntax here!
+                            // CRITICAL: Do NOT modify saved metadata syntax here!
                             // Store in temporary variable instead
                             currentSyntax = value;
                             // Update preview with temporary syntax (don't await for real-time updates)
@@ -1825,10 +1918,11 @@ export class RecordersTab extends WordflowSubSettingsTab {
                         text.inputEl.addEventListener('blur', () => { void (async () => {
                             await this.handleSyntaxBlur(settings, originalSyntax, currentSyntax, 'metadata', recorderInstance, previewContainer);
                             // Update originalSyntax and currentSyntax based on what was actually saved
-                            if (settings.metadataSyntax !== originalSyntax) {
+                            const savedSyntax = this.getMetadataSyntax(settings);
+                            if (savedSyntax !== originalSyntax) {
                                 // User confirmed - update both to new syntax
-                                originalSyntax = settings.metadataSyntax;
-                                currentSyntax = settings.metadataSyntax;
+                                originalSyntax = savedSyntax;
+                                currentSyntax = savedSyntax;
                             } else {
                                 // User cancelled - reset currentSyntax to original
                                 currentSyntax = originalSyntax;
@@ -1998,7 +2092,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 							settings.bulletListSyntax = currentSyntax;
 							break;
 						case 'metadata':
-							settings.metadataSyntax = currentSyntax;
+							this.setMetadataSyntax(settings, currentSyntax);
 							break;
 					}
 					
@@ -2029,7 +2123,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 		switch (settings.recordType){
 			case 'table': this.SyntaxComponent.setValue(settings.tableSyntax); break;
 			case 'bulletList': this.SyntaxComponent.setValue(settings.bulletListSyntax); break;
-			case 'metadata': this.SyntaxComponent.setValue(settings.metadataSyntax); break;
+			case 'metadata': this.SyntaxComponent.setValue(this.getMetadataSyntax(settings)); break;
 		}
 	}
 
@@ -2049,7 +2143,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 			switch (settings.recordType) {
 				case 'table': syntax = settings.tableSyntax; break;
 				case 'bulletList': syntax = settings.bulletListSyntax; break;
-				case 'metadata': syntax = settings.metadataSyntax; break;
+				case 'metadata': syntax = this.getMetadataSyntax(settings); break;
 			}
 		}
 		

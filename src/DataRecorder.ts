@@ -12,6 +12,7 @@ export class DataRecorder {
     public existingDataMap: Map<string, ExistingData> = new Map();
     private newDataMap: Map<string, NewData> = new Map();
     public enableDynamicFolder: boolean;
+    public modifiedNoteScopeFolder: string;
     public periodicNoteFolder: string;
     public periodicNoteFormat: string;
     public periodicNoteType: string;
@@ -44,6 +45,7 @@ export class DataRecorder {
         if (!this.config) {
             this.enabled = this.plugin.settings.enabled ?? true;
             this.enableDynamicFolder = this.plugin.settings.enableDynamicFolder;
+            this.modifiedNoteScopeFolder = this.plugin.settings.modifiedNoteScopeFolder ?? '';
             this.periodicNoteFolder = this.plugin.settings.periodicNoteFolder;
             this.periodicNoteFormat = this.plugin.settings.periodicNoteFormat;
             this.periodicNoteType = this.plugin.settings.periodicNoteType;
@@ -60,6 +62,7 @@ export class DataRecorder {
         } else {
             this.enabled = this.config.enabled ?? true;
             this.enableDynamicFolder = this.config.enableDynamicFolder;
+            this.modifiedNoteScopeFolder = this.config.modifiedNoteScopeFolder ?? '';
             this.periodicNoteFolder = this.config.periodicNoteFolder;
             this.periodicNoteFormat = this.config.periodicNoteFormat;
             this.periodicNoteType = this.config.periodicNoteType;
@@ -75,6 +78,11 @@ export class DataRecorder {
             this.insertPlaceEnd = this.config.insertPlaceEnd;
         }
         this.recorderTarget = createRecorderTarget(this.periodicNoteType);
+        if (this.isModifiedNoteRecorder()) {
+            this.metadataSyntax = this.config
+                ? (this.config.modifiedNoteMetadataSyntax ?? this.plugin.settings.modifiedNoteMetadataSyntax ?? this.config.metadataSyntax)
+                : (this.plugin.settings.modifiedNoteMetadataSyntax ?? this.plugin.settings.metadataSyntax);
+        }
         //new Notice(`Setting changed! Record type:${this.recordType}`, 3000)
         this.loadParsers();
     }
@@ -93,6 +101,10 @@ export class DataRecorder {
 
     public isPeriodicNoteRecorder(): boolean {
         return this.recorderTarget.isPeriodic();
+    }
+
+    public isModifiedNoteRecorder(): boolean {
+        return !this.recorderTarget.isPeriodic();
     }
 
     public getGroupKey(): string {
@@ -134,13 +146,18 @@ export class DataRecorder {
     }
 
     public async record(tracker?: DocTracker): Promise<void> {
-        if (!this.enabled || !this.isPeriodicNoteRecorder()) return;
+        if (!this.enabled) return;
 
         //console.log('try to Load Tracker of closed note:',tracker)
         // Load tracker data
         await this.loadTrackerData(tracker);
 
         if (this.newDataMap.size == 0) return;
+
+        if (this.isModifiedNoteRecorder()) {
+            await this.writeToModifiedNotes();
+            return;
+        }
 
         // Separate stale trackers (from a previous period) and record them to their own date first
         const today = moment();
@@ -165,6 +182,37 @@ export class DataRecorder {
         if (this.newDataMap.size == 0) return;
         const trackedTime: number | undefined = undefined; // today
         await this.writeToNote(trackedTime);
+    }
+
+    private async writeToModifiedNotes(): Promise<void> {
+        if (this.recordType !== 'metadata') return;
+
+        for (const [filePath, newData] of this.newDataMap.entries()) {
+            if (!this.isInModifiedNoteScope(filePath)) continue;
+
+            const recordNote = this.plugin.app.vault.getFileByPath(filePath);
+            if (!recordNote) {
+                console.warn(`DataRecorder.writeToModifiedNotes: file not found: ${filePath}`);
+                new Notice(this.plugin.i18n.t('notices.fileNotFound', { filePath: filePath }));
+                continue;
+            }
+
+            await this.loadExistingData(recordNote);
+            const existingData = this.existingDataMap.get(filePath);
+            const mergedData = new MergedData(newData);
+            if (existingData) {
+                mergedData.mergeWith(existingData);
+            }
+
+            const newContent = this.Parser.generateContent([mergedData]);
+            await this.updateNoteToYAML(recordNote, newContent);
+        }
+    }
+
+    private isInModifiedNoteScope(filePath: string): boolean {
+        const scopeFolder = this.modifiedNoteScopeFolder.trim().replace(/^\/+|\/+$/g, '');
+        if (!scopeFolder) return true;
+        return filePath.startsWith(scopeFolder + '/');
     }
 
     private async writeToNote(targetDate?: number): Promise<void> {
@@ -548,7 +596,19 @@ export class DataRecorder {
             }
         }
 
-        // Use Obsidian's API to update frontmatter
+        // Check if the file already has YAML frontmatter
+        // Obsidian's processFrontMatter can only UPDATE existing frontmatter,
+        // not CREATE one for files without any YAML block.
+        const frontmatter = this.plugin.app.metadataCache.getFileCache(recordNote)?.frontmatter;
+        if (!frontmatter) {
+            // File has no YAML frontmatter — manually prepend a YAML block
+            const fileContent = await this.plugin.app.vault.read(recordNote);
+            const yamlBlock = '---\n' + newContent.trim() + '\n---\n';
+            await this.plugin.app.vault.modify(recordNote, yamlBlock + fileContent);
+            return;
+        }
+
+        // Use Obsidian's API to update existing frontmatter
         await this.plugin.app.fileManager.processFrontMatter(recordNote, (frontmatter) => {
             // Update all the properties from our parsed content
             for (const [key, value] of Object.entries(updates)) {

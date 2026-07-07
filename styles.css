@@ -184,7 +184,7 @@
 }
 
 .wordflow-structured-syntax-topbar {
-    position: relative;
+    margin-bottom: 8px;
 }
 
 .wordflow-syntax-mode-toggle {
@@ -234,23 +234,19 @@
 
 .wordflow-metadata-property-header,
 .wordflow-structured-syntax-header {
-    box-sizing: border-box;
-    padding-right: 40px;
-}
-
-.wordflow-structured-syntax-topbar > .clickable-icon,
-.wordflow-structured-syntax-topbar > button {
-    position: absolute;
-    right: 0;
-    top: -4px;
-}
-
-.wordflow-metadata-property-header,
-.wordflow-structured-syntax-header {
     color: var(--text-muted);
     font-size: var(--font-ui-smaller);
     font-weight: 600;
-    margin-bottom: 8px;
+}
+
+.wordflow-metadata-property-header > span,
+.wordflow-structured-syntax-header > span {
+    text-align: center;
+}
+
+.wordflow-structured-syntax-header-action {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .wordflow-metadata-property-row,
@@ -270,6 +266,17 @@
     display: flex;
     gap: 2px;
     justify-content: flex-end;
+}
+
+.wordflow-duplicate-property-warning {
+    color: var(--text-error);
+    font-size: var(--font-ui-small);
+    line-height: var(--line-height-tight);
+    margin-top: 8px;
+}
+
+.wordflow-duplicate-property-warning.is-hidden {
+    display: none !important;
 }
 
 .wordflow-row-icon-actions button {

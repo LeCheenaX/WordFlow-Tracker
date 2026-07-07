@@ -1,4 +1,4 @@
-import { wordsCounter } from "./Utils/stats";
+import { stripYamlFrontmatter, wordsCounter } from "./Utils/stats";
 import { isTableChange, tableWordDiff } from "./Utils/tableWordCount";
 import { conditionalSleep } from "./Utils/conditionalSleep";
 import Timer from "./Timer";
@@ -77,6 +77,11 @@ export class DocTracker {
         this.readTimer?.pause();
     }
 
+    public async flushPendingChanges(): Promise<void> { // has delay in 1 ms
+        if(!this.debouncedTracker) return;
+        await Promise.resolve(this.debouncedTracker.run());
+    }
+
     public async countWordsFullScan() {
         let file = this.activeEditor?.file;
         if (!file || file.path !== this.filePath) {
@@ -97,10 +102,10 @@ export class DocTracker {
         //@ts-expect-error
         if (this.activeEditor?.editor?.cm) {
             //@ts-expect-error
-            this.docWords = totalWordsCt(this.activeEditor?.editor.cm.state.sliceDoc(0));
+            this.docWords = totalWordsCt(stripYamlFrontmatter(this.activeEditor?.editor.cm.state.sliceDoc(0)));
         } else {
             const content = await this.plugin.app.vault.read(file);
-            this.docWords = totalWordsCt(content);
+            this.docWords = totalWordsCt(stripYamlFrontmatter(content));
         }
     }
 
@@ -141,6 +146,7 @@ export class DocTracker {
         //console.log('DocTracker.resetEdit: called')
         this.isResetting = true; // Signal Widget to skip this tracker during the reset window
         await sleep(1000); // for multiple recorders to record before cleared.
+        this.originalWords = this.docWords;
         this.editedTimes = 0;
         this.editedWords = 0;
         this.addedWords = 0;
