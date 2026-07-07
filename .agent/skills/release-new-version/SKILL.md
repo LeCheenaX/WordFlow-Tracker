@@ -23,12 +23,6 @@ Occasional release commits also changed:
 - `miscellaneous/cumulative_downloads_trend.png`: regenerate the chart.
 - `styles.css`: only when the release itself includes CSS changes.
 
-Important current-project caveats:
-
-- `version-bump.mjs` can update `manifest.json` and `versions.json`, but the recent release commits did not update `versions.json`.
-- `package.json` currently has an unrelated sample version (`1.0.1`), so do not treat `package.json` as the release source of truth without explicit user confirmation.
-- The release source of truth is currently `manifest.json` plus `src/changeLog.ts`.
-
 ## Release Philosophy
 
 Obsidian plugin exposure is driven heavily by download activity. Prefer frequent
@@ -49,10 +43,9 @@ Read these before making release edits:
 
 - `manifest.json`
 - `src/changeLog.ts`
-- `versions.json`
-- `package.json`
 - `.github/workflows/release.yml`
 - `miscellaneous/downloads-Trend.py`, if updating release statistics
+- `miscellaneous/cumulative_downloads_trend.png`, the result after executing `miscellaneous/downloads-Trend.py`
 
 Inspect recent version commits when uncertain:
 
@@ -76,12 +69,7 @@ git show <version-update-commit> -- manifest.json src/changeLog.ts
    - Prepend the new release section at the top of both `en` and `zh-CN`.
    - Keep the newest release first.
 
-4. Decide whether `versions.json` should be updated.
-   - For Obsidian plugins, `versions.json` maps plugin versions to required Obsidian app versions.
-   - If maintaining compatibility metadata, add `"targetVersion": "minAppVersion"`.
-   - Because recent commits have not kept it current, ask or note the inconsistency before changing it.
-
-5. Optionally update release statistics.
+4. Update release statistics.
    - Follow the "Download Statistics Workflow" below.
    - Update `miscellaneous/downloads-Trend.py` with new version rows or corrected counts.
    - Regenerate `miscellaneous/cumulative_downloads_trend.png`.
@@ -164,7 +152,9 @@ order:
 ```
 
 For a brand-new release, add a row using the release date and current download
-count. It is normal for a just-created release to start at `0`.
+count. It is normal for a just-created release to start at `0`. 
+
+Note: You should always prepare an item of the latest version to be released, with a download number of 0 and release date of current date. 
 
 For an existing release, replace the old count with the latest count from the
 data source. Do not add a duplicate row for the same version.
@@ -259,7 +249,8 @@ and creates the release as a draft.
 
 ## Publish Commands
 
-After the user approves committing and publishing, create a version commit, then
+After the user approves committing and publishing, you must sync the local git with the cloud git. 
+Only when the sync is successful, could you create a version commit, then
 tag and push the tag.
 
 Standard release:
@@ -278,6 +269,8 @@ After pushing:
 - Review release notes and attached assets before publishing the GitHub release.
 
 ## Withdraw And Re-release
+
+If the sync failed but you accidentally push the version to github, you should withdraw the version and sync again until the cloud version on github is the same as local git tree. 
 
 Use this only when a broken release/tag needs to be replaced.
 

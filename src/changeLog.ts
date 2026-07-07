@@ -1,8 +1,24 @@
-export const currentPluginVersion = '2.2.9';
+export const currentPluginVersion = '2.3.0';
 
 export const changelog = {
 'en': 
 `
+### 2.3.0 updates
+🔥 **Major Updates:**
+- Rebuilt recorder settings UI: new Property Editor, folder suggestions, and improved interaction logic for more convenient configuration experience.
+- **New recorder type: Modified Note Recorder** — directly record accumulated historic edit stats into each modified note itself, ideal for tracking per-note writing progress over time. Supports metadata, bullet list, and scope folder filtering.
+
+✨ **New Features:**
+- New Property Editor in recorder settings for structured syntax editing.
+- Folder auto-suggestions when configuring periodic note folders.
+
+⚡ **Enhancements:**
+- Optimized default settings for better out-of-box experience.
+- Improved i18n and tooltips for newly added features.
+
+🐛 **Fixes:**
+- Fixed document word count being incorrect due to tracker not updating original words.
+
 ### 2.2.9 updates
 ✨ **New Features:**
 - Context Management: AI can now understand changes better by:
@@ -69,6 +85,22 @@ export const changelog = {
 `,
 'zh-CN': 
 `
+### 2.3.0 更新说明
+🔥 **重大更新：**
+- 重构记录器设置 UI：新增属性编辑器、文件夹路径建议，全面优化交互逻辑，配置体验更便捷。
+- **新增记录器类型：修改笔记记录器（Modified Note Recorder）** — 直接将累积的历史编辑统计写入每个被修改的笔记自身，适合追踪单篇笔记的写作进度。支持 metadata、bullet list 以及作用域文件夹过滤。
+
+✨ **新功能：**
+- 新增结构化语法属性编辑器，支持可视化编辑记录语法。
+- 周期笔记文件夹支持路径自动建议。
+
+⚡ **功能增强：**
+- 优化默认设置，开箱体验更佳。
+- 修复新功能的国际化文案和工具提示问题。
+
+🐛 **问题修复：**
+- 修复文档字数因 tracker 未更新原文而统计错误的问题。
+
 ### 2.2.9 更新说明
 ✨ **新功能：**
 - 上下文管理：AI 差异分析现在可以包含修改位置周围的上下文（按句子、段落或标题切片），让 AI 更准确地理解文档变更。
