@@ -1,8 +1,24 @@
-export const currentPluginVersion = '2.3.0';
+export const currentPluginVersion = '2.3.1';
 
 export const changelog = {
 'en': 
 `
+### 2.3.1 updates
+✨ **New Features:**
+- Modified Note Recorder can now configure its own date format. 
+
+🐛 **Bug Fixes:**
+- Fixed recorder setting toggle buttons so clicking most of the button area no longer collapses the recorder unexpectedly.
+- Fixed Widget settings page scrolling so settings after "Switch to this field" remain reachable.
+
+⚡ **Enhancements:**
+- ES-Lint issues as per Obsidian specifications. 
+
+🎨 **UI Optimization:**
+- Added three-column titles in recorder settings to clarify what each column represents.
+- Refined the add button in recorder settings so the plus icon no longer occupies a full-row background.
+- Improved recorder settings layout on mobile, including the right margin and crowded five-column controls for name, note type, content type, enable, and delete.
+
 ### 2.3.0 updates
 🔥 **Major Updates:**
 - Rebuilt recorder settings UI: new Property Editor, folder suggestions, and improved interaction logic for more convenient configuration experience.
@@ -85,6 +101,19 @@ export const changelog = {
 `,
 'zh-CN': 
 `
+### 2.3.1 更新说明
+✨ **新功能：**
+- 新出的 Modified Note Recorder 现在可以单独配置时间格式；。
+
+🐛 **Bug 修复：**
+- 修复 recorder 设置页面的启用/禁用按钮只有一小部分可点击，大部分区域会触发 recorder 折叠的问题。
+- 修复 Widget 设置页面显示不全，到 \`Switch to this field\` 后无法继续滑动的问题。
+
+🎨 **UI优化：**
+- recorder 设置页面增加三栏 title，备注每列代表的含义。
+- 优化 recorder 设置页面的 \`+\` 号按钮，使其不再占用一整行背景。
+- 修复 recorder 设置页面移动端布局错乱，包括右边距相较 Obsidian 默认右边距过高，以及页面元素挤在一起的问题。
+
 ### 2.3.0 更新说明
 🔥 **重大更新：**
 - 重构记录器设置 UI：新增属性编辑器、文件夹路径建议，全面优化交互逻辑，配置体验更便捷。

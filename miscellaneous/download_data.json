@@ -1,0 +1,257 @@
+[
+  {
+    "date": "2025-03-04",
+    "downloads": 25,
+    "version": "1.0.0"
+  },
+  {
+    "date": "2025-03-05",
+    "downloads": 11,
+    "version": "1.0.1"
+  },
+  {
+    "date": "2025-03-07",
+    "downloads": 11,
+    "version": "1.0.2"
+  },
+  {
+    "date": "2025-03-07",
+    "downloads": 8,
+    "version": "1.0.3"
+  },
+  {
+    "date": "2025-03-09",
+    "downloads": 9,
+    "version": "1.0.4"
+  },
+  {
+    "date": "2025-03-09",
+    "downloads": 12,
+    "version": "1.0.5"
+  },
+  {
+    "date": "2025-03-12",
+    "downloads": 16,
+    "version": "1.1.0"
+  },
+  {
+    "date": "2025-03-13",
+    "downloads": 12,
+    "version": "1.1.1"
+  },
+  {
+    "date": "2025-03-13",
+    "downloads": 16,
+    "version": "1.2.0"
+  },
+  {
+    "date": "2025-03-13",
+    "downloads": 9,
+    "version": "1.2.1"
+  },
+  {
+    "date": "2025-03-19",
+    "downloads": 13,
+    "version": "1.2.2"
+  },
+  {
+    "date": "2025-03-21",
+    "downloads": 22,
+    "version": "1.2.3"
+  },
+  {
+    "date": "2025-03-24",
+    "downloads": 794,
+    "version": "1.3.0"
+  },
+  {
+    "date": "2025-05-31",
+    "downloads": 128,
+    "version": "1.3.1"
+  },
+  {
+    "date": "2025-06-03",
+    "downloads": 139,
+    "version": "1.3.2"
+  },
+  {
+    "date": "2025-06-06",
+    "downloads": 338,
+    "version": "1.4.0"
+  },
+  {
+    "date": "2025-06-19",
+    "downloads": 79,
+    "version": "1.4.1"
+  },
+  {
+    "date": "2025-06-20",
+    "downloads": 228,
+    "version": "1.4.2"
+  },
+  {
+    "date": "2025-06-28",
+    "downloads": 1649,
+    "version": "1.4.3"
+  },
+  {
+    "date": "2025-07-05",
+    "downloads": 1603,
+    "version": "1.5.0"
+  },
+  {
+    "date": "2025-11-10",
+    "downloads": 161,
+    "version": "1.5.1"
+  },
+  {
+    "date": "2025-11-13",
+    "downloads": 703,
+    "version": "1.5.2"
+  },
+  {
+    "date": "2025-12-07",
+    "downloads": 556,
+    "version": "1.5.3"
+  },
+  {
+    "date": "2025-12-30",
+    "downloads": 66,
+    "version": "1.6.0"
+  },
+  {
+    "date": "2025-12-30",
+    "downloads": 270,
+    "version": "1.6.1"
+  },
+  {
+    "date": "2026-01-05",
+    "downloads": 512,
+    "version": "1.6.2"
+  },
+  {
+    "date": "2026-01-16",
+    "downloads": 303,
+    "version": "1.6.3"
+  },
+  {
+    "date": "2026-01-21",
+    "downloads": 77,
+    "version": "1.7.0"
+  },
+  {
+    "date": "2026-01-22",
+    "downloads": 193,
+    "version": "1.7.1"
+  },
+  {
+    "date": "2026-01-24",
+    "downloads": 343,
+    "version": "1.7.2"
+  },
+  {
+    "date": "2026-01-30",
+    "downloads": 313,
+    "version": "1.7.3"
+  },
+  {
+    "date": "2026-02-05",
+    "downloads": 277,
+    "version": "1.7.4"
+  },
+  {
+    "date": "2026-02-10",
+    "downloads": 227,
+    "version": "1.7.5"
+  },
+  {
+    "date": "2026-02-13",
+    "downloads": 12,
+    "version": "1.8.0-alpha"
+  },
+  {
+    "date": "2026-02-13",
+    "downloads": 15,
+    "version": "1.8.0-beta"
+  },
+  {
+    "date": "2026-02-13",
+    "downloads": 12,
+    "version": "1.8.0-gamma"
+  },
+  {
+    "date": "2026-02-13",
+    "downloads": 659,
+    "version": "2.0.0"
+  },
+  {
+    "date": "2026-02-28",
+    "downloads": 981,
+    "version": "2.0.1"
+  },
+  {
+    "date": "2026-04-18",
+    "downloads": 250,
+    "version": "2.1.0"
+  },
+  {
+    "date": "2026-04-21",
+    "downloads": 14,
+    "version": "2.2.0"
+  },
+  {
+    "date": "2026-04-21",
+    "downloads": 877,
+    "version": "2.2.1"
+  },
+  {
+    "date": "2026-05-18",
+    "downloads": 11,
+    "version": "2.2.2"
+  },
+  {
+    "date": "2026-05-18",
+    "downloads": 8,
+    "version": "2.2.3"
+  },
+  {
+    "date": "2026-05-18",
+    "downloads": 494,
+    "version": "2.2.4"
+  },
+  {
+    "date": "2026-05-27",
+    "downloads": 728,
+    "version": "2.2.5"
+  },
+  {
+    "date": "2026-06-12",
+    "downloads": 385,
+    "version": "2.2.6"
+  },
+  {
+    "date": "2026-06-19",
+    "downloads": 13,
+    "version": "2.2.7"
+  },
+  {
+    "date": "2026-06-19",
+    "downloads": 311,
+    "version": "2.2.8"
+  },
+  {
+    "date": "2026-06-25",
+    "downloads": 518,
+    "version": "2.2.9"
+  },
+  {
+    "date": "2026-07-07",
+    "downloads": 184,
+    "version": "2.3.0"
+  },
+  {
+    "date": "2026-07-10",
+    "downloads": 0,
+    "version": "2.3.1"
+  }
+]
