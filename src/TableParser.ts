@@ -399,7 +399,7 @@ export class TableParser{
                         } else {
                             entry.lastModifiedTime = null;
                         }
-                    } catch (_e) {
+                    } catch {
                         entry.lastModifiedTime = null;
                     }
                     break;                    

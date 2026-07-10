@@ -6,7 +6,7 @@ import WordflowTrackerPlugin from "./main";
 import { debounce, Editor, EventRef, MarkdownView, MarkdownViewModeType, moment, TFile } from "obsidian";
 import { historyField } from "@codemirror/commands";
 
-const DEBUG = false as const;
+const DEBUG = false;
 
 export class DocTracker {
     public lastDone = 0;

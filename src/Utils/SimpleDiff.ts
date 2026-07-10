@@ -32,24 +32,6 @@ function lcsTable(a: string[], b: string[]): number[][] {
 }
 
 /**
- * Backtrack through LCS table to produce diff lines.
- */
-function backtrack(dp: number[][], a: string[], b: string[], i: number, j: number, result: DiffLine[]): void {
-    if (i === 0 && j === 0) return;
-
-    if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
-        backtrack(dp, a, b, i - 1, j - 1, result);
-        result.push({ type: 'context', content: a[i - 1] });
-    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-        backtrack(dp, a, b, i, j - 1, result);
-        result.push({ type: 'add', content: b[j - 1] });
-    } else if (i > 0) {
-        backtrack(dp, a, b, i - 1, j, result);
-        result.push({ type: 'remove', content: a[i - 1] });
-    }
-}
-
-/**
  * Iterative backtrack to avoid stack overflow on large files.
  */
 function backtrackIterative(dp: number[][], a: string[], b: string[]): DiffLine[] {
@@ -672,13 +654,6 @@ function getBlockRanges(content: string, blocks: string[]): ContextRange[] {
 
 function rangesOverlap(a: ContextRange, b: ContextRange): boolean {
     return a.start <= b.end && b.start <= a.end;
-}
-
-/**
- * Indent multi-line text
- */
-function indentText(text: string, indent: string): string {
-    return text.split('\n').map(line => indent + line).join('\n');
 }
 
 function formatLineList(output: string[], lines: string[], indent: string): void {

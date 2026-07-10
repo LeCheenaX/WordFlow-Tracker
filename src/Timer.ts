@@ -11,7 +11,7 @@ export default class Timer {
     private accumulatedTime = 0;
     private timeToNextUpdate = 0; // miliseconds until next update
 
-    private startDebounceInterval: number = 1000 as const; 
+    private startDebounceInterval = 1000; 
     private readonly updateInterval: number = (this.plugin.settings.useSecondInWidget)? 1000: 60000; // 60 seconds
     private readonly idleInterval: number = parseInt(this.plugin.settings.idleInterval)*60000; // convert to miliseconds
     private debouncedPauser: ReturnType<typeof debounce> | null = null;

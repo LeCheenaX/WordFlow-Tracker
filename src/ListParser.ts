@@ -153,7 +153,7 @@ export class BulletListParser{
                 if (groupData.lastModifiedTime !== undefined) {
                     try {
                         ListData.lastModifiedTime = moment(groupData.lastModifiedTime, this.timeFormat).valueOf();
-                    } catch (_e) {
+                    } catch {
                         ListData.lastModifiedTime = null;
                     }
                 } else {
@@ -485,7 +485,7 @@ export class ListParser{
                 if (groupData.lastModifiedTime !== undefined) {
                     try {
                         ListData.lastModifiedTime = Date.parse(groupData.lastModifiedTime);
-                    } catch (e) {
+                    } catch {
                         ListData.lastModifiedTime = null;
                     }
                 } else {
@@ -587,7 +587,7 @@ export class ListParser{
                 .replace(/\${modifiedNote}/g, linkText)
                 .replace(/\${lastModifiedTime}/g, typeof data.lastModifiedTime === 'number' 
                     ? moment(data.lastModifiedTime).format(this.timeFormat) 
-                    : data.lastModifiedTime as string)
+                    : String(data.lastModifiedTime ?? ''))
                 .replace(/\${editedWords}/g, data.editedWords.toString())
                 .replace(/\${editedTimes}/g, data.editedTimes.toString())
                 .replace(/\${editedPercentage}/g, data.editedPercentage);

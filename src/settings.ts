@@ -11,6 +11,19 @@ import { getDateValidationErrorResult } from './Utils/dateFormatValidator';
 import { getAllRecorderFieldOptions } from './Utils/fieldOptions';
 import { isPeriodicRecorderTarget, RECORDER_TARGET_TYPES } from './RecorderTarget';
 
+type DestructiveButtonComponent = ButtonComponent & {
+    setDestructive?: () => ButtonComponent;
+};
+
+function markButtonDestructive(button: ButtonComponent): ButtonComponent {
+    const destructiveButton = button as DestructiveButtonComponent;
+    if (destructiveButton.setDestructive) {
+        return destructiveButton.setDestructive();
+    }
+    button.buttonEl.addClass('mod-warning');
+    return button;
+}
+
 // Obsidian supports only string and boolean for settings. numbers are not supported. 
 export interface WordflowRecorderConfigs {
     name: string;
@@ -394,7 +407,7 @@ export class GeneralTab extends WordflowSubSettingsTab {
         .setDesc(this.i18n.t('settings.general.resetSettings.desc'))
         .addButton(btn => btn
                 .setButtonText(this.i18n.t('settings.general.resetSettings.button'))
-                .setWarning()
+                .then(markButtonDestructive)
                 //.setIcon('alert-triangle')
                 .onClick(() => this.confirmReset())
             );
@@ -478,7 +491,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     .setButtonText(this.i18n.t('settings.recorders.actions.delete'))
                     .setTooltip(this.i18n.t('settings.recorders.actions.delete'))
                     .setIcon('trash')
-                    .setWarning()
+                    .then(markButtonDestructive)
                     .onClick(() => {
                         void this.removeRecorder(this.activeRecorderIndex - 1);
                     })
@@ -681,7 +694,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             new ButtonComponent(deleteContainer)
                 .setIcon('trash')
                 .setTooltip(this.i18n.t('settings.recorders.actions.delete'))
-                .setWarning()
+                .then(markButtonDestructive)
                 .onClick(() => {
                     void this.removeRecorder(index - 1);
                 });
@@ -731,8 +744,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
             const ownerName = this.getRecordTypeConflictOwner(settings, index, recordType);
             const label = this.getRecordTypeLabel(recordType);
             dropdown.addOption(recordType, ownerName ? this.i18n.t('settings.recorders.summary.recordTypeUsedBy', { recordType: label, recorder: ownerName }) : label);
-            const option = dropdown.selectEl.querySelector(`option[value="${recordType}"]`) as HTMLOptionElement | null;
-            if (option && ownerName) option.disabled = true;
+            const option = dropdown.selectEl.querySelector(`option[value="${recordType}"]`);
+            if (option instanceof HTMLOptionElement && ownerName) option.disabled = true;
         }
         dropdown.setValue(settings.recordType);
     }
@@ -2547,7 +2560,6 @@ export class WidgetTab extends WordflowSubSettingsTab {
             .addSlider(slider => slider
                 .setLimits(10, 60, 10)
                 .setValue(Math.max(10, Math.min(60, this.plugin.settings.tagColorHueRange)))
-                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.tagColorHueRange = value;
                     await this.plugin.saveSettings();
@@ -2574,7 +2586,6 @@ export class WidgetTab extends WordflowSubSettingsTab {
             .addSlider(slider => {
                 slider.setLimits(4, 10, 1);
                 slider.setValue(this.plugin.settings.heatmapGradientLevels || 6);
-                slider.setDynamicTooltip();
                 slider.onChange(async (value) => {
                     this.plugin.settings.heatmapGradientLevels = value;
                     await this.plugin.saveSettings();
@@ -2588,7 +2599,6 @@ export class WidgetTab extends WordflowSubSettingsTab {
             .addSlider(slider => {
                 slider.setLimits(5, 13, 1);
                 slider.setValue(this.plugin.settings.heatmapWeeksToShow || 12);
-                slider.setDynamicTooltip();
                 slider.onChange(async (value) => {
                     this.plugin.settings.heatmapWeeksToShow = value;
                     await this.plugin.saveSettings();
@@ -3247,7 +3257,6 @@ export class AITab extends WordflowSubSettingsTab {
                 .addSlider(slider => slider
                     .setLimits(1, 6, 1)
                     .setValue(this.plugin.settings.aiHeadingLevel)
-                    .setDynamicTooltip()
                     .onChange(async (value) => {
                         this.plugin.settings.aiHeadingLevel = value;
                         await this.plugin.saveSettings();

@@ -19,7 +19,7 @@ export async function conditionalSleep(
     const allConditionsMet = conditions.every(condition => {
         try {
             return condition();
-        } catch (e) {
+        } catch {
             // If any condition throws an error, consider it as false
             return false;
         }

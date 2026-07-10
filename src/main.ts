@@ -16,7 +16,7 @@ import { App, Component, getAllTags, MarkdownView, MarkdownRenderer, Modal, Noti
 declare const activeDocument: Document;
 
 // Remember to rename these classes and interfaces!
-const DEBUG = false as const;
+const DEBUG = false;
 
 export default class WordflowTrackerPlugin extends Plugin {
 	public settings: WordflowSettings;

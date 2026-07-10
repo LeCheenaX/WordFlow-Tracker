@@ -504,7 +504,7 @@ export class DataRecorder {
             MergedTotalData.totalTime = 0;
         }
         //console.log('Total Before merging:',[MergedTotalData])
-        for (const [filePath, newData] of this.newDataMap.entries()) {
+        for (const newData of this.newDataMap.values()) {
             MergedTotalData.totalEdits += newData.editedTimes;
             MergedTotalData.totalWords += newData.editedWords;
             MergedTotalData.totalEditTime += newData.editTime;

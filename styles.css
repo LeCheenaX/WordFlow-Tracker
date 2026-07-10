@@ -271,18 +271,18 @@
     margin-bottom: 8px;
 }
 
-.wordflow-syntax-mode-toggle {
-    background-color: transparent !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
+.setting-item.wordflow-raw-syntax-setting .setting-item-control > button.wordflow-syntax-mode-toggle {
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
     color: var(--text-muted);
     min-width: 32px;
     padding-left: 6px;
     padding-right: 6px;
 }
 
-.wordflow-syntax-mode-toggle:hover {
-    background-color: var(--background-modifier-hover) !important;
+.setting-item.wordflow-raw-syntax-setting .setting-item-control > button.wordflow-syntax-mode-toggle:hover {
+    background-color: var(--background-modifier-hover);
     color: var(--text-normal);
 }
 
@@ -364,7 +364,7 @@
 }
 
 .wordflow-duplicate-property-warning.is-hidden {
-    display: none !important;
+    display: none;
 }
 
 .wordflow-row-icon-actions button {
