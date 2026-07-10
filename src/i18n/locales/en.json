@@ -135,7 +135,7 @@
           }
         },
         "timeFormatInNote": {
-          "name": "Modified time in note",
+          "name": "Last modified time format in note",
           "desc": "Set the format of '${lastModifiedTime}' when writing metadata to modified notes.",
           "preview": "Your current syntax looks like this: "
         }
