@@ -82,10 +82,21 @@
 
 .is-mobile .wordflow-setting-tab {
     padding: 12px;
+    height: auto;
+    min-height: 0;
+    max-height: calc(100vh - var(--header-height, 0px));
+}
+
+.is-mobile .wordflow-tab-content {
+    overflow: visible;
 }
 
 .is-mobile .wordflow-tab-content-scroll {
+    height: auto;
+    max-height: calc(100vh - 120px);
+    min-height: 0;
     padding: 0;
+    -webkit-overflow-scrolling: touch;
 }
 
 .is-mobile .wordflow-setting-tab .setting-item {
@@ -97,6 +108,11 @@
     justify-content: flex-start;
     margin-left: 0;
     max-width: none;
+    width: 100%;
+}
+
+.is-mobile .wordflow-setting-tab .setting-item-control .dropdown {
+    min-width: 0;
     width: 100%;
 }
 
