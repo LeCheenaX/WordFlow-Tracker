@@ -211,6 +211,7 @@ export function splitIntoHeadingSections(content: string, maxLevel: number): Hea
 function splitIntoSentences(content: string): string[] {
     // Build a map: URL positions → placeholder, so dots inside URLs don't
     // get mistaken for sentence boundaries.
+    const urlPlaceholderPrefix = '__WORDFLOW_URL_';
     const urlRanges: Array<{ start: number; end: number; placeholder: string }> = [];
     const urlRegex = /https?:\/\/[^\s)"'\]]+/g;
     let urlMatch: RegExpExecArray | null;
@@ -218,7 +219,7 @@ function splitIntoSentences(content: string): string[] {
         urlRanges.push({
             start: urlMatch.index,
             end: urlMatch.index + urlMatch[0].length,
-            placeholder: `\x00URL${urlRanges.length}\x00`
+            placeholder: `${urlPlaceholderPrefix}${urlRanges.length}__`
         });
     }
     
@@ -237,13 +238,13 @@ function splitIntoSentences(content: string): string[] {
     // 1. English . ! ? followed by space or newline
     // 2. Chinese 。！？ (anywhere)
     // 3. Ellipsis … (anywhere)
-    // Note: \x00URL\d+\x00 placeholders are skipped via continue below
-    const regex = /([.!?])(?=\s|\n|$)|([。！？])|\x00URL\d+\x00|(…)/g;
+    // Note: URL placeholders are skipped via continue below
+    const regex = /([.!?])(?=\s|\n|$)|([。！？])|__WORDFLOW_URL_\d+__|(…)/g;
     let match;
     
     while ((match = regex.exec(safeContent)) !== null) {
         // Skip URL placeholder matches (they match the third alternative)
-        if (match[0].startsWith('\x00URL')) {
+        if (match[0].startsWith(urlPlaceholderPrefix)) {
             continue;
         }
         const sentence = safeContent.substring(lastIndex, match.index + match[0].length);

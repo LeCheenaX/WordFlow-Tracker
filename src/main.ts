@@ -190,16 +190,16 @@ export default class WordflowTrackerPlugin extends Plugin {
 		}));
 
 		this.registerEvent(this.app.workspace.on('active-leaf-change', () => {
-			debouncedHandler();
+			void debouncedHandler();
 		}));
 
 		this.registerEvent(this.app.workspace.on('layout-change', () => {
 			if (this.lastActiveFile.path == this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path &&
 				this.lastActiveFile.mode !== this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode()) {
 				this.isModeSwitch = true;
-				debouncedHandler();
+				void debouncedHandler();
 			} else {
-				debouncedHandler();
+				void debouncedHandler();
 			}
 			//console.log('last active: ', this.lastActiveFile);
 			//console.log('isModeSwitch: ', this.isModeSwitch)
@@ -210,7 +210,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 				path: this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path ?? this.lastActiveFile.path,
 				mode: this.app.workspace.getActiveViewOfType(MarkdownView)?.getMode() ?? this.lastActiveFile.mode
 			};
-			debouncedHandler();
+			void debouncedHandler();
 		}
 
 

@@ -4,12 +4,12 @@ import { AbstractInputSuggest, App, ButtonComponent, Modal, Notice, Setting, Tex
 declare const activeDocument: Document;
 import { DataRecorder, MergedData } from './DataRecorder';
 import { moment, normalizePath } from 'obsidian';
-import { SupportedLocale, I18nManager, getI18n } from './i18n';
+import { I18nManager, getI18n } from './i18n';
 import { updateStatusBarStyle } from './StatusBarManager';
 import { TagColorConfig } from './Utils/TagColorManager';
 import { getDateValidationErrorResult } from './Utils/dateFormatValidator';
 import { getAllRecorderFieldOptions } from './Utils/fieldOptions';
-import { isPeriodicRecorderTarget, RECORDER_TARGET_TYPES, RecorderTargetType } from './RecorderTarget';
+import { isPeriodicRecorderTarget, RECORDER_TARGET_TYPES } from './RecorderTarget';
 
 // Obsidian supports only string and boolean for settings. numbers are not supported. 
 export interface WordflowRecorderConfigs {
@@ -225,8 +225,7 @@ class FolderSuggest extends AbstractInputSuggest<TFolder> {
     protected getSuggestions(query: string): TFolder[] {
         const normalizedQuery = query.toLowerCase();
         return this.app.vault
-            .getAllLoadedFiles()
-            .filter((file): file is TFolder => file instanceof TFolder)
+            .getAllFolders()
             .filter(folder => folder.path !== '' && folder.path !== '/')
             .filter(folder => folder.path.toLowerCase().includes(normalizedQuery))
             .slice(0, 50);
@@ -263,7 +262,7 @@ export class GeneralTab extends WordflowSubSettingsTab {
                 d.setValue(this.plugin.settings.locale)
                 .onChange(async (value) => {
                     this.plugin.settings.locale = value;
-                    this.i18n.setLocale(value as SupportedLocale);
+                    this.i18n.setLocale(value);
                     await this.plugin.saveSettings();
                     new Notice(this.i18n.t('notices.languageChanged'), 5000);
                     // Refresh the UI to show the new language
@@ -630,7 +629,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             if (!isPeriodicRecorderTarget(value)) {
                 settings.recordType = 'metadata';
                 settings.insertPlace = 'yaml';
-            } else if (!this.canUseRecordType(settings, index, settings.recordType as 'table' | 'bulletList' | 'metadata')) {
+            } else if (!this.canUseRecordType(settings, index, settings.recordType)) {
                 const available = this.getAvailableRecordTypes(settings, index);
                 if (available.length > 0) settings.recordType = available[0];
             }
@@ -648,7 +647,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         recordTypeDropdown.selectEl.disabled = !isPeriodicRecorderTarget(settings.periodicNoteType);
         recordTypeDropdown.selectEl.setAttr('title', this.i18n.t('settings.recorders.summary.recordTypeTooltip'));
         recordTypeDropdown.onChange(async (value) => {
-            const recordType = value as 'table' | 'bulletList' | 'metadata';
+            const recordType = value;
             if (!this.canUseRecordType(settings, index, recordType)) {
                 recordTypeDropdown.setValue(settings.recordType);
                 return;
@@ -694,7 +693,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         const currentConflictOwner = this.getRecordTypeConflictOwner(
             settings,
             index,
-            settings.recordType as 'table' | 'bulletList' | 'metadata'
+            settings.recordType
         );
         if (currentConflictOwner && isPeriodicRecorderTarget(settings.periodicNoteType)) {
             rowContainer.createDiv({
@@ -724,7 +723,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         for (const type of RECORDER_TARGET_TYPES) {
             dropdown.addOption(type, this.getTargetLabel(type));
         }
-        dropdown.setValue((currentValue || DEFAULT_SETTINGS.periodicNoteType) as RecorderTargetType);
+        dropdown.setValue(currentValue || DEFAULT_SETTINGS.periodicNoteType);
     }
 
     private populateRecordTypeDropdown(dropdown: DropdownComponent, settings: WordflowRecorderConfigs, index: number): void {
@@ -780,7 +779,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         return `${folderMode}|${folder}|${format}`;
     }
 
-    private getRecordTypeConflictOwner(settings: WordflowRecorderConfigs, index: number, recordType: 'table' | 'bulletList' | 'metadata'): string | null {
+    private getRecordTypeConflictOwner(settings: WordflowRecorderConfigs, index: number, recordType: string): string | null {
         if (!isPeriodicRecorderTarget(settings.periodicNoteType)) return recordType === 'metadata' ? null : settings.name;
         const targetKey = this.getRecordNoteKey(settings);
         for (let otherIndex = 0; otherIndex < this.getRecorderCount(); otherIndex++) {
@@ -795,7 +794,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
         return null;
     }
 
-    private canUseRecordType(settings: WordflowRecorderConfigs, index: number, recordType: 'table' | 'bulletList' | 'metadata'): boolean {
+    private canUseRecordType(settings: WordflowRecorderConfigs, index: number, recordType: string): boolean {
         return this.getRecordTypeConflictOwner(settings, index, recordType) === null;
     }
 
