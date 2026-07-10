@@ -442,20 +442,20 @@ export class RecordersTab extends WordflowSubSettingsTab {
         this.container.empty();
         const tabContent = this.container.createDiv('wordflow-tab-content-scroll');
         const listContainer = tabContent.createDiv('wordflow-recorder-list');
+        this.renderRecorderHeader(listContainer);
 
         for (let index = 0; index < this.getRecorderCount(); index++) {
             this.renderRecorderRow(listContainer, index);
         }
 
-        new Setting(tabContent)
-            .addButton(btn => btn
-                .setButtonText(this.i18n.t('settings.recorders.actions.add'))
-                .setIcon('plus')
-                .setTooltip(this.i18n.t('settings.recorders.actions.add'))
-                .onClick(() => {
-                    void this.createNewRecorder();
-                })
-            );
+        const addRecorderContainer = tabContent.createDiv('wordflow-recorder-add-container');
+        new ButtonComponent(addRecorderContainer)
+            .setButtonText(this.i18n.t('settings.recorders.actions.add'))
+            .setIcon('plus')
+            .setTooltip(this.i18n.t('settings.recorders.actions.add'))
+            .onClick(() => {
+                void this.createNewRecorder();
+            });
         return;
 
         this.container.empty();
@@ -559,6 +559,31 @@ export class RecordersTab extends WordflowSubSettingsTab {
         return this.plugin.recorderManager.getRecorders()[index];
     }
 
+    private renderRecorderHeader(container: HTMLElement): void {
+        const headerRow = container.createDiv('wordflow-recorder-summary-header');
+        headerRow.createDiv('wordflow-recorder-summary-header-spacer');
+        headerRow.createDiv({
+            cls: 'wordflow-recorder-summary-heading',
+            text: this.i18n.t('settings.recorders.summary.nameTooltip')
+        });
+        headerRow.createDiv({
+            cls: 'wordflow-recorder-summary-heading',
+            text: this.i18n.t('settings.recorders.periodicNote.type.name')
+        }).setAttr('title', this.i18n.t('settings.recorders.summary.targetTooltip'));
+        headerRow.createDiv({
+            cls: 'wordflow-recorder-summary-heading',
+            text: this.i18n.t('settings.recorders.recordingContents.recordType.name')
+        }).setAttr('title', this.i18n.t('settings.recorders.summary.recordTypeTooltip'));
+        headerRow.createDiv('wordflow-recorder-summary-header-spacer');
+        headerRow.createDiv('wordflow-recorder-summary-header-spacer');
+    }
+
+    private stopRecorderSummaryToggle(container: HTMLElement): void {
+        ['click', 'mousedown', 'touchstart'].forEach((eventName) => {
+            container.addEventListener(eventName, (evt) => evt.stopPropagation());
+        });
+    }
+
     private renderRecorderRow(container: HTMLElement, index: number): void {
         const settings = this.getRecorderSettings(index);
         const recorderInstance = this.getRecorderInstance(index);
@@ -568,7 +593,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
         summaryRow.addEventListener('click', (evt: MouseEvent) => {
             const target = evt.target as HTMLElement;
-            if (target.closest('input, select, button, textarea')) return;
+            if (target.closest('input, select, button, textarea, .checkbox-container, .clickable-icon')) return;
             this.activeRecorderIndex = this.activeRecorderIndex === index ? -1 : index;
             this.display();
         });
@@ -578,7 +603,9 @@ export class RecordersTab extends WordflowSubSettingsTab {
         setIcon(expandContainer, isExpanded ? 'chevron-down' : 'chevron-right');
 
         const nameContainer = summaryRow.createDiv('wordflow-recorder-summary-name');
+        nameContainer.setAttr('data-label', this.i18n.t('settings.recorders.summary.nameTooltip'));
         nameContainer.setAttr('title', this.i18n.t('settings.recorders.summary.nameTooltip'));
+        this.stopRecorderSummaryToggle(nameContainer);
         const nameInput = new TextComponent(nameContainer)
             .setValue(settings.name);
         nameInput.inputEl.setAttr('title', this.i18n.t('settings.recorders.summary.nameTooltip'));
@@ -590,7 +617,9 @@ export class RecordersTab extends WordflowSubSettingsTab {
             });
 
         const targetContainer = summaryRow.createDiv('wordflow-recorder-summary-target');
+        targetContainer.setAttr('data-label', this.i18n.t('settings.recorders.periodicNote.type.name'));
         targetContainer.setAttr('title', this.i18n.t('settings.recorders.summary.targetTooltip'));
+        this.stopRecorderSummaryToggle(targetContainer);
         const targetDropdown = new DropdownComponent(targetContainer);
         this.populateTargetDropdown(targetDropdown, settings.periodicNoteType);
         targetDropdown.selectEl.setAttr('title', this.i18n.t('settings.recorders.summary.targetTooltip'));
@@ -609,7 +638,9 @@ export class RecordersTab extends WordflowSubSettingsTab {
         });
 
         const recordTypeContainer = summaryRow.createDiv('wordflow-recorder-summary-format');
+        recordTypeContainer.setAttr('data-label', this.i18n.t('settings.recorders.recordingContents.recordType.name'));
         recordTypeContainer.setAttr('title', this.i18n.t('settings.recorders.summary.recordTypeTooltip'));
+        this.stopRecorderSummaryToggle(recordTypeContainer);
         const recordTypeDropdown = new DropdownComponent(recordTypeContainer);
         this.populateRecordTypeDropdown(recordTypeDropdown, settings, index);
         recordTypeDropdown.selectEl.disabled = !isPeriodicRecorderTarget(settings.periodicNoteType);
@@ -629,7 +660,9 @@ export class RecordersTab extends WordflowSubSettingsTab {
         });
 
         const enabledContainer = summaryRow.createDiv('wordflow-recorder-summary-enabled');
+        enabledContainer.setAttr('data-label', this.i18n.t('settings.recorders.summary.enabledTooltip'));
         enabledContainer.setAttr('title', this.i18n.t('settings.recorders.summary.enabledTooltip'));
+        this.stopRecorderSummaryToggle(enabledContainer);
         const enabledToggle = new ToggleComponent(enabledContainer)
             .setValue(settings.enabled ?? true);
         enabledToggle.toggleEl.setAttr('title', this.i18n.t('settings.recorders.summary.enabledTooltip'));
@@ -642,6 +675,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
 
         if (index > 0) {
             const deleteContainer = summaryRow.createDiv('wordflow-recorder-summary-delete');
+            deleteContainer.setAttr('data-label', this.i18n.t('settings.recorders.actions.delete'));
+            this.stopRecorderSummaryToggle(deleteContainer);
             new ButtonComponent(deleteContainer)
                 .setIcon('trash')
                 .setTooltip(this.i18n.t('settings.recorders.actions.delete'))
@@ -650,7 +685,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
                     void this.removeRecorder(index - 1);
                 });
         } else {
-            summaryRow.createDiv('wordflow-recorder-summary-delete');
+            const deleteContainer = summaryRow.createDiv('wordflow-recorder-summary-delete');
+            deleteContainer.setAttr('data-label', this.i18n.t('settings.recorders.actions.delete'));
         }
 
         const currentConflictOwner = this.getRecordTypeConflictOwner(
