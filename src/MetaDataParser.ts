@@ -25,7 +25,7 @@ export class MetaDataParser{
     ){}
 
     public loadSettings(){
-        this.timeFormat = this.DataRecorder.timeFormat;
+        this.timeFormat = this.DataRecorder.timeFormatInNote;
         //this.sortBy = this.DataRecorder.sortBy;
         //this.isDescend = this.DataRecorder.isDescend;
         this.syntax = this.DataRecorder.metadataSyntax;
@@ -135,6 +135,9 @@ export class MetaDataParser{
         }
         if (YAMLData.readEditTime !== undefined) {
             extractedData.readEditTime = restoreTimeString(YAMLData.readEditTime) || 0;
+        }
+        if (YAMLData.lastModifiedTime && YAMLData.lastModifiedTime.trim()) {
+            extractedData.lastModifiedTime = moment(YAMLData.lastModifiedTime, this.timeFormat).valueOf();
         }
 
         existingDataMap.set(extractedData.filePath, extractedData);

@@ -30,6 +30,7 @@ export interface WordflowRecorderConfigs {
     metadataSyntax: string;
     modifiedNoteMetadataSyntax: string;
     timeFormat: string;
+    timeFormatInNote: string;
     sortBy: string;
     isDescend: boolean;
     insertPlace: string;
@@ -134,9 +135,10 @@ export const DEFAULT_SETTINGS: WordflowSettings = {
 	insertPlace: 'bottom',
 	tableSyntax: `| Note                                              | Edited Words    | Percentage | Focused             | Last Modified Time   |\n| ------------------------------------ | ----------------- | ------------- | ----------------- | ---------------------- |\n| [[\${modifiedNote}\\|\${noteTitle}]] | \${editedWords} | \${statBar}    | \${readEditTime} | \${lastModifiedTime} |`,
 	bulletListSyntax: `- [[\${modifiedNote}|\${noteTitle}]]\n    - Edits: \${editedTimes}\n    - Edited Words: \${editedWords}\n    - Focused Time: \${readEditTime}`,
-	metadataSyntax: `total edits: \${totalEdits}\ntotal words: \${totalWords}\ntotal time: \${totalTime}`,
+    metadataSyntax: `total edits: \${totalEdits}\ntotal words: \${totalWords}\ntotal time: \${totalTime}`,
     modifiedNoteMetadataSyntax: `history edits: \${editedTimes}\nhistory focused: \${readEditTime}\nwords: \${docWords}\nmodified: \${lastModifiedTime}`,
 	timeFormat: 'HH:mm',
+    timeFormatInNote: 'YYYY-MM-DDTHH:mm:ss',
 	sortBy: 'lastModifiedTime',
 	isDescend: true,
 	insertPlaceStart: '',
@@ -843,6 +845,32 @@ export class RecordersTab extends WordflowSubSettingsTab {
             });
     }
 
+    private renderTimeFormatInNoteSetting(container: HTMLElement, settings: WordflowRecorderConfigs, recorderInstance: DataRecorder): void {
+        let timeFormatPreviewText: HTMLSpanElement;
+        new Setting(container)
+            .setName(this.i18n.t('settings.recorders.modifiedNote.timeFormatInNote.name'))
+            .setDesc(createFragment(f => {
+                f.appendText(this.i18n.t('settings.recorders.modifiedNote.timeFormatInNote.desc'));
+                f.createEl('br');
+                f.appendText(this.i18n.t('settings.recorders.modifiedNote.timeFormatInNote.preview'));
+
+                timeFormatPreviewText = f.createSpan({ cls: 'wordflow-setting-previewText' });
+                const format = settings.timeFormatInNote ?? DEFAULT_SETTINGS.timeFormatInNote;
+                const validationError = getDateValidationErrorResult(format, this.plugin.i18n);
+                timeFormatPreviewText.setText(validationError || moment().format(format));
+            }))
+            .addText(text => text
+                .setPlaceholder(DEFAULT_SETTINGS.timeFormatInNote)
+                .setValue(settings.timeFormatInNote ?? DEFAULT_SETTINGS.timeFormatInNote)
+                .onChange(async (value) => {
+                    settings.timeFormatInNote = value !== '' ? value : DEFAULT_SETTINGS.timeFormatInNote;
+                    const validationError = getDateValidationErrorResult(settings.timeFormatInNote, this.plugin.i18n);
+                    timeFormatPreviewText.setText(validationError || moment().format(settings.timeFormatInNote));
+                    await this.plugin.saveSettings();
+                    recorderInstance.loadSettings();
+                }));
+    }
+
     private getModifiedNoteScopeValidationText(scopeFolder: string): string {
         if (!scopeFolder) return this.i18n.t('settings.recorders.modifiedNote.scope.validation.allVault');
         return this.app.vault.getFolderByPath(scopeFolder)
@@ -894,6 +922,8 @@ export class RecordersTab extends WordflowSubSettingsTab {
         const editorEl = this.renderStructuredSyntaxEditor(container, settings, recorderInstance, index, previewContainer);
         container.insertBefore(editorEl, previewContainer);
         void this.updateSyntaxPreview(settings, previewContainer);
+        
+        this.renderTimeFormatInNoteSetting(container, settings, recorderInstance);
     }
 
     private createRecorderSectionHeading(container: HTMLElement, text: string): HTMLElement {
@@ -1484,6 +1514,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
             metadataSyntax: DEFAULT_SETTINGS.metadataSyntax,
             modifiedNoteMetadataSyntax: DEFAULT_SETTINGS.modifiedNoteMetadataSyntax,
             timeFormat: DEFAULT_SETTINGS.timeFormat,
+            timeFormatInNote: DEFAULT_SETTINGS.timeFormatInNote,
             sortBy: DEFAULT_SETTINGS.sortBy,
             isDescend: DEFAULT_SETTINGS.isDescend,
             insertPlace: DEFAULT_SETTINGS.insertPlace,
@@ -2222,7 +2253,7 @@ export class RecordersTab extends WordflowSubSettingsTab {
 			editTime: '10 min',
 			editedPercentage: '59%',
             statBar: '<span class="stat-bar-container" data-origin-words="1926" data-deleted-words="20" data-added-words="100"><span class="stat-bar origin" style="width: 60%"></span><span class="stat-bar deleted" style="width: 11%"></span><span class="stat-bar added" style="width: 49%"></span></span>',
-			lastModifiedTime: moment().format(settings.timeFormat),
+			lastModifiedTime: isPeriodicRecorderTarget(settings.periodicNoteType)? moment().format(settings.timeFormat): moment().format(settings.timeFormatInNote),
 			comment: 'user comment that won\'t auto update',
 			diff: this.plugin.settings.enableAIDiff ? 'AI summary of changes' : 'AI not enabled',
 			totalEdits: '5',
@@ -2259,7 +2290,9 @@ export class RecordersTab extends WordflowSubSettingsTab {
 					let iconName = 'binary'; // default for numbers
 					if (value.includes('min') || value.includes('time')) {
 						iconName = 'text';
-					}
+					} else if (moment(value, settings.timeFormatInNote, true).isValid()){
+                        iconName = 'clock';
+                    }
 					setIcon(iconContainer, iconName);
 					
 					// Property key

@@ -133,6 +133,11 @@
             "valid": "当前生效范围：{folder}",
             "invalid": "⚠ 未找到文件夹：{folder}"
           }
+        },
+        "timeFormatInNote": {
+          "name": "笔记内修改时间格式",
+          "desc": "设置写入被修改笔记 metadata 时 '${lastModifiedTime}' 的格式。",
+          "preview": "您当前的语法如下："
         }
       },
       "structured": {

@@ -18,6 +18,7 @@ export class DataRecorder {
     public periodicNoteType: string;
     public recordType: string;
     public timeFormat: string;
+    public timeFormatInNote: string;
     public sortBy: string;
     public isDescend: boolean;
     public tableSyntax: string;
@@ -51,6 +52,7 @@ export class DataRecorder {
             this.periodicNoteType = this.plugin.settings.periodicNoteType;
             this.recordType = this.plugin.settings.recordType;
             this.timeFormat = this.plugin.settings.timeFormat;
+            this.timeFormatInNote = this.plugin.settings.timeFormatInNote;
             this.sortBy = this.plugin.settings.sortBy;
             this.isDescend = this.plugin.settings.isDescend;
             this.tableSyntax = this.plugin.settings.tableSyntax;
@@ -68,6 +70,7 @@ export class DataRecorder {
             this.periodicNoteType = this.config.periodicNoteType;
             this.recordType = this.config.recordType;
             this.timeFormat = this.config.timeFormat;
+            this.timeFormatInNote = this.config.timeFormatInNote;
             this.sortBy = this.config.sortBy;
             this.isDescend = this.config.isDescend;
             this.tableSyntax = this.config.tableSyntax;

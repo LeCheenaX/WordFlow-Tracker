@@ -133,6 +133,11 @@
             "valid": "Current effective folder: {folder}",
             "invalid": "⚠ Folder not found: {folder}"
           }
+        },
+        "timeFormatInNote": {
+          "name": "Modified time in note",
+          "desc": "Set the format of '${lastModifiedTime}' when writing metadata to modified notes.",
+          "preview": "Your current syntax looks like this: "
         }
       },
       "structured": {
