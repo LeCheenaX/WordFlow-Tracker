@@ -25,6 +25,49 @@ jobs:
           npm install
           npm run build
 
+      - name: Generate release notes from changelog
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          const tag = process.env.RELEASE_TAG;
+          const normalizedTag = tag.replace(/^v/, '');
+          const source = fs.readFileSync('src/changeLog.ts', 'utf8');
+          const enMatch = source.match(/'en'\s*:\s*`([\s\S]*?)`,\s*'zh-CN'/);
+
+          if (!enMatch) {
+            throw new Error('Could not find the English changelog section in src/changeLog.ts');
+          }
+
+          const sections = enMatch[1]
+            .split(/\r?\n(?=###\s+)/)
+            .map((section) => section.trim())
+            .filter(Boolean);
+
+          const releaseSection = sections.find((section) =>
+            section.startsWith(`### ${tag} updates`) ||
+            section.startsWith(`### ${normalizedTag} updates`)
+          );
+
+          if (!releaseSection) {
+            throw new Error(`Could not find English changelog notes for ${tag}`);
+          }
+
+          const notes = releaseSection
+            .split(/\r?\n/)
+            .slice(1)
+            .join('\n')
+            .trim();
+
+          if (!notes) {
+            throw new Error(`English changelog notes for ${tag} are empty`);
+          }
+
+          fs.writeFileSync('release-notes.md', `${notes}\n`);
+          NODE
+
       - name: Generate artifact attestation for main.js
         uses: actions/attest-build-provenance@v2
         with:
@@ -48,5 +91,6 @@ jobs:
 
           gh release create "$tag" \
             --title="$tag" \
-            --draft \
+            --notes-file release-notes.md \
+            --latest \
             main.js manifest.json styles.css

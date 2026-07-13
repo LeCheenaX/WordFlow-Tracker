@@ -1,0 +1,1306 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wordflow Tracker view prototype</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --panel-soft: #f1f5f9;
+      --line: #dce3ec;
+      --text: #1d2430;
+      --muted: #667085;
+      --faint: #97a3b6;
+      --blue: #3478f6;
+      --cyan: #00a6c8;
+      --green: #28a879;
+      --amber: #f29b38;
+      --red: #e45b5b;
+      --violet: #8b5cf6;
+      --pink: #d9468f;
+      --shadow: 0 16px 42px rgba(34, 43, 57, 0.10);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    main {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 30px 0 48px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+      align-items: stretch;
+      margin-bottom: 20px;
+    }
+
+    .hero-copy,
+    .query-board,
+    .view-panel,
+    .analysis-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-copy {
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 270px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 16px 0 0 var(--amber), 32px 0 0 var(--pink);
+    }
+
+    h1 {
+      margin: 18px 0 10px;
+      max-width: 680px;
+      font-size: 42px;
+      line-height: 1.06;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 660px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfe;
+    }
+
+    .metric b {
+      display: block;
+      font-size: 21px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .query-board {
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    .query-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      font-weight: 760;
+    }
+
+    .query-title span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    pre {
+      margin: 0;
+      padding: 14px 16px;
+      background: #111827;
+      color: #e5eefc;
+      border-radius: 8px;
+      overflow: auto;
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    code { font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; }
+
+    .syntax-note {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .syntax-note div {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fbfcfe;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .syntax-note b {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 20px;
+    }
+
+    .view-panel,
+    .analysis-panel {
+      padding: 18px;
+      min-width: 0;
+    }
+
+    .wide { grid-column: 1 / -1; }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .panel-header p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: var(--muted);
+      background: #fbfcfe;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .active-chip {
+      border-color: rgba(52, 120, 246, 0.25);
+      color: var(--blue);
+      background: rgba(52, 120, 246, 0.08);
+    }
+
+    .heatmap-shell {
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      overflow-x: auto;
+    }
+
+    .month-labels {
+      display: grid;
+      grid-template-columns: repeat(16, 17px);
+      gap: 5px;
+      margin-left: 36px;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .month-labels span:nth-child(1) { grid-column: 1 / span 4; }
+    .month-labels span:nth-child(2) { grid-column: 5 / span 4; }
+    .month-labels span:nth-child(3) { grid-column: 9 / span 4; }
+    .month-labels span:nth-child(4) { grid-column: 13 / span 4; }
+
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: 30px repeat(16, 17px);
+      grid-template-rows: repeat(7, 17px);
+      gap: 5px;
+      align-items: center;
+    }
+
+    .day-label {
+      color: var(--muted);
+      font-size: 11px;
+      text-align: right;
+      padding-right: 3px;
+    }
+
+    .cell {
+      width: 17px;
+      height: 17px;
+      border-radius: 4px;
+      background: #e7ebf0;
+      border: 1px solid rgba(0, 0, 0, 0.03);
+    }
+
+    .level-1 { background: #d7f1e7; }
+    .level-2 { background: #96ddc3; }
+    .level-3 { background: #4fbf96; }
+    .level-4 { background: #1e966c; }
+    .level-5 { background: #106347; }
+    .edit-hot { background: var(--amber); }
+    .read-hot { background: var(--blue); }
+    .outline { box-shadow: inset 0 0 0 2px #111827; }
+
+    .legend {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend-scale {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-scale .cell {
+      width: 14px;
+      height: 14px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfe;
+      min-height: 86px;
+    }
+
+    .kpi span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .kpi strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .dashboard-main {
+      display: grid;
+      grid-template-columns: 1fr 0.8fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .bar-chart {
+      height: 220px;
+      display: grid;
+      grid-template-columns: repeat(7, minmax(34px, 1fr));
+      align-items: end;
+      gap: 14px;
+      padding: 14px 10px 0 6px;
+      border-bottom: 1px solid var(--line);
+      background-image: linear-gradient(to top, var(--line) 1px, transparent 1px);
+      background-size: 100% 44px;
+    }
+
+    .bar {
+      position: relative;
+      min-height: 10px;
+      border-radius: 7px 7px 0 0;
+      background: var(--violet);
+    }
+
+    .bar:nth-child(2) { background: var(--blue); }
+    .bar:nth-child(3) { background: var(--green); }
+    .bar:nth-child(4) { background: var(--amber); }
+    .bar:nth-child(5) { background: var(--cyan); }
+    .bar:nth-child(6) { background: var(--pink); }
+
+    .bar::before {
+      content: attr(data-value);
+      position: absolute;
+      top: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .bar::after {
+      content: attr(data-label);
+      position: absolute;
+      bottom: -32px;
+      left: 50%;
+      width: 58px;
+      transform: translateX(-50%);
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+      line-height: 1.15;
+    }
+
+    .donut-layout {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .donut {
+      width: 178px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: conic-gradient(
+        var(--violet) 0 42%,
+        var(--blue) 42% 63%,
+        var(--green) 63% 76%,
+        var(--amber) 76% 88%,
+        var(--pink) 88% 100%
+      );
+      position: relative;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+    }
+
+    .donut::after {
+      content: "38h 42m";
+      position: absolute;
+      inset: 37px;
+      border-radius: 50%;
+      background: var(--panel);
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--text);
+      box-shadow: inset 0 0 0 1px var(--line);
+    }
+
+    .share-list {
+      display: grid;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .share-row {
+      display: grid;
+      grid-template-columns: 12px minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--blue);
+    }
+
+    .share-row b {
+      color: var(--text);
+      font-weight: 650;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .stacked-bars {
+      display: grid;
+      gap: 13px;
+    }
+
+    .stack-row {
+      display: grid;
+      grid-template-columns: 70px minmax(0, 1fr) 64px;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stack-track {
+      height: 18px;
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--panel-soft);
+      display: flex;
+    }
+
+    .seg-add { background: var(--green); }
+    .seg-del { background: var(--red); }
+    .seg-read { background: var(--blue); }
+    .seg-edit { background: var(--amber); }
+    .seg-old { background: #c7d0dd; }
+
+    .timeline {
+      display: grid;
+      gap: 0;
+      border-left: 2px solid var(--line);
+      margin-left: 8px;
+      padding-left: 18px;
+    }
+
+    .event {
+      position: relative;
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+      min-width: 0;
+    }
+
+    .event:last-child { border-bottom: 0; }
+
+    .event::before {
+      content: "";
+      position: absolute;
+      left: -25px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 0 4px #edf4ff;
+    }
+
+    .event:nth-child(2)::before { background: var(--green); box-shadow: 0 0 0 4px #e9f7f1; }
+    .event:nth-child(3)::before { background: var(--amber); box-shadow: 0 0 0 4px #fff1de; }
+    .event:nth-child(4)::before { background: var(--pink); box-shadow: 0 0 0 4px #fdebf4; }
+
+    .event-time {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .event-title {
+      min-width: 0;
+    }
+
+    .event-title b {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .event-title span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .event-score {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .table-like {
+      display: grid;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: 1.2fr 0.75fr 0.7fr 0.7fr;
+      gap: 12px;
+      padding: 10px 12px;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      min-width: 0;
+      font-size: 13px;
+    }
+
+    .table-row:last-child { border-bottom: 0; }
+    .table-row.head {
+      color: var(--muted);
+      background: #f8fafc;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .mini-bars {
+      display: flex;
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--panel-soft);
+    }
+
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .analysis-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px;
+      background: #fbfcfe;
+      min-height: 180px;
+    }
+
+    .analysis-card h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    .analysis-card p {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .analysis-card strong {
+      color: var(--text);
+    }
+
+    .idea-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .idea-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfcfe;
+      min-height: 250px;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .idea-card h3 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .idea-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .idea-card code {
+      display: block;
+      padding: 8px;
+      border-radius: 7px;
+      background: #111827;
+      color: #e5eefc;
+      font-size: 11px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .micro-viz {
+      min-height: 92px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .sparkline {
+      width: 100%;
+      height: 88px;
+    }
+
+    .fishbone {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      align-items: center;
+      gap: 4px;
+      height: 92px;
+      position: relative;
+    }
+
+    .fishbone::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      border-top: 2px solid var(--line);
+    }
+
+    .fish-day {
+      position: relative;
+      display: grid;
+      justify-items: center;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 10px;
+      z-index: 1;
+    }
+
+    .bone {
+      width: 2px;
+      height: 34px;
+      background: var(--blue);
+      transform: rotate(34deg);
+      border-radius: 999px;
+    }
+
+    .bone.alt {
+      background: var(--green);
+      transform: rotate(-34deg);
+    }
+
+    .weekday-matrix {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      align-items: end;
+      height: 92px;
+    }
+
+    .weekday-tile {
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 750;
+      min-height: 24px;
+      background: var(--blue);
+    }
+
+    .treemap {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 0.8fr;
+      grid-template-rows: 1fr 0.8fr;
+      gap: 5px;
+      height: 92px;
+    }
+
+    .tree-cell {
+      border-radius: 7px;
+      color: #fff;
+      padding: 8px;
+      font-size: 11px;
+      font-weight: 760;
+      overflow: hidden;
+    }
+
+    .tree-cell:first-child { grid-row: span 2; background: var(--violet); }
+    .tree-cell:nth-child(2) { background: var(--blue); }
+    .tree-cell:nth-child(3) { background: var(--green); }
+    .tree-cell:nth-child(4) { background: var(--amber); }
+    .tree-cell:nth-child(5) { background: var(--pink); }
+
+    .leaderboard {
+      display: grid;
+      gap: 7px;
+    }
+
+    .leader-row {
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .leader-fill {
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--green), var(--blue));
+    }
+
+    .stream {
+      width: 100%;
+      height: 92px;
+    }
+
+    .calendar-lanes {
+      display: grid;
+      grid-template-columns: 42px repeat(7, 1fr);
+      gap: 4px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .lane-label {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 4px;
+    }
+
+    .lane-block {
+      min-height: 18px;
+      border-radius: 5px;
+      background: #edf1f7;
+    }
+
+    .lane-block.hot { background: var(--blue); }
+    .lane-block.read { background: var(--green); }
+    .lane-block.edit { background: var(--amber); }
+
+    .flow-viz {
+      height: 92px;
+      display: grid;
+      align-items: center;
+    }
+
+    .flow-viz svg,
+    .burndown svg {
+      width: 100%;
+      height: 92px;
+      display: block;
+    }
+
+    .cfd {
+      display: grid;
+      height: 92px;
+      align-items: end;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 5px;
+    }
+
+    .cfd-col {
+      border-radius: 6px 6px 0 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column-reverse;
+      min-height: 20px;
+      background: var(--panel-soft);
+    }
+
+    .cfd-col span:nth-child(1) { background: var(--green); }
+    .cfd-col span:nth-child(2) { background: var(--blue); }
+    .cfd-col span:nth-child(3) { background: var(--amber); }
+
+    .bubble-plot {
+      position: relative;
+      height: 92px;
+    }
+
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--blue), transparent 18%);
+      border: 2px solid #fff;
+      box-shadow: 0 2px 8px rgba(52, 120, 246, 0.22);
+    }
+
+    @media (max-width: 920px) {
+      main { width: min(100vw - 20px, 760px); padding-top: 18px; }
+      .hero,
+      .grid,
+      .dashboard-main,
+      .donut-layout,
+      .analysis-grid,
+      .idea-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-row,
+      .dashboard-grid,
+      .syntax-note {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      h1 { font-size: 32px; }
+      .chip-row { justify-content: flex-start; }
+      .event { grid-template-columns: 58px minmax(0, 1fr); }
+      .event-score { grid-column: 2; width: fit-content; }
+      .table-row { grid-template-columns: 1fr 0.55fr; }
+      .table-row span:nth-child(3),
+      .table-row span:nth-child(4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <div>
+          <span class="eyebrow">Wordflow views</span>
+          <h1>把周期笔记里的写作轨迹，渲染成可复盘的 Obsidian 视图</h1>
+          <p class="subtitle">首批原型只使用现有记录器能解析的数据：周期笔记 metadata、table、bullet list，以及被修改笔记的 metadata、tags 和 folder。</p>
+        </div>
+        <div class="metric-row">
+          <div class="metric"><b>38h 42m</b><span>专注总时长</span></div>
+          <div class="metric"><b>21,840</b><span>编辑字数</span></div>
+          <div class="metric"><b>128</b><span>编辑次数</span></div>
+          <div class="metric"><b>34</b><span>活跃笔记</span></div>
+        </div>
+      </div>
+
+      <div class="query-board">
+        <div class="query-title">语法草案 <span>短关键词，按自然阅读顺序组合</span></div>
+        <pre><code>```wordflow
+SUMMARY
+RECORDER "Daily Tracker"
+PAST 7 DAYS
+VALUE readEditTime
+FILTER tags: (#writing AND #project) AND (-#archive OR -#draft)
+FILTER folder: "Notes/Projects"
+TITLE "本周写作复盘"
+```</code></pre>
+        <div class="syntax-note">
+          <div><b>视图</b>HEATMAP, SUMMARY, DONUT, BAR, STACKED, TIMELINE</div>
+          <div><b>时间</b>TODAY, WEEK, MONTH, PAST 12 WEEKS, FROM ... TO ...</div>
+          <div><b>过滤</b>tags: 支持 AND/OR/-/括号；folder: 支持路径前缀</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="view-panel wide">
+        <div class="panel-header">
+          <div>
+            <h2>SUMMARY 复盘看板</h2>
+            <p>最适合做默认入口：一眼看到趋势、占比、Top 笔记和最近修改。</p>
+          </div>
+          <div class="chip-row">
+            <span class="chip active-chip">SUMMARY</span>
+            <span class="chip">PAST 7 DAYS</span>
+            <span class="chip">VALUE readEditTime</span>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="kpi"><span>总专注</span><strong>38:42</strong></div>
+          <div class="kpi"><span>新增字数</span><strong>14,320</strong></div>
+          <div class="kpi"><span>删除字数</span><strong>3,860</strong></div>
+          <div class="kpi"><span>净增长</span><strong>10,460</strong></div>
+        </div>
+
+        <div class="dashboard-main">
+          <div class="bar-chart" aria-label="past seven days bar chart">
+            <div class="bar" data-value="3.1h" data-label="Thu 07-02" style="height: 36%;"></div>
+            <div class="bar" data-value="4.2h" data-label="Fri 07-03" style="height: 46%;"></div>
+            <div class="bar" data-value="5.4h" data-label="Sat 07-04" style="height: 60%;"></div>
+            <div class="bar" data-value="2.7h" data-label="Sun 07-05" style="height: 31%;"></div>
+            <div class="bar" data-value="7.1h" data-label="Mon 07-06" style="height: 79%;"></div>
+            <div class="bar" data-value="8.4h" data-label="Tue 07-07" style="height: 94%;"></div>
+            <div class="bar" data-value="4.5h" data-label="Wed 07-08" style="height: 51%;"></div>
+          </div>
+
+          <div class="donut-layout">
+            <div class="donut" aria-label="tag share donut"></div>
+            <div class="share-list">
+              <div class="share-row"><span class="dot" style="background: var(--violet);"></span><b>#writing / longform</b><span>42%</span></div>
+              <div class="share-row"><span class="dot" style="background: var(--blue);"></span><b>#project / plugin</b><span>21%</span></div>
+              <div class="share-row"><span class="dot" style="background: var(--green);"></span><b>#reading</b><span>13%</span></div>
+              <div class="share-row"><span class="dot" style="background: var(--amber);"></span><b>Research</b><span>12%</span></div>
+              <div class="share-row"><span class="dot" style="background: var(--pink);"></span><b>Inbox notes</b><span>12%</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="view-panel">
+        <div class="panel-header">
+          <div>
+            <h2>HEATMAP 热力图</h2>
+            <p>展示习惯、断档和高产区间。适合 daily metadata 或按日汇总 table/list。</p>
+          </div>
+          <div class="chip-row">
+            <span class="chip active-chip">HEATMAP</span>
+            <span class="chip">PAST 16 WEEKS</span>
+          </div>
+        </div>
+        <div class="heatmap-shell">
+          <div class="month-labels"><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span></div>
+          <div class="heatmap-grid" aria-label="calendar heatmap">
+            <div class="day-label">Mon</div><div class="cell"></div><div class="cell level-1"></div><div class="cell level-2"></div><div class="cell"></div><div class="cell level-3"></div><div class="cell level-2"></div><div class="cell"></div><div class="cell level-1"></div><div class="cell level-4"></div><div class="cell level-3"></div><div class="cell"></div><div class="cell level-2"></div><div class="cell level-5"></div><div class="cell level-4"></div><div class="cell level-2"></div><div class="cell"></div>
+            <div class="day-label">Tue</div><div class="cell level-1"></div><div class="cell level-2"></div><div class="cell"></div><div class="cell level-3"></div><div class="cell level-4"></div><div class="cell level-2"></div><div class="cell level-1"></div><div class="cell level-2"></div><div class="cell level-5"></div><div class="cell level-4 outline"></div><div class="cell level-2"></div><div class="cell level-3"></div><div class="cell level-4"></div><div class="cell level-2"></div><div class="cell level-1"></div><div class="cell"></div>
+            <div class="day-label">Wed</div><div class="cell"></div><div class="cell level-3"></div><div class="cell level-1"></div><div class="cell"></div><div class="cell level-2"></div><div class="cell"></div><div class="cell level-2"></div><div class="cell level-3"></div><div class="cell level-4"></div><div class="cell level-5"></div><div class="cell level-3"></div><div class="cell"></div><div class="cell level-2"></div><div class="cell level-3"></div><div class="cell level-1"></div><div class="cell"></div>
+            <div class="day-label">Thu</div><div class="cell level-2"></div><div class="cell level-4"></div><div class="cell level-3"></div><div class="cell level-1"></div><div class="cell level-3"></div><div class="cell level-4"></div><div class="cell level-2"></div><div class="cell"></div><div class="cell edit-hot"></div><div class="cell read-hot"></div><div class="cell level-3"></div><div class="cell level-1"></div><div class="cell"></div><div class="cell level-2"></div><div class="cell level-3"></div><div class="cell level-4"></div>
+            <div class="day-label">Fri</div><div class="cell"></div><div class="cell level-2"></div><div class="cell level-3"></div><div class="cell level-4"></div><div class="cell level-5"></div><div class="cell level-4"></div><div class="cell level-1"></div><div class="cell level-2"></div><div class="cell read-hot"></div><div class="cell edit-hot"></div><div class="cell level-2"></div><div class="cell level-1"></div><div class="cell level-3"></div><div class="cell level-4"></div><div class="cell"></div><div class="cell level-1"></div>
+            <div class="day-label">Sat</div><div class="cell level-3"></div><div class="cell"></div><div class="cell level-1"></div><div class="cell level-2"></div><div class="cell"></div><div class="cell level-2"></div><div class="cell level-4"></div><div class="cell level-5"></div><div class="cell level-4"></div><div class="cell level-3"></div><div class="cell"></div><div class="cell level-2"></div><div class="cell"></div><div class="cell level-1"></div><div class="cell level-2"></div><div class="cell level-3"></div>
+            <div class="day-label">Sun</div><div class="cell"></div><div class="cell level-1"></div><div class="cell"></div><div class="cell level-1"></div><div class="cell level-2"></div><div class="cell level-3"></div><div class="cell level-2"></div><div class="cell"></div><div class="cell level-1"></div><div class="cell level-2"></div><div class="cell"></div><div class="cell level-1"></div><div class="cell level-2"></div><div class="cell level-3"></div><div class="cell"></div><div class="cell level-1"></div>
+          </div>
+          <div class="legend">
+            <span>颜色深度表示 `VALUE` 的动态分位；蓝/橙可用于 read/edit 模式差异。</span>
+            <span class="legend-scale">Low <span class="cell"></span><span class="cell level-1"></span><span class="cell level-2"></span><span class="cell level-3"></span><span class="cell level-4"></span><span class="cell level-5"></span> High</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="view-panel">
+        <div class="panel-header">
+          <div>
+            <h2>STACKED 构成图</h2>
+            <p>展示“新增/删除/保留”或“阅读/编辑”的组成，而不是只看一个总数。</p>
+          </div>
+          <div class="chip-row">
+            <span class="chip active-chip">STACKED</span>
+            <span class="chip">VALUE statBar</span>
+          </div>
+        </div>
+        <div class="stacked-bars">
+          <div class="stack-row"><span>Mon</span><div class="stack-track"><span class="seg-old" style="width:46%"></span><span class="seg-add" style="width:38%"></span><span class="seg-del" style="width:16%"></span></div><span>3,240</span></div>
+          <div class="stack-row"><span>Tue</span><div class="stack-track"><span class="seg-old" style="width:34%"></span><span class="seg-add" style="width:51%"></span><span class="seg-del" style="width:15%"></span></div><span>5,820</span></div>
+          <div class="stack-row"><span>Wed</span><div class="stack-track"><span class="seg-old" style="width:62%"></span><span class="seg-add" style="width:22%"></span><span class="seg-del" style="width:16%"></span></div><span>1,970</span></div>
+          <div class="stack-row"><span>Thu</span><div class="stack-track"><span class="seg-edit" style="width:61%"></span><span class="seg-read" style="width:39%"></span></div><span>4h 12m</span></div>
+          <div class="stack-row"><span>Fri</span><div class="stack-track"><span class="seg-edit" style="width:42%"></span><span class="seg-read" style="width:58%"></span></div><span>5h 03m</span></div>
+        </div>
+        <div class="legend">
+          <span class="legend-scale"><span class="cell seg-old"></span>原文 <span class="cell seg-add"></span>新增 <span class="cell seg-del"></span>删除</span>
+          <span class="legend-scale"><span class="cell seg-edit"></span>编辑 <span class="cell seg-read"></span>阅读</span>
+        </div>
+      </article>
+
+      <article class="view-panel">
+        <div class="panel-header">
+          <div>
+            <h2>BAR 排名图</h2>
+            <p>比较 Top 笔记、Top 文件夹或按天趋势。适合高频复盘和找异常值。</p>
+          </div>
+          <div class="chip-row">
+            <span class="chip active-chip">BAR</span>
+            <span class="chip">GROUP BY folder</span>
+          </div>
+        </div>
+        <div class="table-like">
+          <div class="table-row head"><span>Folder</span><span>Words</span><span>Focus</span><span>Composition</span></div>
+          <div class="table-row"><span>Notes/Projects/Plugin</span><span>9,420</span><span>12h 14m</span><span class="mini-bars"><i class="seg-add" style="width:68%"></i><i class="seg-del" style="width:20%"></i><i class="seg-old" style="width:12%"></i></span></div>
+          <div class="table-row"><span>Writing/Essays</span><span>6,810</span><span>9h 40m</span><span class="mini-bars"><i class="seg-add" style="width:54%"></i><i class="seg-del" style="width:14%"></i><i class="seg-old" style="width:32%"></i></span></div>
+          <div class="table-row"><span>Reading/Notes</span><span>3,180</span><span>7h 05m</span><span class="mini-bars"><i class="seg-read" style="width:72%"></i><i class="seg-edit" style="width:28%"></i></span></div>
+          <div class="table-row"><span>Inbox</span><span>1,540</span><span>2h 21m</span><span class="mini-bars"><i class="seg-add" style="width:37%"></i><i class="seg-del" style="width:11%"></i><i class="seg-old" style="width:52%"></i></span></div>
+        </div>
+      </article>
+
+      <article class="view-panel">
+        <div class="panel-header">
+          <div>
+            <h2>TIMELINE 时间线</h2>
+            <p>按最后修改时间或记录时间展示笔记流，适合回忆“那天具体改了什么”。</p>
+          </div>
+          <div class="chip-row">
+            <span class="chip active-chip">TIMELINE</span>
+            <span class="chip">SORT DESC</span>
+          </div>
+        </div>
+        <div class="timeline">
+          <div class="event"><span class="event-time">23:42</span><span class="event-title"><b>插件视图语法设计</b><span>#project/plugin · +1,240 words</span></span><span class="event-score">2h 18m</span></div>
+          <div class="event"><span class="event-time">21:06</span><span class="event-title"><b>Dataview 查询笔记</b><span>#research · 36 edits</span></span><span class="event-score">48m</span></div>
+          <div class="event"><span class="event-time">18:30</span><span class="event-title"><b>长文草稿：复盘系统</b><span>#writing · +860 / -120</span></span><span class="event-score">1h 22m</span></div>
+          <div class="event"><span class="event-time">15:12</span><span class="event-title"><b>Obsidian API 参考</b><span>#reading · read mode</span></span><span class="event-score">35m</span></div>
+        </div>
+      </article>
+
+      <article class="view-panel wide">
+        <div class="panel-header">
+          <div>
+            <h2>10 个扩展视图草案</h2>
+            <p>这些先作为第二批候选：有些适合马上做，有些需要等解析和聚合能力更稳定后再做。</p>
+          </div>
+          <div class="chip-row">
+            <span class="chip active-chip">IDEAS</span>
+            <span class="chip">10 view types</span>
+            <span class="chip">prototype only</span>
+          </div>
+        </div>
+
+        <div class="idea-grid">
+          <div class="idea-card">
+            <h3>1. NOTE TREND 单文件趋势线</h3>
+            <p>目的：回答“这个文件本周每天字数/编辑次数怎么变”。非常实用，适合写长文、论文、项目文档。</p>
+            <div class="micro-viz">
+              <svg class="sparkline" viewBox="0 0 280 92" role="img" aria-label="note trend">
+                <path d="M10 72 L55 62 L100 68 L145 44 L190 38 L235 26 L270 18" fill="none" stroke="#3478f6" stroke-width="4" stroke-linecap="round" />
+                <path d="M10 78 L55 74 L100 65 L145 58 L190 52 L235 48 L270 41" fill="none" stroke="#28a879" stroke-width="4" stroke-linecap="round" />
+                <g fill="#3478f6"><circle cx="10" cy="72" r="4"/><circle cx="145" cy="44" r="4"/><circle cx="270" cy="18" r="4"/></g>
+                <g fill="#28a879"><circle cx="55" cy="74" r="4"/><circle cx="190" cy="52" r="4"/><circle cx="270" cy="41" r="4"/></g>
+              </svg>
+            </div>
+            <p>美观关键：两条细腻曲线叠加，蓝色 `editedWords`，绿色 `editedTimes`，悬停显示当天记录。</p>
+            <code>NOTE TREND
+FILE "Projects/Wordflow Tracker.md"
+THIS WEEK
+VALUE editedWords, editedTimes</code>
+          </div>
+
+          <div class="idea-card">
+            <h3>2. NOTE FISHBONE 浏览鱼骨线</h3>
+            <p>目的：回答“我本周每天都浏览/编辑过哪些笔记”。这个比普通列表更有记忆感，适合复盘路径。</p>
+            <div class="micro-viz">
+              <div class="fishbone">
+                <div class="fish-day"><span>Mon</span><span class="bone"></span></div>
+                <div class="fish-day"><span>Tue</span><span class="bone alt"></span></div>
+                <div class="fish-day"><span>Wed</span><span class="bone"></span></div>
+                <div class="fish-day"><span>Thu</span><span class="bone alt"></span></div>
+                <div class="fish-day"><span>Fri</span><span class="bone"></span></div>
+                <div class="fish-day"><span>Sat</span><span class="bone alt"></span></div>
+                <div class="fish-day"><span>Sun</span><span class="bone"></span></div>
+              </div>
+            </div>
+            <p>美观关键：中心轴表示一周，斜骨表示笔记，骨长表示 `readEditTime`，颜色表示 tag group。</p>
+            <code>FISHBONE
+RECORDER "Daily Tracker"
+THIS WEEK
+GROUP BY day
+LABEL noteTitle</code>
+          </div>
+
+          <div class="idea-card">
+            <h3>3. WEEKDAY PROFILE 周几画像</h3>
+            <p>目的：回答“本月/最近半年我周几 readEditTime 最久”。多数人会用来找自己的节律。</p>
+            <div class="micro-viz">
+              <div class="weekday-matrix">
+                <div class="weekday-tile" style="height:42px;background:#96ddc3;">Mon</div>
+                <div class="weekday-tile" style="height:67px;background:#4fbf96;">Tue</div>
+                <div class="weekday-tile" style="height:35px;background:#d7f1e7;color:#2d4a3f;">Wed</div>
+                <div class="weekday-tile" style="height:76px;background:#1e966c;">Thu</div>
+                <div class="weekday-tile" style="height:88px;background:#106347;">Fri</div>
+                <div class="weekday-tile" style="height:50px;background:#3478f6;">Sat</div>
+                <div class="weekday-tile" style="height:27px;background:#dce3ec;color:#667085;">Sun</div>
+              </div>
+            </div>
+            <p>美观关键：既像柱图又像热度块，能一眼看出“高产星期”。</p>
+            <code>WEEKDAY PROFILE
+PAST 6 MONTHS
+VALUE readEditTime
+AGG avg</code>
+          </div>
+
+          <div class="idea-card">
+            <h3>4. TAG TREEMAP 标签矩形树图</h3>
+            <p>目的：回答“本月/最近一年哪个 tag group 编辑次数最多”。比饼图更适合多标签、多层级。</p>
+            <div class="micro-viz">
+              <div class="treemap">
+                <div class="tree-cell">#plugin<br>42%</div>
+                <div class="tree-cell">#writing</div>
+                <div class="tree-cell">#research</div>
+                <div class="tree-cell">#reading</div>
+                <div class="tree-cell">#inbox</div>
+              </div>
+            </div>
+            <p>美观关键：面积代表 `editedTimes`，颜色沿用现有 tag color 设置。</p>
+            <code>TREEMAP
+THIS MONTH
+GROUP BY tag
+VALUE editedTimes</code>
+          </div>
+
+          <div class="idea-card">
+            <h3>5. NOTE LEADERBOARD 累计贡献榜</h3>
+            <p>目的：回答“最近一个月哪个笔记累计编辑字数最多”。非常直接，适合日常复盘。</p>
+            <div class="micro-viz">
+              <div class="leaderboard">
+                <div class="leader-row"><b>1</b><span class="leader-fill" style="width:94%;"></span><span>8,920</span></div>
+                <div class="leader-row"><b>2</b><span class="leader-fill" style="width:76%;"></span><span>7,140</span></div>
+                <div class="leader-row"><b>3</b><span class="leader-fill" style="width:52%;"></span><span>4,880</span></div>
+                <div class="leader-row"><b>4</b><span class="leader-fill" style="width:38%;"></span><span>3,310</span></div>
+              </div>
+            </div>
+            <p>美观关键：排名、条长、数值三者同时出现；点击可打开对应笔记。</p>
+            <code>LEADERBOARD
+PAST 30 DAYS
+GROUP BY note
+VALUE editedWords
+LIMIT 10</code>
+          </div>
+
+          <div class="idea-card">
+            <h3>6. STREAM 堆叠曲线流图</h3>
+            <p>目的：回答“周一到周日不同笔记的专注时长如何叠加”。适合看注意力迁移。</p>
+            <div class="micro-viz">
+              <svg class="stream" viewBox="0 0 280 92" role="img" aria-label="stacked stream">
+                <path d="M0 72 C36 58 54 78 92 62 C130 46 156 68 194 50 C230 34 248 46 280 24 L280 92 L0 92 Z" fill="#8b5cf6" opacity=".82"/>
+                <path d="M0 61 C40 50 58 57 92 43 C126 31 155 44 194 36 C230 24 252 30 280 16 L280 24 C248 46 230 34 194 50 C156 68 130 46 92 62 C54 78 36 58 0 72 Z" fill="#3478f6" opacity=".88"/>
+                <path d="M0 47 C36 42 58 38 92 35 C130 30 156 32 194 24 C228 18 252 14 280 10 L280 16 C252 30 230 24 194 36 C155 44 126 31 92 43 C58 57 40 50 0 61 Z" fill="#28a879" opacity=".9"/>
+              </svg>
+            </div>
+            <p>美观关键：柔和流线比普通堆叠柱更能表现“注意力流动”。</p>
+            <code>STREAM
+THIS WEEK
+GROUP BY note
+VALUE readEditTime
+LIMIT 6</code>
+          </div>
+
+          <div class="idea-card">
+            <h3>7. CALENDAR LANES 日历泳道</h3>
+            <p>目的：把专注数据贴到日历上下文里，看规律和异常。适合月视图、季度视图。</p>
+            <div class="micro-viz">
+              <div class="calendar-lanes">
+                <span></span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+                <span class="lane-label">AM</span><span class="lane-block"></span><span class="lane-block hot"></span><span class="lane-block read"></span><span class="lane-block"></span><span class="lane-block edit"></span><span class="lane-block"></span><span class="lane-block"></span>
+                <span class="lane-label">PM</span><span class="lane-block edit"></span><span class="lane-block hot"></span><span class="lane-block"></span><span class="lane-block read"></span><span class="lane-block hot"></span><span class="lane-block edit"></span><span class="lane-block"></span>
+                <span class="lane-label">Night</span><span class="lane-block"></span><span class="lane-block"></span><span class="lane-block edit"></span><span class="lane-block"></span><span class="lane-block read"></span><span class="lane-block hot"></span><span class="lane-block"></span>
+              </div>
+            </div>
+            <p>美观关键：像迷你日历，不只是图表；时间段可由 `lastModifiedTime` 或记录时间推断。</p>
+            <code>CALENDAR LANES
+THIS MONTH
+VALUE readEditTime
+SPLIT BY timeOfDay</code>
+          </div>
+
+          <div class="idea-card">
+            <h3>8. TAG FLOW 标签流向图</h3>
+            <p>目的：回答“时间从哪些 folder 流向哪些 tag group”。适合发现项目结构和标签体系是否一致。</p>
+            <div class="micro-viz flow-viz">
+              <svg viewBox="0 0 280 92" role="img" aria-label="tag flow">
+                <path d="M22 18 C92 18 116 30 188 30" fill="none" stroke="#3478f6" stroke-width="14" stroke-linecap="round" opacity=".8"/>
+                <path d="M22 46 C92 46 116 58 188 58" fill="none" stroke="#28a879" stroke-width="18" stroke-linecap="round" opacity=".78"/>
+                <path d="M22 72 C92 72 116 58 188 38" fill="none" stroke="#f29b38" stroke-width="10" stroke-linecap="round" opacity=".82"/>
+                <rect x="5" y="8" width="34" height="22" rx="6" fill="#111827"/><rect x="5" y="36" width="34" height="22" rx="6" fill="#111827"/><rect x="5" y="64" width="34" height="22" rx="6" fill="#111827"/>
+                <rect x="188" y="20" width="70" height="20" rx="6" fill="#edf1f7"/><rect x="188" y="50" width="70" height="20" rx="6" fill="#edf1f7"/>
+              </svg>
+            </div>
+            <p>美观关键：带宽表示 `readEditTime` 或 `editedWords`，适合“文件夹 -> 标签”的双维分析。</p>
+            <code>FLOW
+PAST 90 DAYS
+FROM folder
+TO tag
+VALUE readEditTime</code>
+          </div>
+
+          <div class="idea-card">
+            <h3>9. BURNUP / BURNDOWN 目标进度线</h3>
+            <p>目的：服务目标管理，比如“本月写 50,000 字还差多少”。如果用户设目标，这个非常有用。</p>
+            <div class="micro-viz burndown">
+              <svg viewBox="0 0 280 92" role="img" aria-label="burnup burndown">
+                <path d="M12 78 L268 18" fill="none" stroke="#dce3ec" stroke-width="3" stroke-dasharray="6 6"/>
+                <path d="M12 76 L48 72 L84 61 L120 57 L156 42 L192 36 L228 24 L268 19" fill="none" stroke="#3478f6" stroke-width="4" stroke-linecap="round"/>
+                <path d="M12 16 L48 20 L84 28 L120 39 L156 48 L192 57 L228 69 L268 78" fill="none" stroke="#e45b5b" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <p>美观关键：目标线、实际累计线、剩余线同屏；没有目标时不建议默认展示。</p>
+            <code>BURNUP
+THIS MONTH
+VALUE addedWords
+TARGET 50000</code>
+          </div>
+
+          <div class="idea-card">
+            <h3>10. CFD 累积流图</h3>
+            <p>目的：借项目管理的 cumulative flow 思路，看新增、删除、净变化是否长期失衡。</p>
+            <div class="micro-viz">
+              <div class="cfd">
+                <div class="cfd-col" style="height:35px;"><span style="height:45%"></span><span style="height:30%"></span><span style="height:25%"></span></div>
+                <div class="cfd-col" style="height:42px;"><span style="height:52%"></span><span style="height:25%"></span><span style="height:23%"></span></div>
+                <div class="cfd-col" style="height:48px;"><span style="height:58%"></span><span style="height:24%"></span><span style="height:18%"></span></div>
+                <div class="cfd-col" style="height:57px;"><span style="height:50%"></span><span style="height:31%"></span><span style="height:19%"></span></div>
+                <div class="cfd-col" style="height:65px;"><span style="height:61%"></span><span style="height:20%"></span><span style="height:19%"></span></div>
+                <div class="cfd-col" style="height:72px;"><span style="height:55%"></span><span style="height:28%"></span><span style="height:17%"></span></div>
+                <div class="cfd-col" style="height:82px;"><span style="height:64%"></span><span style="height:19%"></span><span style="height:17%"></span></div>
+                <div class="cfd-col" style="height:88px;"><span style="height:59%"></span><span style="height:25%"></span><span style="height:16%"></span></div>
+                <div class="cfd-col" style="height:76px;"><span style="height:49%"></span><span style="height:34%"></span><span style="height:17%"></span></div>
+              </div>
+            </div>
+            <p>美观关键：用于“长期结构”而不是当天详情；颜色固定为新增/删除/净增长或编辑/阅读/评论。</p>
+            <code>CFD
+PAST 12 WEEKS
+VALUE addedWords, deletedWords, changedWords</code>
+          </div>
+        </div>
+      </article>
+
+      <article class="analysis-panel wide">
+        <div class="panel-header">
+          <div>
+            <h2>首批视图取舍</h2>
+            <p>只保留目的明确、能从现有数据直接产出的视图；饼图先作为 DONUT 的 `STYLE pie` 变体，不单独占一个视图类型。</p>
+          </div>
+        </div>
+        <div class="analysis-grid">
+          <div class="analysis-card">
+            <h3>多数用户会用</h3>
+            <p><strong>SUMMARY/HEATMAP/BAR/TIMELINE</strong> 都服务于复盘：我哪天写得多、主要写了什么、最近改了哪些笔记。</p>
+            <p>这些目的清晰，不依赖额外数据建模。</p>
+          </div>
+          <div class="analysis-card">
+            <h3>适合的数据</h3>
+            <p>周期 metadata 适合热力图；table/list 适合单笔记聚合、标签和文件夹过滤；被修改笔记 metadata 适合历史总量。</p>
+            <p>`statBar` 最适合 STACKED，不建议只压成单个数字。</p>
+          </div>
+          <div class="analysis-card">
+            <h3>视觉方向</h3>
+            <p>保持 Obsidian 内嵌感：浅边框、低阴影、紧凑密度；用多色表达字段含义，而不是用大面积装饰。</p>
+            <p>热力图和时间线负责“眼前一亮”，看板负责“马上有用”。</p>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
