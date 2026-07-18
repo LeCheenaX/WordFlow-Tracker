@@ -685,45 +685,68 @@
       height: 88px;
     }
 
+    .trend-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: -4px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
     .fishbone {
       display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      align-items: center;
-      gap: 4px;
+      gap: 8px;
       height: 92px;
       position: relative;
     }
 
-    .fishbone::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 50%;
-      border-top: 2px solid var(--line);
-    }
-
-    .fish-day {
+    .fish-main {
       position: relative;
       display: grid;
-      justify-items: center;
-      gap: 5px;
+      grid-template-columns: 42px 1fr;
+      align-items: center;
+      min-height: 24px;
       color: var(--muted);
       font-size: 10px;
-      z-index: 1;
+    }
+
+    .fish-spine {
+      position: relative;
+      height: 2px;
+      background: var(--line);
+      border-radius: 999px;
     }
 
     .bone {
+      position: absolute;
+      bottom: 1px;
       width: 2px;
-      height: 34px;
       background: var(--blue);
-      transform: rotate(34deg);
+      transform-origin: bottom;
+      transform: rotate(35deg);
       border-radius: 999px;
     }
 
     .bone.alt {
       background: var(--green);
-      transform: rotate(-34deg);
+      top: 1px;
+      bottom: auto;
+      transform-origin: top;
+      transform: rotate(-35deg);
+    }
+
+    .bone.note { background: var(--violet); }
+    .bone.read { background: var(--amber); }
+
+    .fish-dot {
+      position: absolute;
+      top: 50%;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--text);
     }
 
     .weekday-matrix {
@@ -773,6 +796,30 @@
       gap: 7px;
     }
 
+    .leader-tabs {
+      display: inline-grid;
+      grid-template-columns: 1fr 1fr;
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      overflow: hidden;
+      margin-bottom: 7px;
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .leader-tabs span {
+      padding: 4px 6px;
+      background: #fff;
+    }
+
+    .leader-tabs .on {
+      color: var(--blue);
+      background: rgba(52, 120, 246, 0.08);
+      font-weight: 760;
+    }
+
     .leader-row {
       display: grid;
       grid-template-columns: 20px minmax(0, 1fr) auto;
@@ -785,7 +832,7 @@
     .leader-fill {
       height: 12px;
       border-radius: 999px;
-      background: linear-gradient(90deg, var(--green), var(--blue));
+      background: var(--blue);
     }
 
     .stream {
@@ -833,9 +880,10 @@
 
     .cfd {
       display: grid;
+      grid-template-columns: 28px repeat(7, 1fr);
+      grid-template-rows: 1fr 16px;
       height: 92px;
       align-items: end;
-      grid-template-columns: repeat(9, 1fr);
       gap: 5px;
     }
 
@@ -848,9 +896,25 @@
       background: var(--panel-soft);
     }
 
-    .cfd-col span:nth-child(1) { background: var(--green); }
+    .cfd-axis {
+      align-self: stretch;
+      border-right: 1px solid var(--line);
+    }
+
+    .cfd-day {
+      color: var(--muted);
+      font-size: 9px;
+      text-align: center;
+      align-self: center;
+    }
+
+    .cfd-col span:nth-child(1) { background: var(--violet); }
     .cfd-col span:nth-child(2) { background: var(--blue); }
-    .cfd-col span:nth-child(3) { background: var(--amber); }
+    .cfd-col span:nth-child(3) { background: var(--green); }
+
+    .cfd.tag-mode .cfd-col span:nth-child(1) { background: var(--pink); }
+    .cfd.tag-mode .cfd-col span:nth-child(2) { background: var(--amber); }
+    .cfd.tag-mode .cfd-col span:nth-child(3) { background: var(--cyan); }
 
     .bubble-plot {
       position: relative;
@@ -863,6 +927,296 @@
       background: color-mix(in srgb, var(--blue), transparent 18%);
       border: 2px solid #fff;
       box-shadow: 0 2px 8px rgba(52, 120, 246, 0.22);
+    }
+
+    .fishbone {
+      display: block;
+      position: relative;
+      height: 150px;
+      min-width: 0;
+      padding: 8px 10px;
+    }
+
+    .fish-axis {
+      position: absolute;
+      left: 22px;
+      right: 22px;
+      top: 74px;
+      height: 2px;
+      background: var(--line);
+      border-radius: 999px;
+    }
+
+    .fish-axis::after {
+      content: "";
+      position: absolute;
+      right: -2px;
+      top: -4px;
+      width: 10px;
+      height: 10px;
+      border-top: 2px solid var(--line);
+      border-right: 2px solid var(--line);
+      transform: rotate(45deg);
+    }
+
+    .fish-node {
+      position: absolute;
+      top: 66px;
+      left: var(--x);
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--blue);
+      transform: translateX(-50%);
+      z-index: 4;
+    }
+
+    .fish-node span {
+      position: absolute;
+      left: 50%;
+      top: 18px;
+      transform: translateX(-50%);
+      color: var(--muted);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .fish-branch {
+      position: absolute;
+      left: var(--x);
+      top: calc(74px - var(--rise));
+      width: var(--w);
+      height: var(--rise);
+      color: var(--text);
+      font-size: 10px;
+      z-index: 2;
+    }
+
+    .fish-branch::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 34px;
+      height: var(--rise);
+      border-left: 2px solid var(--c);
+      border-top: 2px solid var(--c);
+      transform: skewX(-32deg);
+      transform-origin: bottom left;
+      opacity: .96;
+    }
+
+    .fish-branch::after {
+      content: "";
+      position: absolute;
+      left: 30px;
+      top: 0;
+      width: calc(var(--w) - 30px);
+      height: 2px;
+      background: var(--c);
+      border-radius: 999px;
+    }
+
+    .fish-branch.down {
+      top: 74px;
+    }
+
+    .fish-branch.down::before {
+      top: 0;
+      bottom: auto;
+      border-top: 0;
+      border-bottom: 2px solid var(--c);
+      transform: skewX(32deg);
+      transform-origin: top left;
+    }
+
+    .fish-branch.down::after {
+      top: auto;
+      bottom: 0;
+    }
+
+    .fish-label {
+      position: absolute;
+      left: calc(var(--w) + 6px);
+      top: -7px;
+      display: grid;
+      grid-template-columns: max-content max-content;
+      gap: 4px;
+      align-items: baseline;
+      white-space: nowrap;
+      line-height: 1;
+    }
+
+    .fish-branch.down .fish-label {
+      top: auto;
+      bottom: -7px;
+    }
+
+    .fish-value {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .fish-legend {
+      position: absolute;
+      right: 10px;
+      top: 8px;
+      display: inline-flex;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .fish-legend i {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 3px;
+    }
+
+    .fishbone .fish-branch {
+      top: calc(74px - var(--rise));
+      width: var(--branch-line);
+      height: var(--rise);
+    }
+
+    .fishbone .fish-branch::before {
+      left: 0;
+      bottom: -1px;
+      width: var(--diag);
+      height: 2px;
+      border: 0;
+      background: var(--c);
+      border-radius: 999px;
+      transform: rotate(-34deg);
+      transform-origin: left center;
+    }
+
+    .fishbone .fish-branch::after {
+      left: var(--run);
+      top: 0;
+      width: var(--branch-line);
+    }
+
+    .fishbone .fish-branch.down {
+      top: 74px;
+      height: var(--rise);
+    }
+
+    .fishbone .fish-branch.down::before {
+      top: 0;
+      bottom: auto;
+      transform: rotate(34deg);
+      transform-origin: left center;
+    }
+
+    .fishbone .fish-branch.down::after {
+      top: auto;
+      bottom: 0;
+    }
+
+    .fishbone .fish-label {
+      left: calc(var(--run) + var(--branch-line) + 6px);
+    }
+
+    .fishbone .fish-branch {
+      width: 160px;
+    }
+
+    .fishbone .fish-branch::after {
+      content: "";
+      display: block;
+      left: var(--run);
+      width: 72px;
+      min-width: 72px;
+      background: var(--c);
+    }
+
+    .fishbone .fish-label {
+      left: calc(var(--run) + 78px);
+    }
+
+    .fishbone-responsive {
+      position: relative;
+      height: 170px;
+      min-width: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .fishbone-responsive svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .fishbone-responsive .axis-line,
+    .fishbone-responsive .branch-line {
+      vector-effect: non-scaling-stroke;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .fishbone-responsive .axis-line {
+      stroke: var(--line);
+      stroke-width: 2;
+    }
+
+    .fishbone-responsive .branch-line {
+      fill: none;
+      stroke-width: 2.5;
+    }
+
+    .fishbone-responsive .node-dot {
+      vector-effect: non-scaling-stroke;
+      fill: #fff;
+      stroke: var(--blue);
+      stroke-width: 3;
+    }
+
+    .fishbone-responsive .day-label {
+      position: absolute;
+      top: 94px;
+      left: var(--x);
+      transform: translateX(-50%);
+      color: var(--muted);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .fishbone-responsive .fish-label {
+      position: absolute;
+      left: var(--x);
+      top: var(--y);
+      display: inline-flex;
+      gap: 4px;
+      align-items: baseline;
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--text);
+      font-size: 10px;
+      line-height: 1;
+      white-space: nowrap;
+      transform: translateX(-2px);
+    }
+
+    .fishbone-responsive .fish-value {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .fishbone-responsive .fish-legend {
+      top: 2px;
+      right: 4px;
+      z-index: 2;
+      background: rgba(255, 255, 255, 0.78);
+      border-radius: 999px;
+      padding: 2px 6px;
     }
 
     @media (max-width: 920px) {
@@ -1081,41 +1435,76 @@ TITLE "本周写作复盘"
         <div class="idea-grid">
           <div class="idea-card">
             <h3>1. NOTE TREND 单文件趋势线</h3>
-            <p>目的：回答“这个文件本周每天字数/编辑次数怎么变”。非常实用，适合写长文、论文、项目文档。</p>
+            <p>目的：回答“这个文件本周每天存量字数/历史编辑次数怎么变”。无数据的日期沿用上一条值，曲线保持平，不回落到 0。</p>
             <div class="micro-viz">
               <svg class="sparkline" viewBox="0 0 280 92" role="img" aria-label="note trend">
-                <path d="M10 72 L55 62 L100 68 L145 44 L190 38 L235 26 L270 18" fill="none" stroke="#3478f6" stroke-width="4" stroke-linecap="round" />
-                <path d="M10 78 L55 74 L100 65 L145 58 L190 52 L235 48 L270 41" fill="none" stroke="#28a879" stroke-width="4" stroke-linecap="round" />
-                <g fill="#3478f6"><circle cx="10" cy="72" r="4"/><circle cx="145" cy="44" r="4"/><circle cx="270" cy="18" r="4"/></g>
-                <g fill="#28a879"><circle cx="55" cy="74" r="4"/><circle cx="190" cy="52" r="4"/><circle cx="270" cy="41" r="4"/></g>
+                <path d="M10 74 L55 74 L100 61 L145 61 L190 42 L235 42 L270 25" fill="none" stroke="#3478f6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M10 80 L55 80 L100 72 L145 72 L190 64 L235 64 L270 55" fill="none" stroke="#28a879" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M10 74 L55 74" fill="none" stroke="#3478f6" stroke-width="4" stroke-dasharray="3 6" opacity=".42" />
+                <path d="M100 61 L145 61" fill="none" stroke="#3478f6" stroke-width="4" stroke-dasharray="3 6" opacity=".42" />
+                <path d="M190 42 L235 42" fill="none" stroke="#3478f6" stroke-width="4" stroke-dasharray="3 6" opacity=".42" />
+                <g fill="#3478f6"><circle cx="10" cy="74" r="4"/><circle cx="100" cy="61" r="4"/><circle cx="190" cy="42" r="4"/><circle cx="270" cy="25" r="4"/></g>
+                <g fill="#28a879"><circle cx="10" cy="80" r="4"/><circle cx="100" cy="72" r="4"/><circle cx="190" cy="64" r="4"/><circle cx="270" cy="55" r="4"/></g>
               </svg>
+              <div class="trend-note"><span>Mon</span><span>Tue no data</span><span>Wed</span><span>Thu flat</span><span>Fri</span><span>Sat flat</span><span>Sun</span></div>
             </div>
-            <p>美观关键：两条细腻曲线叠加，蓝色 `editedWords`，绿色 `editedTimes`，悬停显示当天记录。</p>
+            <p>美观关键：用阶梯/平台表达“存量”，虚线平台表示该日没有新记录但值被 carry forward。</p>
             <code>NOTE TREND
 FILE "Projects/Wordflow Tracker.md"
 THIS WEEK
-VALUE editedWords, editedTimes</code>
+VALUE docWords, history.editedTimes
+FILL previous</code>
           </div>
 
           <div class="idea-card">
             <h3>2. NOTE FISHBONE 浏览鱼骨线</h3>
-            <p>目的：回答“我本周每天都浏览/编辑过哪些笔记”。这个比普通列表更有记忆感，适合复盘路径。</p>
+            <p>目的：回答“我本周每天浏览/编辑过哪些笔记或 tag group”。一天是一条主鱼骨，多条子骨代表当天的笔记或 tag group。</p>
             <div class="micro-viz">
-              <div class="fishbone">
-                <div class="fish-day"><span>Mon</span><span class="bone"></span></div>
-                <div class="fish-day"><span>Tue</span><span class="bone alt"></span></div>
-                <div class="fish-day"><span>Wed</span><span class="bone"></span></div>
-                <div class="fish-day"><span>Thu</span><span class="bone alt"></span></div>
-                <div class="fish-day"><span>Fri</span><span class="bone"></span></div>
-                <div class="fish-day"><span>Sat</span><span class="bone alt"></span></div>
-                <div class="fish-day"><span>Sun</span><span class="bone"></span></div>
+              <div class="fishbone-responsive">
+                <div class="fish-legend"><span><i style="background:#cd26d9"></i>tag group</span><span><i style="background:#3366cc"></i>note</span></div>
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="responsive fishbone timeline">
+                  <path class="axis-line" d="M4 50 H96 M94 46 L96 50 L94 54" />
+                  <path class="branch-line" stroke="#cd26d9" d="M8 50 L15 36 H29" />
+                  <path class="branch-line" stroke="#3366cc" d="M8 50 L18.5 29 H32.5" />
+                  <path class="branch-line" stroke="#28a879" d="M22 50 L29 64 H43" />
+                  <path class="branch-line" stroke="#f29b38" d="M22 50 L32.5 71 H46.5" />
+                  <path class="branch-line" stroke="#8b5cf6" d="M36 50 L44.5 33 H58.5" />
+                  <path class="branch-line" stroke="#00a6c8" d="M50 50 L58.5 67 H72.5" />
+                  <path class="branch-line" stroke="#cd26d9" d="M62 50 L69 36 H83" />
+                  <path class="branch-line" stroke="#8b5cf6" d="M62 50 L72.5 29 H86.5" />
+                  <path class="branch-line" stroke="#3366cc" d="M74 50 L82.5 67 H96.5" />
+                  <circle class="node-dot" cx="8" cy="50" r="1.8" />
+                  <circle class="node-dot" cx="22" cy="50" r="1.8" />
+                  <circle class="node-dot" cx="36" cy="50" r="1.8" />
+                  <circle class="node-dot" cx="50" cy="50" r="1.8" />
+                  <circle class="node-dot" cx="62" cy="50" r="1.8" />
+                  <circle class="node-dot" cx="74" cy="50" r="1.8" />
+                  <circle class="node-dot" cx="86" cy="50" r="1.8" />
+                </svg>
+                <span class="day-label" style="--x:8%;">Mon</span>
+                <span class="day-label" style="--x:22%;">Tue</span>
+                <span class="day-label" style="--x:36%;">Wed</span>
+                <span class="day-label" style="--x:50%;">Thu</span>
+                <span class="day-label" style="--x:62%;">Fri</span>
+                <span class="day-label" style="--x:74%;">Sat</span>
+                <span class="day-label" style="--x:86%;">Sun</span>
+                <span class="fish-label" style="--x:29%;--y:54px;">Plugin<span class="fish-value">2h12m</span></span>
+                <span class="fish-label" style="--x:32%;--y:42px;">API note<span class="fish-value">3h05m</span></span>
+                <span class="fish-label" style="--x:43%;--y:112px;">Reading<span class="fish-value">1h48m</span></span>
+                <span class="fish-label" style="--x:46%;--y:126px;">Draft<span class="fish-value">4h20m</span></span>
+                <span class="fish-label" style="--x:58%;--y:48px;">Roadmap<span class="fish-value">2h40m</span></span>
+                <span class="fish-label" style="--x:72%;--y:118px;">Inbox<span class="fish-value">56m</span></span>
+                <span class="fish-label" style="--x:83%;--y:54px;">Wordflow<span class="fish-value">5h18m</span></span>
+                <span class="fish-label" style="--x:86%;--y:42px;">Settings<span class="fish-value">1h24m</span></span>
+                <span class="fish-label" style="--x:92%;--y:128px;">Spec<span class="fish-value">2h03m</span></span>
               </div>
             </div>
-            <p>美观关键：中心轴表示一周，斜骨表示笔记，骨长表示 `readEditTime`，颜色表示 tag group。</p>
+            <p>美观关键：主骨是日期，子骨数量表示当天覆盖面，子骨长度表示 `readEditTime`，颜色来自笔记/tag group 配置。</p>
             <code>FISHBONE
 RECORDER "Daily Tracker"
 THIS WEEK
 GROUP BY day
+SPLIT BY tag
 LABEL noteTitle</code>
           </div>
 
@@ -1161,19 +1550,20 @@ VALUE editedTimes</code>
 
           <div class="idea-card">
             <h3>5. NOTE LEADERBOARD 累计贡献榜</h3>
-            <p>目的：回答“最近一个月哪个笔记累计编辑字数最多”。非常直接，适合日常复盘。</p>
+            <p>目的：回答“最近一个月哪个笔记或 tag group 累计编辑字数最多”。颜色必须使用已配置的笔记/tag group 颜色。</p>
             <div class="micro-viz">
+              <div class="leader-tabs"><span class="on">Note mode</span><span>Tag group</span></div>
               <div class="leaderboard">
-                <div class="leader-row"><b>1</b><span class="leader-fill" style="width:94%;"></span><span>8,920</span></div>
-                <div class="leader-row"><b>2</b><span class="leader-fill" style="width:76%;"></span><span>7,140</span></div>
-                <div class="leader-row"><b>3</b><span class="leader-fill" style="width:52%;"></span><span>4,880</span></div>
-                <div class="leader-row"><b>4</b><span class="leader-fill" style="width:38%;"></span><span>3,310</span></div>
+                <div class="leader-row"><b>1</b><span class="leader-fill" style="width:94%;background:#cd26d9;"></span><span>8,920</span></div>
+                <div class="leader-row"><b>2</b><span class="leader-fill" style="width:76%;background:#3366cc;"></span><span>7,140</span></div>
+                <div class="leader-row"><b>3</b><span class="leader-fill" style="width:52%;background:#28a879;"></span><span>4,880</span></div>
+                <div class="leader-row"><b>4</b><span class="leader-fill" style="width:38%;background:#f29b38;"></span><span>3,310</span></div>
               </div>
             </div>
-            <p>美观关键：排名、条长、数值三者同时出现；点击可打开对应笔记。</p>
+            <p>美观关键：排名、条长、数值三者同时出现；note 模式点击打开笔记，tag group 模式点击展开组内笔记。</p>
             <code>LEADERBOARD
 PAST 30 DAYS
-GROUP BY note
+MODE note | tag
 VALUE editedWords
 LIMIT 10</code>
           </div>
@@ -1252,25 +1642,51 @@ TARGET 50000</code>
           </div>
 
           <div class="idea-card">
-            <h3>10. CFD 累积流图</h3>
-            <p>目的：借项目管理的 cumulative flow 思路，看新增、删除、净变化是否长期失衡。</p>
+            <h3>10. CFD 累积流图：笔记变体</h3>
+            <p>目的：把 cumulative flow 的“累积结构”换成笔记维度，看最近 7 天注意力是否长期集中在少数笔记。</p>
             <div class="micro-viz">
               <div class="cfd">
-                <div class="cfd-col" style="height:35px;"><span style="height:45%"></span><span style="height:30%"></span><span style="height:25%"></span></div>
-                <div class="cfd-col" style="height:42px;"><span style="height:52%"></span><span style="height:25%"></span><span style="height:23%"></span></div>
-                <div class="cfd-col" style="height:48px;"><span style="height:58%"></span><span style="height:24%"></span><span style="height:18%"></span></div>
-                <div class="cfd-col" style="height:57px;"><span style="height:50%"></span><span style="height:31%"></span><span style="height:19%"></span></div>
-                <div class="cfd-col" style="height:65px;"><span style="height:61%"></span><span style="height:20%"></span><span style="height:19%"></span></div>
-                <div class="cfd-col" style="height:72px;"><span style="height:55%"></span><span style="height:28%"></span><span style="height:17%"></span></div>
-                <div class="cfd-col" style="height:82px;"><span style="height:64%"></span><span style="height:19%"></span><span style="height:17%"></span></div>
-                <div class="cfd-col" style="height:88px;"><span style="height:59%"></span><span style="height:25%"></span><span style="height:16%"></span></div>
-                <div class="cfd-col" style="height:76px;"><span style="height:49%"></span><span style="height:34%"></span><span style="height:17%"></span></div>
+                <span class="cfd-axis"></span>
+                <div class="cfd-col" style="height:35px;"><span style="height:46%"></span><span style="height:34%"></span><span style="height:20%"></span></div>
+                <div class="cfd-col" style="height:48px;"><span style="height:40%"></span><span style="height:36%"></span><span style="height:24%"></span></div>
+                <div class="cfd-col" style="height:55px;"><span style="height:52%"></span><span style="height:28%"></span><span style="height:20%"></span></div>
+                <div class="cfd-col" style="height:62px;"><span style="height:58%"></span><span style="height:24%"></span><span style="height:18%"></span></div>
+                <div class="cfd-col" style="height:76px;"><span style="height:45%"></span><span style="height:33%"></span><span style="height:22%"></span></div>
+                <div class="cfd-col" style="height:86px;"><span style="height:63%"></span><span style="height:20%"></span><span style="height:17%"></span></div>
+                <div class="cfd-col" style="height:72px;"><span style="height:49%"></span><span style="height:31%"></span><span style="height:20%"></span></div>
+                <span></span><span class="cfd-day">Mon</span><span class="cfd-day">Tue</span><span class="cfd-day">Wed</span><span class="cfd-day">Thu</span><span class="cfd-day">Fri</span><span class="cfd-day">Sat</span><span class="cfd-day">Sun</span>
               </div>
             </div>
-            <p>美观关键：用于“长期结构”而不是当天详情；颜色固定为新增/删除/净增长或编辑/阅读/评论。</p>
+            <p>美观关键：每个颜色是一篇笔记或 Top N 笔记，横轴明确写周一到周日；其他笔记合并为“Other”。</p>
             <code>CFD
-PAST 12 WEEKS
-VALUE addedWords, deletedWords, changedWords</code>
+THIS WEEK
+GROUP BY note
+VALUE readEditTime
+LIMIT 5</code>
+          </div>
+
+          <div class="idea-card">
+            <h3>10b. CFD 累积流图：tag group 变体</h3>
+            <p>目的：同一个结构换成 tag group，回答“最近 7 天注意力主要堆在哪些主题”。</p>
+            <div class="micro-viz">
+              <div class="cfd tag-mode">
+                <span class="cfd-axis"></span>
+                <div class="cfd-col" style="height:42px;"><span style="height:38%"></span><span style="height:40%"></span><span style="height:22%"></span></div>
+                <div class="cfd-col" style="height:54px;"><span style="height:32%"></span><span style="height:46%"></span><span style="height:22%"></span></div>
+                <div class="cfd-col" style="height:50px;"><span style="height:28%"></span><span style="height:42%"></span><span style="height:30%"></span></div>
+                <div class="cfd-col" style="height:68px;"><span style="height:48%"></span><span style="height:31%"></span><span style="height:21%"></span></div>
+                <div class="cfd-col" style="height:82px;"><span style="height:54%"></span><span style="height:26%"></span><span style="height:20%"></span></div>
+                <div class="cfd-col" style="height:60px;"><span style="height:35%"></span><span style="height:38%"></span><span style="height:27%"></span></div>
+                <div class="cfd-col" style="height:47px;"><span style="height:26%"></span><span style="height:44%"></span><span style="height:30%"></span></div>
+                <span></span><span class="cfd-day">D-6</span><span class="cfd-day">D-5</span><span class="cfd-day">D-4</span><span class="cfd-day">D-3</span><span class="cfd-day">D-2</span><span class="cfd-day">D-1</span><span class="cfd-day">Today</span>
+              </div>
+            </div>
+            <p>美观关键：颜色严格使用 tag group 配置色；适合最近 7 天或最近 12 周，不适合当天详情。</p>
+            <code>CFD
+PAST 7 DAYS
+GROUP BY tag
+VALUE editedTimes
+LIMIT 6</code>
           </div>
         </div>
       </article>

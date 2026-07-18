@@ -1,5 +1,5 @@
-import { DataRecorder } from '../DataRecorder';
-import { MetaDataParser } from '../MetaDataParser';
+import { DataRecorder } from '../Recorder/DataRecorder';
+import { MetaDataParser } from '../Recorder/MetaDataParser';
 import type WordflowTrackerPlugin from '../main';
 
 const WIDGET_FIELDS = [

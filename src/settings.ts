@@ -2,14 +2,14 @@ import WordflowTrackerPlugin from './main';
 import { AbstractInputSuggest, App, ButtonComponent, Modal, Notice, Setting, TextComponent, TextAreaComponent, DropdownComponent, ToggleComponent, MarkdownRenderer, Component, setIcon, TFile, TFolder, requestUrl } from 'obsidian';
 
 declare const activeDocument: Document;
-import { DataRecorder, MergedData } from './DataRecorder';
+import { DataRecorder, ExistingData, MergedData } from './Recorder/DataRecorder';
 import { moment, normalizePath } from 'obsidian';
 import { I18nManager, getI18n } from './i18n';
 import { updateStatusBarStyle } from './StatusBarManager';
 import { TagColorConfig } from './Utils/TagColorManager';
 import { getDateValidationErrorResult } from './Utils/dateFormatValidator';
 import { getAllRecorderFieldOptions } from './Utils/fieldOptions';
-import { isPeriodicRecorderTarget, RECORDER_TARGET_TYPES } from './RecorderTarget';
+import { isPeriodicRecorderTarget, RECORDER_TARGET_TYPES } from './Recorder/RecorderTarget';
 
 type DestructiveButtonComponent = ButtonComponent & {
     setDestructive?: () => ButtonComponent;
@@ -3658,7 +3658,7 @@ class SyntaxChangeConfirmationModal extends Modal {
 
 			// Generate old content (with old syntax)
 			const oldMergedData: MergedData[] = [];
-			existingDataMap.forEach((existingData) => {
+			existingDataMap.forEach((existingData: ExistingData) => {
 				oldMergedData.push(new MergedData(undefined, existingData));
 			});
 			this.oldContent = this.recorder.getParser().generateContent(oldMergedData);
@@ -3666,7 +3666,7 @@ class SyntaxChangeConfirmationModal extends Modal {
 			// Generate new content (with new syntax)
 			this.recorder.getParser().updateSyntax(this.newSyntax);
 			const newMergedData: MergedData[] = [];
-			existingDataMap.forEach((existingData) => {
+			existingDataMap.forEach((existingData: ExistingData) => {
 				newMergedData.push(new MergedData(undefined, existingData));
 			});
 			this.newContent = this.recorder.getParser().generateContent(newMergedData);
@@ -3695,14 +3695,14 @@ class SyntaxChangeConfirmationModal extends Modal {
 				const existingDataMap = await this.recorder.getParser().extractData(recordNote);
 
 				const oldMergedData: MergedData[] = [];
-				existingDataMap.forEach((existingData) => {
+				existingDataMap.forEach((existingData: ExistingData) => {
 					oldMergedData.push(new MergedData(undefined, existingData));
 				});
 				const noteOldContent = this.recorder.getParser().generateContent(oldMergedData);
 
 				this.recorder.getParser().updateSyntax(this.newSyntax);
 				const newMergedData: MergedData[] = [];
-				existingDataMap.forEach((existingData) => {
+				existingDataMap.forEach((existingData: ExistingData) => {
 					newMergedData.push(new MergedData(undefined, existingData));
 				});
 				const noteNewContent = this.recorder.getParser().generateContent(newMergedData);

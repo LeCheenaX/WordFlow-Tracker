@@ -1,7 +1,7 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
-import { formatTime, restoreTimeString } from "./Timer";
+import { formatTime, restoreTimeString } from "../Widget/Timer";
 import { moment, TFile } from 'obsidian';
-import WordflowTrackerPlugin from "./main";
+import WordflowTrackerPlugin from "../main";
 
 interface MetadataPattern {
     start: string;

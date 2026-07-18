@@ -1,7 +1,7 @@
 import { stripYamlFrontmatter, wordsCounter } from "./Utils/stats";
 import { isTableChange, tableWordDiff } from "./Utils/tableWordCount";
 import { conditionalSleep } from "./Utils/conditionalSleep";
-import Timer from "./Timer";
+import Timer from "./Widget/Timer";
 import WordflowTrackerPlugin from "./main";
 import { debounce, Editor, EventRef, MarkdownView, MarkdownViewModeType, moment, TFile } from "obsidian";
 import { historyField } from "@codemirror/commands";

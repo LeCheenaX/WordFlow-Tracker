@@ -1,9 +1,9 @@
 import { DataRecorder, ExistingData, MergedData } from "./DataRecorder";
-import { formatTime, restoreTimeString } from "./Timer";
+import { formatTime, restoreTimeString } from "../Widget/Timer";
 import { moment, Notice, TFile } from 'obsidian';
-import WordflowTrackerPlugin from "./main";
-import { normalizeObsidianLinkPath, resolveLinkToPath } from "./Utils/pathNormalizer";
-import { resolveNoteProperty } from "./Utils/notePropertyResolver";
+import WordflowTrackerPlugin from "../main";
+import { normalizeObsidianLinkPath, resolveLinkToPath } from "../Utils/pathNormalizer";
+import { resolveNoteProperty } from "../Utils/notePropertyResolver";
 
 export class TableParser{
     //private recordType: string;

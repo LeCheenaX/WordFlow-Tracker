@@ -1,4 +1,4 @@
-import WordflowTrackerPlugin from './main';
+import WordflowTrackerPlugin from '../main';
 import { moment, normalizePath, requestUrl } from 'obsidian';
 
 interface SnapshotData {

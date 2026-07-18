@@ -1,10 +1,10 @@
-import WordflowTrackerPlugin from "./main";
-import { RecorderConfig } from "./settings"
-import { DocTracker } from './DocTracker';
+import WordflowTrackerPlugin from "../main";
+import { RecorderConfig } from "../settings"
+import { DocTracker } from '../DocTracker';
 import { TableParser } from './TableParser';
 import { BulletListParser } from './ListParser';
 import { MetaDataParser } from "./MetaDataParser";
-import { AIDiffManager } from "./AIDiffManager";
+import { AIDiffManager } from "../AI/AIDiffManager";
 import { createRecorderTarget, RecorderTarget } from "./RecorderTarget";
 import { moment, Notice, TFile, TFolder } from 'obsidian';
 

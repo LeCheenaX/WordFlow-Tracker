@@ -1,6 +1,6 @@
-import WordflowTrackerPlugin from './main';
+import WordflowTrackerPlugin from '../main';
 import { TFile, requestUrl } from 'obsidian';
-import { computeDiffForLLM } from './Utils/SimpleDiff';
+import { computeDiffForLLM } from '../Utils/SimpleDiff';
 
 const DEBUG = false;
 export interface DiffQueueItem {

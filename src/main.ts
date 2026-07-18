@@ -1,16 +1,17 @@
 import { DocTracker } from './DocTracker';
-import { DataRecorder } from './DataRecorder';
-import { RecorderManager } from './RecorderManager';
+import { DataRecorder } from './Recorder/DataRecorder';
+import { RecorderManager } from './Recorder/RecorderManager';
 import { StatusBarManager, updateStatusBarStyle, removeStatusBarStyle } from './StatusBarManager';
 import { DEFAULT_SETTINGS, GeneralTab, RecordersTab, TimersTab, StatusBarTab, WordflowRecorderConfigs, WordflowSettings, WordflowSubSettingsTab, WidgetTab, ReferenceTab, AITab } from './settings';
-import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget';
+import { WordflowWidgetView, VIEW_TYPE_WORDFLOW_WIDGET } from './Widget/Widget';
 import { currentPluginVersion, changelog } from './changeLog';
 import { initI18n, I18nManager } from './i18n';
 import { executeOnceWithKey } from './Utils/executeOnce';
 import { throttleLeadingEdge } from './Utils/throttle';
-import { SnapshotManager } from './SnapshotManager';
-import { AIDiffManager } from './AIDiffManager';
+import { SnapshotManager } from './AI/SnapshotManager';
+import { AIDiffManager } from './AI/AIDiffManager';
 import { getDateValidationErrorResult } from './Utils/dateFormatValidator';
+import { registerWordflowEmbeddedViews } from './EmbeddedViews';
 import { App, Component, getAllTags, MarkdownView, MarkdownRenderer, Modal, Notice, Plugin, PluginSettingTab, TFile } from 'obsidian';
 
 declare const activeDocument: Document;
@@ -70,6 +71,7 @@ export default class WordflowTrackerPlugin extends Plugin {
 			this.recorderManager.addRecorder(recorder);
 		}
 
+		registerWordflowEmbeddedViews(this);
 
 		const debouncedHandler = throttleLeadingEdge(this.activeDocHandler.bind(this), 50);
 		// Warning: don't change the delay, we need 50ms delay to trigger activeDocHandler twice when opening new files. 

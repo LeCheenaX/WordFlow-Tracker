@@ -1,6 +1,6 @@
 import WordflowTrackerPlugin from "./main";
 import { DocTracker } from "./DocTracker";
-import { formatTime } from "./Timer";
+import { formatTime } from "./Widget/Timer";
 import { WordflowSettings } from "./settings";
 import { MarkdownView } from "obsidian";
 

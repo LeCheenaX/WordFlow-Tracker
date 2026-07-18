@@ -60,6 +60,8 @@ export class TagColorManager {
                 config.color.trim() !== '') {
                 
                 // 为每个标签设置相同的颜色值
+                this.uniqueColorGenerator.reserve(config.color.trim());
+
                 config.tags.forEach(tag => {
                     if (tag && typeof tag === 'string' && tag.trim() !== '') {
                         this.tagColors.set(tag.trim(), config.color.trim());

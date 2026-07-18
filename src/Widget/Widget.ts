@@ -1,15 +1,16 @@
-import WordflowTrackerPlugin from "./main";
-import { ExistingData, DataRecorder } from "./DataRecorder";
+import WordflowTrackerPlugin from "../main";
+import { ExistingData, DataRecorder } from "../Recorder/DataRecorder";
 import { formatTime } from "./Timer";
-import { MetaDataParser } from "./MetaDataParser";
-import { DocTracker } from "./DocTracker";
-import { ConfirmationModal } from "./settings"
-import { UniqueColorGenerator } from "./Utils/UniqueColorGenerator";
-import { TagColorManager, TagColorVariationSettings } from "./Utils/TagColorManager";
-import { HeatmapColorManager } from "./Utils/HeatmapColorManager";
-import { DynamicDropdown } from "./Utils/DynamicDropdown";
-import { resolveNoteProperty } from "./Utils/notePropertyResolver";
-import { getRecorderFieldOptions } from "./Utils/fieldOptions";
+import { MetaDataParser } from "../Recorder/MetaDataParser";
+import { DocTracker } from "../DocTracker";
+import { ConfirmationModal } from "../settings"
+import { UniqueColorGenerator } from "../Utils/UniqueColorGenerator";
+import { TagColorManager, TagColorVariationSettings } from "../Utils/TagColorManager";
+import { HeatmapColorManager } from "../Utils/HeatmapColorManager";
+import { DynamicDropdown } from "../Utils/DynamicDropdown";
+import { resolveNoteProperty } from "../Utils/notePropertyResolver";
+import { getRecorderFieldOptions } from "../Utils/fieldOptions";
+import { resolveTagGroups } from "../Utils/TagGroupResolver";
 import { IconName, ItemView, Notice, WorkspaceLeaf, moment, setIcon, setTooltip, TFile, TFolder } from "obsidian";
 
 export const VIEW_TYPE_WORDFLOW_WIDGET = "wordflow-widget-view";
@@ -967,6 +968,7 @@ export class WordflowWidgetView extends ItemView {
         }
 
         const sortedData = await this.getSortedData(field);
+        await this.updateTaggedColorMap();
 
         // Calculate the total value for the current field across all entries
         this.totalFieldValue = 0;
@@ -1303,19 +1305,14 @@ export class WordflowWidgetView extends ItemView {
         // Filter files based on group type
         let groupFiles: ExistingData[];
         if (isUnconfiguredGroup) {
-            // Filter unconfigured tags files
-            const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
+            // Include notes that have at least one unmatched tag. Untagged notes
+            // do not belong to the widget's tag-group mode.
             groupFiles = sortedData.filter(rowData => {
                 const file = this.plugin.app.vault.getFileByPath(rowData.filePath);
-                if (!file) return true; // Treat deleted files as unconfigured
-                
+                if (!file) return false;
+
                 const fileTags = this.tagColorManager.getFileTags(this.plugin.app, file);
-                const hasConfiguredTags = fileTags.some(tag => {
-                    const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
-                    return configuredTags.includes(cleanTag);
-                });
-                
-                return !hasConfiguredTags;
+                return resolveTagGroups(fileTags, this.plugin.settings.tagColors).unconfiguredTags.length > 0;
             });
         } else {
             // Filter files that belong to this configured tag group
@@ -1339,14 +1336,12 @@ export class WordflowWidgetView extends ItemView {
     }
 
     private calculateTagGroupData(sortedData: ExistingData[], field: string): { tagGroups: TagGroupData[], unconfiguredTagsFiles: { totalWeight: number } } {
-        // 为每个标签配置创建一个组
         const tagColorGroups: TagGroupData[] = this.plugin.settings.tagColors.map(config => ({
             tagName: config.groupName || config.tags?.join('  ') || 'Unknown',
             totalWeight: 0,
             color: config.color || '#3366cc',
             files: []
         }));
-        
         let unconfiguredTotalWeight = 0;
 
         sortedData.forEach(rowData => {
@@ -1355,50 +1350,35 @@ export class WordflowWidgetView extends ItemView {
 
             const fileTags = this.tagColorManager.getFileTags(this.plugin.app, file);
             const fileValue = this.getFieldValue(rowData, field) ?? 0;
-            if (fileValue === 0) return; // skip files with no value or no property
-            
-            // 找到文件匹配的标签配置组
-            const matchingConfigIndices: number[] = [];
-            this.plugin.settings.tagColors.forEach((config, configIndex) => {
-                const hasMatchingTag = config.tags?.some(configTag => 
-                    fileTags.some(fileTag => {
-                        const cleanFileTag = fileTag.startsWith('#') ? fileTag.slice(1) : fileTag;
-                        return cleanFileTag === configTag;
-                    })
-                );
-                if (hasMatchingTag) {
-                    matchingConfigIndices.push(configIndex);
-                }
-            });
+            if (fileValue === 0) return;
 
-            if (matchingConfigIndices.length === 0) {
-                // 无匹配标签配置的文件
-                unconfiguredTotalWeight += fileValue;
-            } else {
-                // 有匹配标签配置的文件 - 按配置组分配权重
-                const weightPerConfig = fileValue / matchingConfigIndices.length;
-                
-                matchingConfigIndices.forEach(configIndex => {
-                    const tagGroup = tagColorGroups[configIndex];
-                    tagGroup.totalWeight += weightPerConfig;
-                    if (!tagGroup.files.includes(rowData.filePath)) {
-                        tagGroup.files.push(rowData.filePath);
-                    }
-                });
+            const resolved = resolveTagGroups(fileTags, this.plugin.settings.tagColors);
+            const hasUnconfiguredTags = resolved.unconfiguredTags.length > 0;
+            const membershipCount = resolved.configuredGroups.length + (hasUnconfiguredTags ? 1 : 0);
+            if (membershipCount === 0) return;
+
+            const weightPerGroup = fileValue / membershipCount;
+            for (const match of resolved.configuredGroups) {
+                const tagGroup = tagColorGroups[match.configIndex];
+                tagGroup.totalWeight += weightPerGroup;
+                if (!tagGroup.files.includes(rowData.filePath)) {
+                    tagGroup.files.push(rowData.filePath);
+                }
+            }
+            if (hasUnconfiguredTags) {
+                unconfiguredTotalWeight += weightPerGroup;
             }
         });
 
-        // 过滤掉权重为0的组，然后按权重排序
         const activeTagGroups = tagColorGroups
             .filter(group => group.totalWeight > 0)
             .sort((a, b) => b.totalWeight - a.totalWeight);
 
-        return { 
-            tagGroups: activeTagGroups, 
-            unconfiguredTagsFiles: { totalWeight: unconfiguredTotalWeight } 
+        return {
+            tagGroups: activeTagGroups,
+            unconfiguredTagsFiles: { totalWeight: unconfiguredTotalWeight }
         };
     }
-
     private calculateFileData(sortedData: ExistingData[], field: string): FileData[] {
         const configuredTags = this.plugin.settings.tagColors.flatMap(config => config.tags || []);
         const allFilesWithTags = this.tagColorManager.buildFilesWithTagsMap(this.plugin.app, this.dataMap!);

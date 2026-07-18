@@ -1,8 +1,8 @@
-import { DocTracker } from './DocTracker';
+import { DocTracker } from '../DocTracker';
 import { DataRecorder } from './DataRecorder';
-import WordflowTrackerPlugin from './main';
+import WordflowTrackerPlugin from '../main';
 import { Notice } from 'obsidian';
-import { throttleLeadingEdge } from './Utils/throttle';
+import { throttleLeadingEdge } from '../Utils/throttle';
 
 export class RecorderManager {
     private recorders: DataRecorder[] = [];

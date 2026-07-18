@@ -1,5 +1,5 @@
-import { DocTracker } from "./DocTracker";
-import WordflowTrackerPlugin from "./main";
+import { DocTracker } from "../DocTracker";
+import WordflowTrackerPlugin from "../main";
 import { debounce, MarkdownViewModeType, moment, Notice } from "obsidian";
 
 export default class Timer {
